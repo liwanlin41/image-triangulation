@@ -1,16 +1,27 @@
-#include <iostream>
-#include <assert.h>
-#include "../src/point.cpp"
+#include <gtest/gtest.h>
+#include "../headers/point.hpp"
 
 using namespace std;
 
-int main() {
-    // simple test to make sure move behaves as expected
-    Point<double> a(0,0);
+TEST(PointTest, Move) {
+    Point a(0,0);
     a.move(3, 4.5);
-    assert (a.getX() == 3);
-    assert (a.getY() == 4.5);
+    ASSERT_EQ(a, a);
+    ASSERT_EQ(3, a.getX());
+    ASSERT_EQ(4.5, a.getY());
+}
 
-    cout << "all tests passed" << endl;
-    return 0;
+TEST(PointTest, Equality) {
+    Point a(0,0);
+    Point b(0,0);
+    ASSERT_EQ(a, b);
+    a.move(1,1);
+    ASSERT_FALSE(a == b);
+    b.move(1,1);
+    ASSERT_EQ(a, b);
+}
+
+int main(int argc, char **argv) {
+    testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }
