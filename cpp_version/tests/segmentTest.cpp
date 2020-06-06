@@ -52,6 +52,17 @@ TEST(IntersectTest, Overlap) {
     ASSERT_TRUE(original.intersects(overlap));
 }
 
+// test collinear segments with no overlap
+TEST(IntersectTest, DisjointCollinear) {
+    Point a(0,0);
+    Point b(1,0);
+    Point c(2,0);
+    Point d(3,0);
+    Segment e(a,b);
+    Segment f(c,d);
+    ASSERT_FALSE(e.intersects(f));
+}
+
 // test no intersection 
 TEST(IntersectTest, NoIntersect) {
     Point a(0,0);
