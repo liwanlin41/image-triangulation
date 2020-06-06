@@ -52,6 +52,18 @@ TEST(IntersectTest, Overlap) {
     ASSERT_TRUE(original.intersects(overlap));
 }
 
+// test collinear segments where one segment is entirely contained within the other
+TEST(IntersectTest, Containment) {
+    Point a(0,0);
+    Point b(3,0);
+    Point c(1,0);
+    Point d(2,0);
+    Segment e(a,b);
+    Segment f(c,d);
+    ASSERT_TRUE(e.intersects(f));
+    ASSERT_TRUE(f.intersects(e));
+}
+
 // test collinear segments with no overlap
 TEST(IntersectTest, DisjointCollinear) {
     Point a(0,0);

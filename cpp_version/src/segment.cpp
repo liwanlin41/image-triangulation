@@ -4,6 +4,22 @@
 
 using namespace std;
 
+// helper function for determining if t in [a,b] where order of a,b is unknown
+bool isBetween(double t, double a, double b) {
+    return (a <= t && t <= b) || (b <= t && t <= a);
+}
+
+// helper function for determining whether there exists
+// an axis-parallel separator between {a, b} and {c, d}
+bool areDisjoint(Point &a, Point &b, Point &c, Point &d) {
+    // check x direction
+    bool x_separable = (min(a.getX(), b.getX()) > max(c.getX(), d.getX())) || 
+        (min(c.getX(), d.getX()) > max(a.getX(), b.getX()));
+    bool y_separable = (min(a.getY(), b.getY()) > max(c.getY(), d.getY())) ||
+        (min(c.getY(), d.getY()) > max(a.getY(), b.getY()));
+    return x_separable || y_separable;
+}
+
 Segment::Segment(Point &a, Point &b) : endpoint1(a), endpoint2(b) {}
 
 double Segment::length() {
@@ -39,13 +55,13 @@ bool Segment::intersects(Segment other) {
     double t1 = adjugate[0][0] * target[0] + adjugate[0][1] * target[1];
     double t2 = adjugate[1][0] * target[0] + adjugate[1][1] * target[1];
 
-    if (determinant > 0) {
-        return (0 <= t1 && t1 <= determinant) && (0 <= t2 && t2 <= determinant);
-    } 
-    // if determinant is 0 (parallel) and all points are collinear, t1 and t2 will be 0 and this line is true;
-    // if parallel then t1, t2 are not both zero and this line is false (no intersection)
-    // therefore this also handles the singular case
-    return (determinant <= t1 && t1 <= 0) && (determinant <= t2 && t2 <= 0);
+    // first handle degenerate case; checking t1 = t2 = 0 will give the correct result for the parallel case
+    // but an additional check needs to be done for the collinear case
+    if (determinant == 0) {
+        return (t1 == 0 && t2 == 0) && !areDisjoint(endpoint1, endpoint2, other.endpoint1, other.endpoint2); 
+    }
+
+    return isBetween(t1, 0, determinant) && isBetween(t2, 0, determinant);
 }
 
 // only support non-parallel segments for now
