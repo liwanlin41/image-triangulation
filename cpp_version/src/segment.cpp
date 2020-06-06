@@ -48,6 +48,34 @@ bool Segment::intersects(Segment other) {
     return (determinant <= t1 && t1 <= 0) && (determinant <= t2 && t2 <= 0);
 }
 
+// only support non-parallel segments for now
+// TODO: refactor with intersects
+// TODO: precision of result?
 Point Segment::getIntersection(Segment other) {
-    return Point(0,0);
+    double matrix[2][2];
+    // first column (matches t1)
+    matrix[0][0] = endpoint1.getX() - endpoint2.getX();
+    matrix[1][0] = endpoint1.getY() - endpoint2.getY();
+    // second column (matches t2)
+    matrix[0][1] = other.endpoint2.getX() - other.endpoint1.getX();
+    matrix[1][1] = other.endpoint2.getY() - other.endpoint1.getY();
+
+    double determinant = matrix[0][0] * matrix[1][1] - matrix[0][1] * matrix[1][0];
+    double adjugate[2][2];
+    adjugate[0][0] = matrix[1][1];
+    adjugate[1][1] = matrix[0][0];
+    adjugate[0][1] = -matrix[0][1];
+    adjugate[1][0] = -matrix[1][0];
+
+    // target vector
+    double target[2] = {other.endpoint2.getX() - endpoint2.getX(), other.endpoint2.getY() - endpoint2.getY()};
+
+    // compute scaled solution t1, t2
+    double t1 = adjugate[0][0] * target[0] + adjugate[0][1] * target[1];
+    double t2 = adjugate[1][0] * target[0] + adjugate[1][1] * target[1];
+
+    double x = (endpoint1.getX() * t1 + endpoint2.getX() * (determinant-t1)) / determinant;
+    double y = (endpoint1.getY() * t1 + endpoint2.getY() * (determinant-t1)) / determinant;
+
+    return Point(x,y);
 }
