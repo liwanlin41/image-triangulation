@@ -14,5 +14,6 @@ class Point {
         double getY();
         void move(double deltaX, double deltaY);
         bool operator==(const Point &other) const;
+        bool operator!=(const Point &other) const;
 };
 #endif
