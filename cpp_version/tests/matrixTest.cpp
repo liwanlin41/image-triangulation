@@ -9,7 +9,7 @@ TEST(DeterminantTest, Zero) {
 
 // test determinant of full rank matrix
 TEST(DeterminantTest, FullRank) {
-    vector<vector<double>> arr = {{1/3, 1}, {0,3}};
+    vector<vector<double>> arr = {{1.0/3, 1}, {0,3}};
     Matrix matrix(arr);
     ASSERT_EQ(1, matrix.determinant());
 }
@@ -64,6 +64,13 @@ TEST(InverseTest, SpecialLinear) {
     Matrix inverse = matrix.inverse();
     ASSERT_EQ(identity, matrix.multiply(inverse));
     ASSERT_EQ(identity, inverse.multiply(matrix));
+}
+
+TEST(EqualityTest, DimensionMismatch) {
+    Matrix square(1,1,1,1);
+    vector<vector<double>> arr = {{1,1,1,1}};
+    Matrix row(arr);
+    ASSERT_NE(row, square);
 }
 
 int main(int argc, char **argv) {

@@ -1,6 +1,7 @@
 #ifndef matrix_h
 #define matrix_h
 
+#include <iostream>
 #include <vector>
 using namespace std;
 
@@ -11,19 +12,20 @@ using namespace std;
 
 class Matrix {
     private:
-        int rows, cols;
+        int numRows, numCols;
         vector<vector<double>> matrix; // hold matrix values
     public:
-        Matrix(vector<vector<double>>);
+        // constructor assuming the input vector is rectangular
+        Matrix(vector<vector<double>> const &);
         // special constructor for 2x2 matrix, creating the matrix [[a,b],[c,d]]
-        Matrix(int a, int b, int c, int d);
+        Matrix(double a, double b, double c, double d);
 
         int getNumRows();
         int getNumCols();
         // return the element in row i, column j
         double get(int i, int j);
         // return result of this @ other for compatible matrices
-        Matrix multiply(Matrix other);
+        Matrix multiply(Matrix &other);
 
         // compute determinant of 2x2 matrix
         double determinant();
@@ -33,6 +35,7 @@ class Matrix {
         Matrix inverse();
 
         bool operator==(const Matrix &other) const;
+        bool operator!=(const Matrix &other) const;
 };
 
 #endif
