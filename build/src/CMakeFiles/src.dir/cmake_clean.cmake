@@ -1,7 +1,7 @@
 file(REMOVE_RECURSE
+  "CMakeFiles/src.dir/matrix.cpp.o"
   "CMakeFiles/src.dir/point.cpp.o"
   "CMakeFiles/src.dir/segment.cpp.o"
-  "CMakeFiles/src.dir/matrix.cpp.o"
   "CMakeFiles/src.dir/triangle.cpp.o"
   "libsrc.pdb"
   "libsrc.a"

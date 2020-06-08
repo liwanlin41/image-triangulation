@@ -43,7 +43,7 @@ RM = /usr/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/wanlin/MIT/UROP/code/cpp_version
+CMAKE_SOURCE_DIR = /home/wanlin/MIT/UROP/code/cpp_code
 
 # The top-level build directory on which CMake was run.
 CMAKE_BINARY_DIR = /home/wanlin/MIT/UROP/code/build
@@ -57,18 +57,42 @@ include src/CMakeFiles/src.dir/progress.make
 # Include the compile flags for this target's objects.
 include src/CMakeFiles/src.dir/flags.make
 
+src/CMakeFiles/src.dir/matrix.cpp.o: src/CMakeFiles/src.dir/flags.make
+src/CMakeFiles/src.dir/matrix.cpp.o: /home/wanlin/MIT/UROP/code/cpp_code/src/matrix.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/wanlin/MIT/UROP/code/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object src/CMakeFiles/src.dir/matrix.cpp.o"
+	cd /home/wanlin/MIT/UROP/code/build/src && /usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/src.dir/matrix.cpp.o -c /home/wanlin/MIT/UROP/code/cpp_code/src/matrix.cpp
+
+src/CMakeFiles/src.dir/matrix.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/src.dir/matrix.cpp.i"
+	cd /home/wanlin/MIT/UROP/code/build/src && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/wanlin/MIT/UROP/code/cpp_code/src/matrix.cpp > CMakeFiles/src.dir/matrix.cpp.i
+
+src/CMakeFiles/src.dir/matrix.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/src.dir/matrix.cpp.s"
+	cd /home/wanlin/MIT/UROP/code/build/src && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/wanlin/MIT/UROP/code/cpp_code/src/matrix.cpp -o CMakeFiles/src.dir/matrix.cpp.s
+
+src/CMakeFiles/src.dir/matrix.cpp.o.requires:
+
+.PHONY : src/CMakeFiles/src.dir/matrix.cpp.o.requires
+
+src/CMakeFiles/src.dir/matrix.cpp.o.provides: src/CMakeFiles/src.dir/matrix.cpp.o.requires
+	$(MAKE) -f src/CMakeFiles/src.dir/build.make src/CMakeFiles/src.dir/matrix.cpp.o.provides.build
+.PHONY : src/CMakeFiles/src.dir/matrix.cpp.o.provides
+
+src/CMakeFiles/src.dir/matrix.cpp.o.provides.build: src/CMakeFiles/src.dir/matrix.cpp.o
+
+
 src/CMakeFiles/src.dir/point.cpp.o: src/CMakeFiles/src.dir/flags.make
-src/CMakeFiles/src.dir/point.cpp.o: /home/wanlin/MIT/UROP/code/cpp_version/src/point.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/wanlin/MIT/UROP/code/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object src/CMakeFiles/src.dir/point.cpp.o"
-	cd /home/wanlin/MIT/UROP/code/build/src && /usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/src.dir/point.cpp.o -c /home/wanlin/MIT/UROP/code/cpp_version/src/point.cpp
+src/CMakeFiles/src.dir/point.cpp.o: /home/wanlin/MIT/UROP/code/cpp_code/src/point.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/wanlin/MIT/UROP/code/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object src/CMakeFiles/src.dir/point.cpp.o"
+	cd /home/wanlin/MIT/UROP/code/build/src && /usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/src.dir/point.cpp.o -c /home/wanlin/MIT/UROP/code/cpp_code/src/point.cpp
 
 src/CMakeFiles/src.dir/point.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/src.dir/point.cpp.i"
-	cd /home/wanlin/MIT/UROP/code/build/src && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/wanlin/MIT/UROP/code/cpp_version/src/point.cpp > CMakeFiles/src.dir/point.cpp.i
+	cd /home/wanlin/MIT/UROP/code/build/src && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/wanlin/MIT/UROP/code/cpp_code/src/point.cpp > CMakeFiles/src.dir/point.cpp.i
 
 src/CMakeFiles/src.dir/point.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/src.dir/point.cpp.s"
-	cd /home/wanlin/MIT/UROP/code/build/src && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/wanlin/MIT/UROP/code/cpp_version/src/point.cpp -o CMakeFiles/src.dir/point.cpp.s
+	cd /home/wanlin/MIT/UROP/code/build/src && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/wanlin/MIT/UROP/code/cpp_code/src/point.cpp -o CMakeFiles/src.dir/point.cpp.s
 
 src/CMakeFiles/src.dir/point.cpp.o.requires:
 
@@ -82,17 +106,17 @@ src/CMakeFiles/src.dir/point.cpp.o.provides.build: src/CMakeFiles/src.dir/point.
 
 
 src/CMakeFiles/src.dir/segment.cpp.o: src/CMakeFiles/src.dir/flags.make
-src/CMakeFiles/src.dir/segment.cpp.o: /home/wanlin/MIT/UROP/code/cpp_version/src/segment.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/wanlin/MIT/UROP/code/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object src/CMakeFiles/src.dir/segment.cpp.o"
-	cd /home/wanlin/MIT/UROP/code/build/src && /usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/src.dir/segment.cpp.o -c /home/wanlin/MIT/UROP/code/cpp_version/src/segment.cpp
+src/CMakeFiles/src.dir/segment.cpp.o: /home/wanlin/MIT/UROP/code/cpp_code/src/segment.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/wanlin/MIT/UROP/code/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object src/CMakeFiles/src.dir/segment.cpp.o"
+	cd /home/wanlin/MIT/UROP/code/build/src && /usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/src.dir/segment.cpp.o -c /home/wanlin/MIT/UROP/code/cpp_code/src/segment.cpp
 
 src/CMakeFiles/src.dir/segment.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/src.dir/segment.cpp.i"
-	cd /home/wanlin/MIT/UROP/code/build/src && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/wanlin/MIT/UROP/code/cpp_version/src/segment.cpp > CMakeFiles/src.dir/segment.cpp.i
+	cd /home/wanlin/MIT/UROP/code/build/src && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/wanlin/MIT/UROP/code/cpp_code/src/segment.cpp > CMakeFiles/src.dir/segment.cpp.i
 
 src/CMakeFiles/src.dir/segment.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/src.dir/segment.cpp.s"
-	cd /home/wanlin/MIT/UROP/code/build/src && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/wanlin/MIT/UROP/code/cpp_version/src/segment.cpp -o CMakeFiles/src.dir/segment.cpp.s
+	cd /home/wanlin/MIT/UROP/code/build/src && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/wanlin/MIT/UROP/code/cpp_code/src/segment.cpp -o CMakeFiles/src.dir/segment.cpp.s
 
 src/CMakeFiles/src.dir/segment.cpp.o.requires:
 
@@ -105,42 +129,18 @@ src/CMakeFiles/src.dir/segment.cpp.o.provides: src/CMakeFiles/src.dir/segment.cp
 src/CMakeFiles/src.dir/segment.cpp.o.provides.build: src/CMakeFiles/src.dir/segment.cpp.o
 
 
-src/CMakeFiles/src.dir/matrix.cpp.o: src/CMakeFiles/src.dir/flags.make
-src/CMakeFiles/src.dir/matrix.cpp.o: /home/wanlin/MIT/UROP/code/cpp_version/src/matrix.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/wanlin/MIT/UROP/code/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object src/CMakeFiles/src.dir/matrix.cpp.o"
-	cd /home/wanlin/MIT/UROP/code/build/src && /usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/src.dir/matrix.cpp.o -c /home/wanlin/MIT/UROP/code/cpp_version/src/matrix.cpp
-
-src/CMakeFiles/src.dir/matrix.cpp.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/src.dir/matrix.cpp.i"
-	cd /home/wanlin/MIT/UROP/code/build/src && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/wanlin/MIT/UROP/code/cpp_version/src/matrix.cpp > CMakeFiles/src.dir/matrix.cpp.i
-
-src/CMakeFiles/src.dir/matrix.cpp.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/src.dir/matrix.cpp.s"
-	cd /home/wanlin/MIT/UROP/code/build/src && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/wanlin/MIT/UROP/code/cpp_version/src/matrix.cpp -o CMakeFiles/src.dir/matrix.cpp.s
-
-src/CMakeFiles/src.dir/matrix.cpp.o.requires:
-
-.PHONY : src/CMakeFiles/src.dir/matrix.cpp.o.requires
-
-src/CMakeFiles/src.dir/matrix.cpp.o.provides: src/CMakeFiles/src.dir/matrix.cpp.o.requires
-	$(MAKE) -f src/CMakeFiles/src.dir/build.make src/CMakeFiles/src.dir/matrix.cpp.o.provides.build
-.PHONY : src/CMakeFiles/src.dir/matrix.cpp.o.provides
-
-src/CMakeFiles/src.dir/matrix.cpp.o.provides.build: src/CMakeFiles/src.dir/matrix.cpp.o
-
-
 src/CMakeFiles/src.dir/triangle.cpp.o: src/CMakeFiles/src.dir/flags.make
-src/CMakeFiles/src.dir/triangle.cpp.o: /home/wanlin/MIT/UROP/code/cpp_version/src/triangle.cpp
+src/CMakeFiles/src.dir/triangle.cpp.o: /home/wanlin/MIT/UROP/code/cpp_code/src/triangle.cpp
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/wanlin/MIT/UROP/code/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object src/CMakeFiles/src.dir/triangle.cpp.o"
-	cd /home/wanlin/MIT/UROP/code/build/src && /usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/src.dir/triangle.cpp.o -c /home/wanlin/MIT/UROP/code/cpp_version/src/triangle.cpp
+	cd /home/wanlin/MIT/UROP/code/build/src && /usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/src.dir/triangle.cpp.o -c /home/wanlin/MIT/UROP/code/cpp_code/src/triangle.cpp
 
 src/CMakeFiles/src.dir/triangle.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/src.dir/triangle.cpp.i"
-	cd /home/wanlin/MIT/UROP/code/build/src && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/wanlin/MIT/UROP/code/cpp_version/src/triangle.cpp > CMakeFiles/src.dir/triangle.cpp.i
+	cd /home/wanlin/MIT/UROP/code/build/src && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/wanlin/MIT/UROP/code/cpp_code/src/triangle.cpp > CMakeFiles/src.dir/triangle.cpp.i
 
 src/CMakeFiles/src.dir/triangle.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/src.dir/triangle.cpp.s"
-	cd /home/wanlin/MIT/UROP/code/build/src && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/wanlin/MIT/UROP/code/cpp_version/src/triangle.cpp -o CMakeFiles/src.dir/triangle.cpp.s
+	cd /home/wanlin/MIT/UROP/code/build/src && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/wanlin/MIT/UROP/code/cpp_code/src/triangle.cpp -o CMakeFiles/src.dir/triangle.cpp.s
 
 src/CMakeFiles/src.dir/triangle.cpp.o.requires:
 
@@ -155,17 +155,17 @@ src/CMakeFiles/src.dir/triangle.cpp.o.provides.build: src/CMakeFiles/src.dir/tri
 
 # Object files for target src
 src_OBJECTS = \
+"CMakeFiles/src.dir/matrix.cpp.o" \
 "CMakeFiles/src.dir/point.cpp.o" \
 "CMakeFiles/src.dir/segment.cpp.o" \
-"CMakeFiles/src.dir/matrix.cpp.o" \
 "CMakeFiles/src.dir/triangle.cpp.o"
 
 # External object files for target src
 src_EXTERNAL_OBJECTS =
 
+src/libsrc.a: src/CMakeFiles/src.dir/matrix.cpp.o
 src/libsrc.a: src/CMakeFiles/src.dir/point.cpp.o
 src/libsrc.a: src/CMakeFiles/src.dir/segment.cpp.o
-src/libsrc.a: src/CMakeFiles/src.dir/matrix.cpp.o
 src/libsrc.a: src/CMakeFiles/src.dir/triangle.cpp.o
 src/libsrc.a: src/CMakeFiles/src.dir/build.make
 src/libsrc.a: src/CMakeFiles/src.dir/link.txt
@@ -178,9 +178,9 @@ src/CMakeFiles/src.dir/build: src/libsrc.a
 
 .PHONY : src/CMakeFiles/src.dir/build
 
+src/CMakeFiles/src.dir/requires: src/CMakeFiles/src.dir/matrix.cpp.o.requires
 src/CMakeFiles/src.dir/requires: src/CMakeFiles/src.dir/point.cpp.o.requires
 src/CMakeFiles/src.dir/requires: src/CMakeFiles/src.dir/segment.cpp.o.requires
-src/CMakeFiles/src.dir/requires: src/CMakeFiles/src.dir/matrix.cpp.o.requires
 src/CMakeFiles/src.dir/requires: src/CMakeFiles/src.dir/triangle.cpp.o.requires
 
 .PHONY : src/CMakeFiles/src.dir/requires
@@ -190,6 +190,6 @@ src/CMakeFiles/src.dir/clean:
 .PHONY : src/CMakeFiles/src.dir/clean
 
 src/CMakeFiles/src.dir/depend:
-	cd /home/wanlin/MIT/UROP/code/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/wanlin/MIT/UROP/code/cpp_version /home/wanlin/MIT/UROP/code/cpp_version/src /home/wanlin/MIT/UROP/code/build /home/wanlin/MIT/UROP/code/build/src /home/wanlin/MIT/UROP/code/build/src/CMakeFiles/src.dir/DependInfo.cmake --color=$(COLOR)
+	cd /home/wanlin/MIT/UROP/code/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/wanlin/MIT/UROP/code/cpp_code /home/wanlin/MIT/UROP/code/cpp_code/src /home/wanlin/MIT/UROP/code/build /home/wanlin/MIT/UROP/code/build/src /home/wanlin/MIT/UROP/code/build/src/CMakeFiles/src.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : src/CMakeFiles/src.dir/depend
 

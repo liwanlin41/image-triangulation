@@ -1,4 +1,4 @@
-# Install script for directory: /home/wanlin/MIT/UROP/code/cpp_version/src
+# Install script for directory: /home/wanlin/MIT/UROP/code/cpp_code/src
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)

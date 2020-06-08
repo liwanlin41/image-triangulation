@@ -6,5 +6,5 @@ CXX_FLAGS =   -std=gnu++1z
 
 CXX_DEFINES = 
 
-CXX_INCLUDES = -I/home/wanlin/MIT/UROP/code/build -I/home/wanlin/MIT/UROP/code/cpp_version/src 
+CXX_INCLUDES = -I/home/wanlin/MIT/UROP/code/build -I/home/wanlin/MIT/UROP/code/cpp_code/src 
 

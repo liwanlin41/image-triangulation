@@ -6,35 +6,35 @@
 
 #IncludeRegexTransform: 
 
-/home/wanlin/MIT/UROP/code/cpp_version/main.cpp
+/home/wanlin/MIT/UROP/code/cpp_code/main.cpp
 iostream
 -
 point.hpp
-/home/wanlin/MIT/UROP/code/cpp_version/point.hpp
+/home/wanlin/MIT/UROP/code/cpp_code/point.hpp
 segment.hpp
-/home/wanlin/MIT/UROP/code/cpp_version/segment.hpp
+/home/wanlin/MIT/UROP/code/cpp_code/segment.hpp
 matrix.hpp
-/home/wanlin/MIT/UROP/code/cpp_version/matrix.hpp
+/home/wanlin/MIT/UROP/code/cpp_code/matrix.hpp
 triangle.hpp
-/home/wanlin/MIT/UROP/code/cpp_version/triangle.hpp
+/home/wanlin/MIT/UROP/code/cpp_code/triangle.hpp
 
-/home/wanlin/MIT/UROP/code/cpp_version/src/matrix.hpp
+/home/wanlin/MIT/UROP/code/cpp_code/src/matrix.hpp
 iostream
 -
 vector
 -
 
-/home/wanlin/MIT/UROP/code/cpp_version/src/point.hpp
+/home/wanlin/MIT/UROP/code/cpp_code/src/point.hpp
 
-/home/wanlin/MIT/UROP/code/cpp_version/src/segment.hpp
+/home/wanlin/MIT/UROP/code/cpp_code/src/segment.hpp
 point.hpp
-/home/wanlin/MIT/UROP/code/cpp_version/src/point.hpp
+/home/wanlin/MIT/UROP/code/cpp_code/src/point.hpp
 
-/home/wanlin/MIT/UROP/code/cpp_version/src/triangle.hpp
+/home/wanlin/MIT/UROP/code/cpp_code/src/triangle.hpp
 vector
 -
 point.hpp
-/home/wanlin/MIT/UROP/code/cpp_version/src/point.hpp
+/home/wanlin/MIT/UROP/code/cpp_code/src/point.hpp
 matrix.hpp
-/home/wanlin/MIT/UROP/code/cpp_version/src/matrix.hpp
+/home/wanlin/MIT/UROP/code/cpp_code/src/matrix.hpp
 
