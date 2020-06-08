@@ -13,13 +13,13 @@ using namespace std;
 
 class Triangle {
     private:
-        Point a, b, c;
         vector<Point> vertices;
     public:
+        // construct from three points and orient in ccw direction
         Triangle(Point &a, Point &b, Point &c);
         double getArea();
-        // get signed area based on the order a, b, c
-        // assumed to be counterclockwise
+        // get signed area based on the order of vertices
+        // with ccw direction positive
         double getSignedArea();
 };
 
