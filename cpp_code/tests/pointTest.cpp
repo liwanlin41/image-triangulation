@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "../headers/point.hpp"
+#include "../src/point.hpp"
 
 using namespace std;
 

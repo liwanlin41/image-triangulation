@@ -1,7 +1,7 @@
 #include <iostream>
 #include <assert.h>
 #include <gtest/gtest.h>
-#include "../headers/segment.hpp"
+#include "../src/segment.hpp"
 
 using namespace std;
 

@@ -1,0 +1,6 @@
+/home/wanlin/MIT/UROP/code/build/CMakeFiles/rebuild_cache.dir
+/home/wanlin/MIT/UROP/code/build/CMakeFiles/CoarseTriangulation.dir
+/home/wanlin/MIT/UROP/code/build/CMakeFiles/edit_cache.dir
+/home/wanlin/MIT/UROP/code/build/src/CMakeFiles/rebuild_cache.dir
+/home/wanlin/MIT/UROP/code/build/src/CMakeFiles/src.dir
+/home/wanlin/MIT/UROP/code/build/src/CMakeFiles/edit_cache.dir

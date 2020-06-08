@@ -1,0 +1,2 @@
+/usr/bin/ar qc libsrc.a  CMakeFiles/src.dir/point.cpp.o CMakeFiles/src.dir/segment.cpp.o CMakeFiles/src.dir/matrix.cpp.o CMakeFiles/src.dir/triangle.cpp.o
+/usr/bin/ranlib libsrc.a

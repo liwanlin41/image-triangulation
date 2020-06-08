@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "../headers/matrix.hpp"
+#include "../src/matrix.hpp"
 
 // test determinant of singular matrix
 TEST(DeterminantTest, Zero) {

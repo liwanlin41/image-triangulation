@@ -1,4 +1,4 @@
-#include "../headers/triangle.hpp"
+#include "triangle.hpp"
 
 using namespace std;
 

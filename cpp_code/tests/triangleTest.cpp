@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "../headers/triangle.hpp"
+#include "../src/triangle.hpp"
 
 using namespace std;
 

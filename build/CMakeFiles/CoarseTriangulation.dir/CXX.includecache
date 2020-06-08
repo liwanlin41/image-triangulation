@@ -1,0 +1,40 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/wanlin/MIT/UROP/code/cpp_version/main.cpp
+iostream
+-
+point.hpp
+/home/wanlin/MIT/UROP/code/cpp_version/point.hpp
+segment.hpp
+/home/wanlin/MIT/UROP/code/cpp_version/segment.hpp
+matrix.hpp
+/home/wanlin/MIT/UROP/code/cpp_version/matrix.hpp
+triangle.hpp
+/home/wanlin/MIT/UROP/code/cpp_version/triangle.hpp
+
+/home/wanlin/MIT/UROP/code/cpp_version/src/matrix.hpp
+iostream
+-
+vector
+-
+
+/home/wanlin/MIT/UROP/code/cpp_version/src/point.hpp
+
+/home/wanlin/MIT/UROP/code/cpp_version/src/segment.hpp
+point.hpp
+/home/wanlin/MIT/UROP/code/cpp_version/src/point.hpp
+
+/home/wanlin/MIT/UROP/code/cpp_version/src/triangle.hpp
+vector
+-
+point.hpp
+/home/wanlin/MIT/UROP/code/cpp_version/src/point.hpp
+matrix.hpp
+/home/wanlin/MIT/UROP/code/cpp_version/src/matrix.hpp
+

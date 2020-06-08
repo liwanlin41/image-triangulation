@@ -1,4 +1,4 @@
-#include "../headers/matrix.hpp"
+#include "matrix.hpp"
 
 Matrix::Matrix(vector<vector<double>> const &inputArr) {
     // defensive copy
