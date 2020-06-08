@@ -16,10 +16,13 @@ Triangle::Triangle(Point *a, Point *b, Point *c) {
 }
 
 double Triangle::getSignedArea() {
-    Point a = *(vertices.at(0));
-    Point b = *(vertices.at(1));
-    Point c = *(vertices.at(2));
-    Matrix matrix(b.getX() - a.getX(), c.getX() - a.getX(), b.getY() - a.getY(), c.getY() - a.getY());
+    double ax = vertices.at(0)->getX();
+    double ay = vertices.at(0)->getY();
+    double bx = vertices.at(1)->getX(); 
+    double by = vertices.at(1)->getY();
+    double cx = vertices.at(2)->getX();
+    double cy = vertices.at(2)->getY();
+    Matrix matrix(bx - ax, cx - ax, by - ay, cy - ay);
     return matrix.determinant()/2;
 }
 
