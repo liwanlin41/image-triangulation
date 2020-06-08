@@ -37,21 +37,21 @@ double Matrix::get(int i, int j) {
 
 double Matrix::determinant() {
     if (numRows != 2 || numCols != 2) {
-        throw "unsupported dimensions";
+        throw domain_error("unsupported dimensions");
     }
     return matrix[0][0] * matrix[1][1] - matrix[0][1] * matrix[1][0];
 }
 
 Matrix Matrix::adjugate() {
     if (numRows != 2 || numCols != 2) {
-        throw "unsupported dimensions";
+        throw domain_error("unsupported dimensions");
     }
     return Matrix(matrix[1][1], -matrix[0][1], -matrix[1][0], matrix[0][0]);
 }
 
 Matrix Matrix::inverse() {
     if (numRows != 2 || numCols != 2) {
-        throw "unsupported dimensions";
+        throw domain_error("unsupported dimensions");
     }
     double det = determinant();
     if (det == 0) {

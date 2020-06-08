@@ -25,13 +25,14 @@ class Matrix {
         // return the element in row i, column j
         double get(int i, int j);
         // return result of this @ other for compatible matrices
+        // throws domain_error on incorrect size
         Matrix multiply(Matrix &other);
 
-        // compute determinant of 2x2 matrix
+        // compute determinant of 2x2 matrix; throws domain_error on incorrect size
         double determinant();
-        // compute adjugate of 2x2 matrix
+        // compute adjugate of 2x2 matrix; throws domain_error on incorrect size
         Matrix adjugate();
-        // compute inverse of 2x2 matrix
+        // compute inverse of 2x2 matrix; throws domain_error on incorrect size or singularity
         Matrix inverse();
 
         bool operator==(const Matrix &other) const;

@@ -1,8 +1,6 @@
 #include <gtest/gtest.h>
 #include "../headers/matrix.hpp"
 
-// TODO: test exception throwing somehow
-
 // test determinant of singular matrix
 TEST(DeterminantTest, Zero) {
     Matrix matrix(1,2,2,4);
@@ -14,6 +12,24 @@ TEST(DeterminantTest, FullRank) {
     vector<vector<double>> arr = {{1.0/3, 1}, {0,3}};
     Matrix matrix(arr);
     ASSERT_EQ(1, matrix.determinant());
+}
+
+// from https://stackoverflow.com/questions/23270078
+TEST(DeterminantTest, Error) {
+    vector<vector<double>> arr = {{1,2,3},{4,5,6}};
+    Matrix matrix(arr);
+    EXPECT_THROW({
+        try
+        {
+            matrix.determinant();
+        }
+        catch( const domain_error& e )
+        {
+            // and this tests that it has the correct message
+            EXPECT_STREQ("unsupported dimensions", e.what() );
+            throw;
+        }
+        }, domain_error);
 }
 
 TEST(AdjugateTest, Basic) {
@@ -60,12 +76,50 @@ TEST(MultiplyTest, NonSquare) {
     ASSERT_EQ(expected, product);
 }
 
+TEST(MultiplyTest, Incompatible) {
+    vector<vector<double>> arr1 = {{1,1,1},{0,1,2}};
+    Matrix matrix1(arr1);
+    Matrix matrix2(1,2,3,4);
+    EXPECT_THROW({
+        try {
+            matrix1.multiply(matrix2);
+        } catch (domain_error &e) {
+            EXPECT_STREQ("incompatible dimensions", e.what());
+            throw;
+        }
+    }, domain_error);
+}
+
 TEST(InverseTest, SpecialLinear) {
     Matrix identity(1,0,0,1);
     Matrix matrix(2,5,0,-0.5);
     Matrix inverse = matrix.inverse();
     ASSERT_EQ(identity, matrix.multiply(inverse));
     ASSERT_EQ(identity, inverse.multiply(matrix));
+}
+
+TEST(InverseTest, GeneralLinear) {
+    Matrix identity(1,0,0,1);
+    Matrix matrix(1,3,4,1);
+    Matrix inverse = matrix.inverse();
+    Matrix product = matrix.multiply(inverse);
+    for(int i = 0; i < 2; i++) {
+        for(int j = 0; j < 2; j++) {
+            ASSERT_DOUBLE_EQ(identity.get(i,j), product.get(i,j));
+        }
+    }
+}
+
+TEST(InverseTest, Singular) {
+    Matrix matrix(1,2,2,4);
+    EXPECT_THROW({
+        try {
+            matrix.inverse();
+        } catch (domain_error &e) {
+            EXPECT_STREQ("singular matrix", e.what());
+            throw;
+        }
+    }, domain_error);
 }
 
 TEST(EqualityTest, DimensionMismatch) {
