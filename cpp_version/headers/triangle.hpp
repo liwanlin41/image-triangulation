@@ -3,6 +3,7 @@
 
 #include <vector>
 #include "point.hpp"
+#include "matrix.hpp"
 
 using namespace std;
 
@@ -18,6 +19,7 @@ class Triangle {
         Triangle(Point &a, Point &b, Point &c);
         double getArea();
         // get signed area based on the order a, b, c
+        // assumed to be counterclockwise
         double getSignedArea();
 };
 
