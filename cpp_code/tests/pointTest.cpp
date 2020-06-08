@@ -16,7 +16,7 @@ TEST(PointTest, Equality) {
     Point b(0,0);
     ASSERT_EQ(a, b);
     a.move(1,1);
-    ASSERT_FALSE(a == b);
+    ASSERT_NE(a, b);
     b.move(1,1);
     ASSERT_EQ(a, b);
 }
