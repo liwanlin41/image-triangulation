@@ -1,4 +1,6 @@
-##Compiling##
+# Coarse Triangulations
+
+##Compiling
 On Linux, compiling can be done by
 ```mkdir build
 cd build
