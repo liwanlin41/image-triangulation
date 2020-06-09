@@ -22,9 +22,12 @@ class Triangle {
         // get signed area based on the order of vertices
         // with ccw direction positive
         double getSignedArea();
-        // get the derivative of area when the vertex *p is moving at velocity (vx, vy)
-        // where at least one of vx, vy must be 0; corresponds to taking gradient in one direction
+        // get the change in area when the vertex *p is moving at velocity (vx, vy)
         double dA(Point *p, double vx, double vy);
+        // get the gradient in the x direction for vertex *p
+        double gradX(Point *p);
+        // get the gradient in the y direction for vertex *p
+        double gradY(Point *p);
 };
 
 #endif
