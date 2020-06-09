@@ -23,6 +23,14 @@ Matrix::Matrix(double a, double b, double c, double d) {
     matrix[1][1] = d;
 }
 
+Matrix::Matrix(double a, double b) {
+    numRows = 2;
+    numCols = 1;
+    matrix.resize(2, vector<double>(1));
+    matrix[0][0] = a;
+    matrix[1][0] = b;
+}
+
 int Matrix::getNumRows() {
     return numRows;
 }

@@ -19,6 +19,8 @@ class Matrix {
         Matrix(vector<vector<double>> const &);
         // special constructor for 2x2 matrix, creating the matrix [[a,b],[c,d]]
         Matrix(double a, double b, double c, double d);
+        // special constructor for 2x1 vector matrix
+        Matrix(double a, double b);
 
         int getNumRows();
         int getNumCols();
