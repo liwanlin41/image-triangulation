@@ -3,6 +3,7 @@
 Given an input image, compute a coarse triangulation approximation of the image. Supported approximations: piecewise constant, linear, quadratic per triangle.
 
 ##Compiling
+
 On Linux, compiling can be done by
 ```mkdir build
 cd build
