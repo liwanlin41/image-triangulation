@@ -1,6 +1,7 @@
 #include <iostream>
 #include <math.h>
 #include "segment.hpp"
+#include <algorithm>
 
 using namespace std;
 
