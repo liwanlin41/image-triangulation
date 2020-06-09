@@ -1,5 +1,4 @@
-cpp_version/.vscode
-java_version/
-python_version/
+.vscode/
+build/
 installs.txt
 testing.txt
