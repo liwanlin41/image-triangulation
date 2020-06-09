@@ -19,12 +19,4 @@ int main(int argc, char* argv[]) {
 	CImg<unsigned char> image("../images/piecewise_constant.png");
 	image.display("Image");
 	return 0;
-/*
-	CImg<unsigned char> img(640,400,1,3);
-	img.fill(0);
-	unsigned char purple[] = { 255, 0, 255 };
-	img.draw_text(100,100,"Hello", purple);
-	img.display("CImg");
-	return 0;
-*/
 }

@@ -33,3 +33,7 @@ double Triangle::getArea() {
     }
     return signedArea;
 }
+
+double Triangle::dA(Point *p, double vx, double vy) {
+
+}
