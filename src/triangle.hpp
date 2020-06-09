@@ -3,6 +3,7 @@
 
 #include <vector>
 #include "point.hpp"
+#include "segment.hpp"
 #include "matrix.hpp"
 
 using namespace std;

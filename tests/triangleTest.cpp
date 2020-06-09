@@ -48,6 +48,26 @@ TEST(SignedAreaTest, Movement) {
     ASSERT_EQ(10, triangle.getArea());
 }
 
+// vertex moves parallel to opposite edge
+TEST(DerivativeTest, Parallel) {
+    Point a(0,0);
+    Point b(5,0);
+    Point c(3,4);
+    Triangle triangle(&a, &b, &c);
+    double change = triangle.dA(&c, 5, 0);
+    ASSERT_EQ(0, change);
+}
+
+// vertex moves perpendicular to opposite dge
+TEST(DerivativeTest, Perpendicular) {
+    Point a(5,0);
+    Point b(3,4);
+    Point c(0,0);
+    Triangle triangle(&a, &b, &c);
+    double change = triangle.dA(&b, 0, 2);
+    ASSERT_EQ(5, change);
+}
+
 int main(int argc, char **argv) {
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
