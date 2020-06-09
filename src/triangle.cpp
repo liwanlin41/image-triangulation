@@ -48,7 +48,6 @@ double Triangle::dA(Point *p, double vx, double vy) {
     edgePoints[1] = vertices.at((index+2) % 3);
     // change is -velocity dot edge normal of length |e|/2
     Segment opposite(edgePoints[0], edgePoints[1]);
-	cout << "length " << opposite.length() << endl;
     Matrix velocity(vx, vy);
     Matrix norm = opposite.scaledNormal();
     // 1 by 1
