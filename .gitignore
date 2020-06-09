@@ -3,3 +3,4 @@ java_version/
 python_version/
 installs.txt
 testing.txt
+cpp_code/build/*
