@@ -129,6 +129,14 @@ TEST(EqualityTest, DimensionMismatch) {
     ASSERT_NE(row, square);
 }
 
+TEST(TransposeTest, NonSquare) {
+    Matrix vec(1,0);
+    Matrix transpose = vec.transpose();
+    vector<vector<double>> arr = {{1,0}};
+    Matrix expected(arr);
+    ASSERT_EQ(expected, transpose);
+}
+
 int main(int argc, char **argv) {
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();

@@ -37,6 +37,9 @@ class Matrix {
         // compute inverse of 2x2 matrix; throws domain_error on incorrect size or singularity
         Matrix inverse();
 
+        // transpose a matrix of arbitrary dimension
+        Matrix transpose();
+
         bool operator==(const Matrix &other) const;
         bool operator!=(const Matrix &other) const;
 };
