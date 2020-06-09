@@ -86,6 +86,28 @@ TEST(IntersectTest, NoIntersect) {
     ASSERT_FALSE(e.intersects(f));
 }
 
+TEST(NormalTest, VerticalSegment) {
+    Point a(0,0);
+    Point b(0,1);
+    Segment e(&a, &b);
+    Matrix unit = e.unitNormal();
+    Matrix expected(1,0);
+    ASSERT_EQ(expected, unit);
+}
+
+// test orientation of a slanted segment
+TEST(NormalTest, Slant) {
+    Point a(6,8);
+    Point b(0,0);
+    Segment e(&a, &b);
+    Matrix unit = e.unitNormal();
+    Matrix scaled = e.scaledNormal();
+    Matrix expectedUnit(-0.8,0.6);
+    Matrix expectedScale(-4, 3);
+    ASSERT_EQ(expectedUnit, unit);
+    ASSERT_EQ(expectedScale, scaled);
+}
+
 int main(int argc, char **argv) {
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
