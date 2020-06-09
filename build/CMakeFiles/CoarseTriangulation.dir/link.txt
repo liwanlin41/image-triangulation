@@ -1,1 +1,0 @@
-/usr/bin/c++     CMakeFiles/CoarseTriangulation.dir/main.cpp.o  -o CoarseTriangulation src/libsrc.a 

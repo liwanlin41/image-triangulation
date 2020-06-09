@@ -5,11 +5,14 @@ Given an input image, compute a coarse triangulation approximation of the image.
 ## Compiling
 
 On Linux, compiling can be done by
-```mkdir build
+```
+mkdir build
 cd build
 cmake ../
 cmake --build .
 ```
+
+If any modifications are made to files in `src` or to `main.cpp` after that, running `make` in the `build` directory will recompile the main file.
 
 In order to compile the test folders on a Linux system, the prerequisite `libgtest-dev` is needed. Move to the `src` folder and run the following:
 ```
