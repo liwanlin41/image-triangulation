@@ -91,7 +91,7 @@ Matrix Matrix::multiply(Matrix &other) {
 bool Matrix::operator==(const Matrix &other) const {
     if(numRows == other.numRows && numCols == other.numCols) {
         for(int i = 0; i < numRows; i++) {
-            for(int j = 0; j < numRows; j++) {
+            for(int j = 0; j < numCols; j++) {
                 if(matrix.at(i).at(j) != other.matrix.at(i).at(j)) {
                     return false;
                 }
