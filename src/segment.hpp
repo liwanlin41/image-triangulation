@@ -9,9 +9,9 @@
 
 class Segment {
     private:
-        Point endpoint1, endpoint2;
+        Point *endpoint1, *endpoint2;
     public:
-        Segment(Point &a, Point &b);
+        Segment(Point *a, Point *b);
         double length();
 
         // return true if this segment intersects other

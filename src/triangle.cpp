@@ -35,5 +35,15 @@ double Triangle::getArea() {
 }
 
 double Triangle::dA(Point *p, double vx, double vy) {
-
+    // first extract the other two endpoints; note order matters
+    int index;
+    for(int i = 0; i < 3; i++) {
+        if(vertices.at(i) == p) {
+            index = i;
+        }
+    }
+    Point *edgePoints[2];
+    // retrieve in ccw order
+    edgePoints[0] = vertices.at((index+1) % 3);
+    edgePoints[1] = vertices.at((index+2) % 3);
 }
