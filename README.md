@@ -1,4 +1,4 @@
-##Compiling
+##Compiling##
 On Linux, compiling can be done by
 ```mkdir build
 cd build
