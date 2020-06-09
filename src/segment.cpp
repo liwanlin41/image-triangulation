@@ -96,3 +96,18 @@ Point Segment::getIntersection(Segment other) {
 
     return Point(x,y);
 }
+
+Matrix Segment::unitNormal() {
+    double deltaX = endpoint2->getX() - endpoint1->getX();
+    double deltaY = endpoint2->getY() - endpoint1->getY();
+    double unitX = deltaX / length();
+    double unitY = deltaY / length();
+    // rotate pi/2 clockwise
+    return Matrix(unitY, -unitX);
+}
+
+Matrix Segment::scaledNormal() {
+    double deltaX = endpoint2->getX() - endpoint1->getX();
+    double deltaY = endpoint2->getY() - endpoint1->getY();
+    return Matrix(deltaY/2, -deltaX/2);
+}
