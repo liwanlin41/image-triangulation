@@ -15,6 +15,7 @@ class LineIntegral {
         static double evaluate(double (*func)(double, double), Triangle *triangle);
         // static method for evaluating integral of func over triangle with vertices *a, *b, *c
         static double evaluate(double (*func)(double, double), Point *a, Point *b, Point *c);
+        // TODO: static methods specialized for a function over an image (constant per pixel)
 };
 
 #endif
