@@ -58,8 +58,10 @@ bool Segment::intersects(Segment other) {
 
     // first handle degenerate case; checking t1 = t2 = 0 will give the correct result for the parallel case
     // but an additional check needs to be done for the collinear case
+    // EDIT: return false for segments intersecting in !=1 point
     if (determinant == 0) {
-        return (t1 == 0 && t2 == 0) && !areDisjoint(endpoint1, endpoint2, other.endpoint1, other.endpoint2); 
+        return false;
+        // return (t1 == 0 && t2 == 0) && !areDisjoint(endpoint1, endpoint2, other.endpoint1, other.endpoint2); 
     }
 
     return isBetween(t1, 0, determinant) && isBetween(t2, 0, determinant);

@@ -15,7 +15,7 @@ class Segment {
         Segment(Point *a, Point *b);
         double length();
 
-        // return true if this segment intersects other
+        // return true if this segment intersects other in exactly one point
         bool intersects(Segment other);
 
         // return intersection point if this intersects other
