@@ -113,3 +113,8 @@ Matrix Segment::scaledNormal() {
     double deltaY = endpoint2->getY() - endpoint1->getY();
     return Matrix(deltaY/2, -deltaX/2);
 }
+
+ostream& Segment::operator<<(ostream& os) {
+    os << "(" << endpoint1->getX() << ", " << endpoint1->getY() << ") -- (" << endpoint2->getX() << ", " << endpoint2->getY() << ")\n";
+    return os;
+}

@@ -26,6 +26,8 @@ class Segment {
         Matrix unitNormal();
         // return the 2x1 normal to this segment that has length |segment|/2
         Matrix scaledNormal();
+
+        ostream& operator<<(ostream& os);
 };
 
 #endif
