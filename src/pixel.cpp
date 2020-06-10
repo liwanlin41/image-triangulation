@@ -1,20 +1,8 @@
 #include <assert.h>
-#include <math.h>
 #include "pixel.hpp"
 
 Pixel::Pixel(int x_, int y_, int c) : x(x_), y(y_), color(c) {
     // confirmed: this is cast correctly 
-    corners.push_back(Point(x-0.5,y-0.5));
-    corners.push_back(Point(x+0.5,y-0.5));
-    corners.push_back(Point(x+0.5,y+0.5));
-    corners.push_back(Point(x-0.5,y+0.5));
-}
-
-Pixel::Pixel(double x_, double y_, int c) {
-    // containing pixel is centered at the nearest integer lattice point
-    x = round(x_);
-    y = round(y_);
-    color = c;
     corners.push_back(Point(x-0.5,y-0.5));
     corners.push_back(Point(x+0.5,y-0.5));
     corners.push_back(Point(x+0.5,y+0.5));

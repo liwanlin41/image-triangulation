@@ -63,15 +63,16 @@ double Triangle::gradY(Point *p) {
     return dA(p, 0, 1);
 }
 
-void Triangle::boundingBox(double &xMin, double &xMax, double &yMin, double &yMax) {
+void Triangle::boundingBox(int &xMin, int &xMax, int &yMin, int &yMax) {
     double ax = vertices.at(0)->getX();
     double ay = vertices.at(0)->getY();
     double bx = vertices.at(1)->getX();
     double by = vertices.at(1)->getY();
     double cx = vertices.at(2)->getX();
     double cy = vertices.at(2)->getY();
-    xMin = min(ax, min(bx, cx));
-    xMax = max(ax, max(bx, cx));
-    yMin = min(ay, min(by, cy));
-    yMax = max(ay, max(by, cy));
+    // round to nearest to get pixel coords
+    xMin = round(min(ax, min(bx, cx)));
+    xMax = round(max(ax, max(bx, cx)));
+    yMin = round(min(ay, min(by, cy)));
+    yMax = round(max(ay, max(by, cy)));
 }

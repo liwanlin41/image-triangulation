@@ -2,6 +2,7 @@
 #define triangle_h
 
 #include <vector>
+#include <math.h>
 #include "point.hpp"
 #include "segment.hpp"
 #include "matrix.hpp"
@@ -28,8 +29,8 @@ class Triangle {
         double gradX(Point *p);
         // get the gradient in the y direction for vertex *p
         double gradY(Point *p);
-        // set input variables to bounding box of triangle
-        void boundingBox(double &xMin, double &xMax, double &yMin, double &yMax);
+        // set input variables to bounding pixel box of triangle
+        void boundingBox(int &xMin, int &xMax, int &yMin, int &yMax);
 };
 
 #endif
