@@ -18,6 +18,8 @@ class Pixel {
     public:
         // create a pixel centered at (x,y) with color color
         Pixel(int x, int y, int color);
+        // create pixel containing (x,y) with color color
+        Pixel(double x, double y, int color);
         int getColor();
         // compute the length of the intersection of Segment e
         // with this pixel (may be 0); if x, y are given, store the coordinates
