@@ -14,6 +14,10 @@ class Segment {
     public:
         Segment(Point *a, Point *b);
         double length();
+        // return endpoint1
+        Point getStart();
+        // return endpoint2
+        Point getEnd();
 
         // return true if this segment intersects other in exactly one point
         bool intersects(Segment other);

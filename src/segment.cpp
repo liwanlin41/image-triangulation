@@ -31,6 +31,14 @@ double Segment::length() {
     return pow(pow(x1-x2,2) + pow(y1-y2,2),0.5);
 }
 
+Point Segment::getStart() {
+    return *endpoint1;
+}
+
+Point Segment::getEnd() {
+    return *endpoint2;
+}
+
 bool Segment::intersects(Segment other) {
     // parametrize and represent as matrix equation to be solved: t1 * x0 + (1-t1) * x1 = t2 * x2 + (1-t2) * x3
     // (x0-x1) * t1 + (x3-x2) * t2 = x3 - x1
