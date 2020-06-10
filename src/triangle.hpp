@@ -28,6 +28,8 @@ class Triangle {
         double gradX(Point *p);
         // get the gradient in the y direction for vertex *p
         double gradY(Point *p);
+        // set input variables to bounding box of triangle
+        void boundingBox(double &xMin, double &xMax, double &yMin, double &yMax);
 };
 
 #endif
