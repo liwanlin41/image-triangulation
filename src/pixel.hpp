@@ -22,6 +22,8 @@ class Pixel {
         // compute the length of the intersection of Segment e
         // with this pixel (may be 0)
         double intersectionLength(Segment &e);
+        // return true if this pixel contains point p (p is inside or on the boundary)
+        bool containsPoint(Point &p);
 };
 
 #endif
