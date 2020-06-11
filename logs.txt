@@ -1,1 +1,3 @@
 Floating point errors: matrix inverse, computing intersection point of two segments
+
+Something is imprecise in double integral
