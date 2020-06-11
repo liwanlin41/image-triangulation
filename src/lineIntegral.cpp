@@ -23,13 +23,19 @@ double LineIntegral::evaluate(double (*func)(double, double), Triangle *triangle
     // compute bounding box of triangle, in pixels
     triangle->boundingBox(xMin, xMax, yMin, yMax);
     // iterate over bounding box
+    vector<Point> vertices = triangle->copyVertices();
+    // preserve ccw direction
+    Segment seg01(&vertices.at(0), &vertices.at(1));
+    Segment seg12(&vertices.at(1), &vertices.at(2));
+    Segment seg20(&vertices.at(2), &vertices.at(0));
     double integral = 0;
     for(int i = xMin; i <= xMax; i++) {
         for(int j = yMin; j <= yMax; j++) {
             Pixel p(i, j, 1);
-
+            integral += p.lineIntegral(func, seg01) + p.lineIntegral(func, seg12) + p.lineINtegral(func, seg20);
         }
     }
+    return integral;
 }
 
 // double LineIntegral::evaluate(double (*func)(double, double), CImg<unsigned char> *img, Point *a, Point *b, Point *c) {
@@ -46,6 +52,7 @@ double LineIntegral::evaluate(double (*func)(double, double), Point *a, Point *b
     int yMin = round(min(ay, min(by, cy)));
     int yMax = round(max(ay, max(by, cy)));
     double integral = 0;
+    // ensure order of points within segment is correct
     Segment ab(a, b);
     Segment bc(b, c);
     Segment ca(c, a);
