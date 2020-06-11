@@ -32,7 +32,7 @@ double LineIntegral::evaluate(double (*func)(double, double), Triangle *triangle
     for(int i = xMin; i <= xMax; i++) {
         for(int j = yMin; j <= yMax; j++) {
             Pixel p(i, j, 1);
-            integral += p.lineIntegral(func, seg01) + p.lineIntegral(func, seg12) + p.lineINtegral(func, seg20);
+            integral += p.lineIntegral(func, seg01) + p.lineIntegral(func, seg12) + p.lineIntegral(func, seg20);
         }
     }
     return integral;

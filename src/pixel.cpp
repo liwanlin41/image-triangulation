@@ -23,9 +23,19 @@ double Pixel::intersectionLength(Segment &e, double *x, double *y) {
     vector<Point> intersections; // hold intersections
     for(int i = 0; i < 4; i++) {
         // retrieve a side of the pixel; at most two will have an intersection
+        // unless intersections is at corners
         Segment side(&corners.at(i), &corners.at((i+1) % 4));
         if (side.intersects(e)) {
-            intersections.push_back(side.getIntersection(e));
+            Point intersectionPoint = side.getIntersection(e);
+            bool isNewPoint = true; // whether this intersection is a new distinct point
+            for(Point pt : intersections) {
+                if (pt == intersectionPoint) {
+                    isNewPoint = false;
+                }
+            }
+            if (isNewPoint) {
+                intersections.push_back(intersectionPoint);
+            }
         }
     }
     if (intersections.size() < 2) {
@@ -38,7 +48,7 @@ double Pixel::intersectionLength(Segment &e, double *x, double *y) {
             intersections.push_back(end);
         }
     }
-    if (intersections.size() == 0) {
+    if (intersections.size() < 2) {
         return 0;
     }
     assert(intersections.size() == 2);
