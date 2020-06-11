@@ -13,9 +13,16 @@ double shoelace(vector<Point> &points) {
         double y0 = points.at(i).getY();
         double x1 = points.at((i+1) % n).getX();
         double y1 = points.at((i+1) % n).getY();
-        area += (x1 * y0 - x0 * y1);
+        area += (x0 * y1 - x1 * y0);
     }
-    return area;
+    // in practice points is supposed to be ccw
+    assert(area >= 0);
+    /*
+    // account for sign
+    if (area < 0) area *= -1;
+    */
+    // don't forget to divide by 2
+    return area/2;
 }
 
 Pixel::Pixel(int x_, int y_, int c) : x(x_), y(y_), color(c) {
@@ -88,7 +95,67 @@ double Pixel::lineIntegral(double (*func)(double, double), Segment &e) {
 }
 
 double Pixel::intersectionArea(Triangle &t, double *x, double *y) {
-
+    vector<Point> boundary; // hold vertices of polygon formed by intersection
+    vector<Point> triangleVertices = t.copyVertices();
+    vector<Segment> triangleSides; // hold sides of triangle
+    for(int i = 0; i < 3; i++) {
+        triangleSides.push_back(Segment(&triangleVertices.at(i),&triangleVertices.at((i+1) % 3)));
+        // add triangle vertices which may be inside the pixel
+        if (containsPoint(triangleVertices.at(i))) {
+            boundary.push_back(triangleVertices.at(i));            
+        }
+    }
+    for(int i = 0; i < 4; i++) {
+        // first determine if corner of pixel is inside
+        Point corner = corners.at(i);
+        Segment side(&corners.at(i), &corners.at((i+1)%4));
+        if (t.contains(corner)) {
+            boundary.push_back(corner);
+        }
+        // determine intersections with side (i, i+1)
+        vector<Point> sideIntersections;
+        for(Segment e : triangleSides) {
+            if (side.intersects(e)) {
+                Point intersectionPoint = side.getIntersection(e);
+                // check to see if this point is already accounted for by corners
+                if (intersectionPoint != corner && intersectionPoint != corners.at((i+1)%4)) {
+                    sideIntersections.push_back(intersectionPoint);
+                }
+            }
+        }
+        // note a triangle can intersect a given side at most twice
+        assert(sideIntersections.size() <= 2);
+        // handle normal case where there is only one intersection with this side
+        if (sideIntersections.size() == 1) {
+            boundary.push_back(sideIntersections.at(0));
+        } else if (sideIntersections.size() == 2) {
+            Point center(this->x, this->y); // center of this pixel
+            double signedArea = Triangle::getSignedArea(&center, &sideIntersections.at(0), &sideIntersections.at(1));
+            // if signedArea == 0, sideIntersections must contain two of the same point
+            // which means one vertex of the triangle is on the side; this has
+            // already been accounted for
+            if (signedArea < 0) { // relative order of these two points is incorrect
+            // (not ccw along pixel boundary)
+                boundary.push_back(sideIntersections.at(1));
+                boundary.push_back(sideIntersections.at(0));
+            } else if (signedArea > 0) {
+                boundary.push_back(sideIntersections.at(0));
+                boundary.push_back(sideIntersections.at(1));
+            }
+        }
+    }
+    // assign centroid
+    if (x && y) {
+        double totalX = 0;
+        double totalY = 0;
+        for(Point pt : boundary) {
+            totalX += pt.getX();
+            totalY += pt.getY();
+        }
+        *x = totalX / boundary.size();
+        *y = totalY / boundary.size();
+    }  
+    return shoelace(boundary);
 }
 
 double Pixel::doubleIntegral(double (*func)(double, double), Triangle &t) {
