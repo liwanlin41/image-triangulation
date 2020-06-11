@@ -1,6 +1,23 @@
 #include <assert.h>
 #include "pixel.hpp"
 
+// helper functions
+
+// compute (unsigned) area of the polygon enclosed by points,
+// where edges of the polygon are given by points.at(i) -- points.at(i+1)
+double shoelace(vector<Point> &points) {
+    double area = 0;
+    int n = points.size();
+    for(int i = 0; i < n; i++) {
+        double x0 = points.at(i).getX();
+        double y0 = points.at(i).getY();
+        double x1 = points.at((i+1) % n).getX();
+        double y1 = points.at((i+1) % n).getY();
+        area += (x1 * y0 - x0 * y1);
+    }
+    return area;
+}
+
 Pixel::Pixel(int x_, int y_, int c) : x(x_), y(y_), color(c) {
     // confirmed: this is cast correctly 
     corners.push_back(Point(x-0.5,y-0.5));
@@ -62,10 +79,23 @@ double Pixel::intersectionLength(Segment &e, double *x, double *y) {
 }
 
 double Pixel::lineIntegral(double (*func)(double, double), Segment &e) {
-    double mid_x, mid_y;
-    double length = intersectionLength(e, &mid_x, &mid_y);
+    double midX, midY;
+    double length = intersectionLength(e, &midX, &midY);
     if (length == 0) {
         return 0;
     }
-    return (*func)(mid_x, mid_y) * length * color;
+    return (*func)(midX, midY) * length * color;
+}
+
+double Pixel::intersectionArea(Triangle &t, double *x, double *y) {
+
+}
+
+double Pixel::doubleIntegral(double (*func)(double, double), Triangle &t) {
+    double avgX, avgY;
+    double area = intersectionArea(t, &avgX, &avgY);
+    if (area == 0) {
+        return 0;
+    }
+    return (*func)(avgX, avgY) * area * color;
 }

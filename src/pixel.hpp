@@ -4,6 +4,7 @@
 #include <vector>
 #include "point.hpp"
 #include "segment.hpp"
+#include "triangle.hpp"
 using namespace std;
 
 /**
@@ -28,8 +29,17 @@ class Pixel {
 
         // return approximate line integral contribution of this pixel when multiplied
         // with integrand func (exact for func linear); in other words, integrate
-        // color * func over the subsegment of e lying in this pixel
+        // color times func over the subsegment of e lying in this pixel
         double lineIntegral(double (*func)(double, double), Segment &e);
+
+        // compute area of the intersection of this pixel with Triangle t (may be 0);
+        // if x, y are given, store the average x and y values over the intersected area
+        double intersectionArea(Triangle &t, double *x = NULL, double *y = NULL);
+
+        // return approximate line integral contribution of this pixel when multiplied
+        // with integrand func (exact for func linear); in other words, integrate
+        // color times func over the part of this pixel that lies inside triangle t
+        double doubleIntegral(double (*func)(double, double), Triangle &t);
 };
 
 #endif
