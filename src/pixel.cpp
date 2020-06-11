@@ -25,6 +25,37 @@ double shoelace(vector<Point> &points) {
     return area/2;
 }
 
+// compute integral of x over polygon points and store in totalX, similar for y
+// center is a reference point inside the polygon
+void integrateXY(double *totalX, double *totalY, vector<Point> &points, Point &center) {
+    double sumX = 0;
+    double sumY = 0;
+    int n = points.size();
+    for(int i = 0; i < n; i++) {
+        // average over triangle is just the centroid
+        double centroidX = (points.at(i).getX() + points.at((i+1) % n).getX() + center.getX())/3;
+        double centroidY = (points.at(i).getY() + points.at((i+1) % n).getY() + center.getY())/3;
+        double triangleArea = Triangle::getSignedArea(&center, &points.at(i), &points.at((i+1) % n));
+        // weight the average
+        sumX += centroidX * triangleArea;
+        sumY += centroidY * triangleArea;
+    }    
+    *totalX = sumX;
+    *totalY = sumY;
+}
+
+// compute average values of x, y over the polygon enclosed by points
+// and put them in the given variables
+// center is a reference point
+void averageXY(double *avgX, double *avgY, vector<Point> &points, Point &center) {
+    double totalX;
+    double totalY;
+    integrateXY(&totalX, &totalY, points, center);
+    double totalArea = shoelace(points);
+    *avgX = totalX / totalArea;
+    *avgY = totalY / totalArea;
+}
+
 Pixel::Pixel(int x_, int y_, int c) : x(x_), y(y_), color(c) {
     // confirmed: this is cast correctly 
     corners.push_back(Point(x-0.5,y-0.5));
@@ -94,7 +125,7 @@ double Pixel::lineIntegral(double (*func)(double, double), Segment &e) {
     return (*func)(midX, midY) * length * color;
 }
 
-double Pixel::intersectionArea(Triangle &t) {
+double Pixel::intersectionArea(Triangle &t, vector<Point> *polygon) {
     vector<Point> boundary; // hold vertices of polygon formed by intersection
     vector<Point> triangleVertices = t.copyVertices();
     vector<Segment> triangleSides; // hold sides of triangle
@@ -144,14 +175,22 @@ double Pixel::intersectionArea(Triangle &t) {
             }
         }
     }
+    // check for null pointer
+    if (polygon) {
+        *polygon = boundary;
+    }
     return shoelace(boundary);
 }
 
 double Pixel::doubleIntegral(double (*func)(double, double), Triangle &t) {
-    double area = intersectionArea(t);
+    vector<Point> boundary;
+    double area = intersectionArea(t, &boundary);
     if (area == 0) {
         return 0;
     }
-    // approximation func by value at center of pixel
-    return (*func)(x, y) * area * color;
+    // approximate func by value at average x, average y
+    double avgX, avgY;
+    Point center(x,y);
+    averageXY(&avgX, &avgY, boundary, center);
+    return (*func)(avgX, avgY) * area * color;
 }

@@ -53,7 +53,6 @@ TEST(IntegralTest, Constant) {
     ASSERT_DOUBLE_EQ(6, integral);
 }
 
-/*
 TEST(IntegralTest, Linear) {
     vector<vector<Pixel>> image = generateFakeImage();
     Point a(0,0);
@@ -62,7 +61,6 @@ TEST(IntegralTest, Linear) {
     Triangle triangle(&a, &b, &c);
     ASSERT_EQ(14, DoubleIntegral::evaluate(linear, &image, &triangle));
 }
-*/
 
 int main(int argc, char **argv) {
     testing::InitGoogleTest(&argc, argv);
