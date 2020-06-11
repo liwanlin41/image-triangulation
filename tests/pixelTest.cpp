@@ -58,10 +58,40 @@ TEST(ContainsTest, Corner) {
     ASSERT_TRUE(p.containsPoint(a));
 }
 
-TEST(COntainsTest, Outside) {
+TEST(ContainsTest, Outside) {
     Pixel p(0,0,255);
     Point a(1,1);
     ASSERT_FALSE(p.containsPoint(a));
+}
+
+// pixel entirely contained within triangle
+TEST(AreaTest, PixelContained) {
+    Pixel p(1,1,255);
+    Point a(0,0);
+    Point b(3,0);
+    Point c(0,4);
+    Triangle t(&a, &b, &c);
+    ASSERT_EQ(1,p.intersectionArea(t));
+}
+
+// one vertex of triangle inside pixel
+TEST(AreaTest, VertexInside) {
+    Pixel p(0,0,255);
+    Point a(0,0);
+    Point b(3,0);
+    Point c(0,4);
+    Triangle t(&a, &b, &c);
+    ASSERT_EQ(0.25, p.intersectionArea(t));
+}
+
+// two vertices of triangle inside pixel
+TEST(AreaTest, EdgeInside) {
+    Pixel p(1,1,255);
+    Point a(0.75, 1);
+    Point b(1.25, 1);
+    Point c(1, 2);
+    Triangle t(&a, &b, &c);
+    ASSERT_EQ(0.25 * 0.75, p.intersectionArea(t));
 }
 
 int main(int argc, char **argv) {
