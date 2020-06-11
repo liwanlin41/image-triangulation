@@ -5,12 +5,12 @@
 
 using namespace std;
 
-// for testing purposes, create an 1000 x 500 image all of whose pixels have color 1
+// for testing purposes, create an 100 x 50 image all of whose pixels have color 1
 vector<vector<Pixel>> generateFakeImage() {
     vector<vector<Pixel>> image;
-    for(int i = 0; i < 1000; i++) {
+    for(int i = 0; i < 100; i++) {
         vector<Pixel> holder;
-        for(int j = 0; j < 500; j++) {
+        for(int j = 0; j < 50; j++) {
             holder.push_back(Pixel(i, j, 1));
         }
         image.push_back(holder);
