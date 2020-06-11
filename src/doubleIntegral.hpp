@@ -16,9 +16,6 @@ class DoubleIntegral {
     public:
         // static method for evaluating integral of func over triangle in image with pixels pixVec
         static double evaluate(double (*func)(double, double), vector<vector<Pixel>> *pixVec, Triangle *triangle);
-
-        // static method for evaluating integral of func over triangle with vertices *a, *b, *c in image with pixels pixVec
-        static double evaluate(double (*func)(double, double), vector<vector<Pixel>> *pixVec, Point *a, Point *b, Point *c);
 };
 
 #endif

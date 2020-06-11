@@ -41,7 +41,6 @@ TEST(IntegralTest, Zero) {
     Point c(20,30);
     Triangle triangle(&a, &b, &c);
     ASSERT_EQ(0, DoubleIntegral::evaluate(z, &image, &triangle));
-    ASSERT_EQ(0, DoubleIntegral::evaluate(z, &image, &a, &b, &c));
 }
 
 TEST(IntegralTest, Constant) {
@@ -50,8 +49,8 @@ TEST(IntegralTest, Constant) {
     Point b(3,0);
     Point c(0,4);
     Triangle triangle(&a, &b, &c);
-    ASSERT_EQ(6, DoubleIntegral::evaluate(constant, &image, &triangle));
-    ASSERT_EQ(6, DoubleIntegral::evaluate(constant, &image, &a, &b, &c));
+    double integral = DoubleIntegral::evaluate(constant, &image, &triangle);
+    ASSERT_EQ(6, integral);
 }
 
 TEST(IntegralTest, Linear) {
@@ -61,7 +60,6 @@ TEST(IntegralTest, Linear) {
     Point c(0,4);
     Triangle triangle(&a, &b, &c);
     ASSERT_EQ(14, DoubleIntegral::evaluate(linear, &image, &triangle));
-    ASSERT_EQ(14, DoubleIntegral::evaluate(linear, &image, &a, &b, &c));
 }
 
 int main(int argc, char **argv) {
