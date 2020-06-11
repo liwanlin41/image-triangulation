@@ -33,6 +33,11 @@ class Triangle {
         void boundingBox(int &xMin, int &xMax, int &yMin, int &yMax);
         // return copy of vertex points
         vector<Point> copyVertices();
+        // determine if triangle contains point p
+        bool contains(Point &p);
+        
+        // static signed area function
+        static double getSignedArea(Point *a, Point *b, Point *c);
 };
 
 #endif

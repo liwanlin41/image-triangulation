@@ -85,3 +85,24 @@ vector<Point> Triangle::copyVertices() {
     }
     return copy;
 }
+
+double Triangle::getSignedArea(Point *a, Point *b, Point *c) {
+    double ax = a->getX();
+    double ay = a->getY();
+    double bx = b->getX(); 
+    double by = b->getY();
+    double cx = c->getX();
+    double cy = c->getY();
+    Matrix matrix(bx - ax, cx - ax, by - ay, cy - ay);
+    return matrix.determinant()/2;
+}
+
+bool Triangle::contains(Point &p) {
+    // p is inside the triangle iff the orientations of the triangles
+    // with vertices (vertices[i], vertices[i+1], p) are all the same
+    bool signs[3]; // hold signs of triangles (true if ccw)
+    for(int i = 0; i < 3; i++) {
+        signs[i] = (Triangle::getSignedArea(vertices.at(i), vertices.at((i+1) % 3), &p) >= 0);
+    }
+    return (signs[0] == signs[1] && signs[1] == signs[2]);
+}

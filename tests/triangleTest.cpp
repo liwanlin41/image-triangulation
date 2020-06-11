@@ -68,6 +68,33 @@ TEST(DerivativeTest, Perpendicular) {
     ASSERT_EQ(5, change);
 }
 
+TEST(ContainmentTest, Inside) {
+    Point a(0,0);
+    Point b(3,0);
+    Point c(0,4);
+    Point p(1,1);
+    Triangle triangle(&a, &b, &c);
+    ASSERT_TRUE(triangle.contains(p));
+}
+
+TEST(ContainmentTest, Boundary) {
+    Point a(0,0);
+    Point b(3,0);
+    Point c(0,4);
+    Point p(2,0);
+    Triangle triangle(&a, &b, &c);
+    ASSERT_TRUE(triangle.contains(p));
+}
+
+TEST(ContainmentTest, Outside) {
+    Point a(0,0);
+    Point b(3,0);
+    Point c(0,4);
+    Point p(-0.1,5);
+    Triangle triangle(&a, &b, &c);
+    ASSERT_FALSE(triangle.contains(p));
+}
+
 int main(int argc, char **argv) {
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
