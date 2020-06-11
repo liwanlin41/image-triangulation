@@ -76,3 +76,12 @@ void Triangle::boundingBox(int &xMin, int &xMax, int &yMin, int &yMax) {
     yMin = round(min(ay, min(by, cy)));
     yMax = round(max(ay, max(by, cy)));
 }
+
+vector<Point> Triangle::copyVertices() {
+    vector<Point> copy;
+    for(Point *ptr : vertices) {
+        Point copiedPoint = *ptr;
+        copy.push_back(copiedPoint);
+    }
+    return copy;
+}

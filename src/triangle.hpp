@@ -31,6 +31,8 @@ class Triangle {
         double gradY(Point *p);
         // set input variables to bounding pixel box of triangle
         void boundingBox(int &xMin, int &xMax, int &yMin, int &yMax);
+        // return copy of vertex points
+        vector<Point> copyVertices();
 };
 
 #endif
