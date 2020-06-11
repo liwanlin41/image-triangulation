@@ -94,7 +94,7 @@ double Pixel::lineIntegral(double (*func)(double, double), Segment &e) {
     return (*func)(midX, midY) * length * color;
 }
 
-double Pixel::intersectionArea(Triangle &t, double *x, double *y) {
+double Pixel::intersectionArea(Triangle &t) {
     vector<Point> boundary; // hold vertices of polygon formed by intersection
     vector<Point> triangleVertices = t.copyVertices();
     vector<Segment> triangleSides; // hold sides of triangle
@@ -144,25 +144,14 @@ double Pixel::intersectionArea(Triangle &t, double *x, double *y) {
             }
         }
     }
-    // assign centroid
-    if (x && y) {
-        double totalX = 0;
-        double totalY = 0;
-        for(Point pt : boundary) {
-            totalX += pt.getX();
-            totalY += pt.getY();
-        }
-        *x = totalX / boundary.size();
-        *y = totalY / boundary.size();
-    }  
     return shoelace(boundary);
 }
 
 double Pixel::doubleIntegral(double (*func)(double, double), Triangle &t) {
-    double avgX, avgY;
-    double area = intersectionArea(t, &avgX, &avgY);
+    double area = intersectionArea(t);
     if (area == 0) {
         return 0;
     }
-    return (*func)(avgX, avgY) * area * color;
+    // approximation func by value at center of pixel
+    return (*func)(x, y) * area * color;
 }

@@ -33,12 +33,12 @@ class Pixel {
         double lineIntegral(double (*func)(double, double), Segment &e);
 
         // compute area of the intersection of this pixel with Triangle t (may be 0);
-        // if x, y are given, store the average x and y values over the intersected area
-        double intersectionArea(Triangle &t, double *x = NULL, double *y = NULL);
+        double intersectionArea(Triangle &t);
 
         // return approximate line integral contribution of this pixel when multiplied
-        // with integrand func (exact for func linear); in other words, integrate
-        // color times func over the part of this pixel that lies inside triangle t
+        // with integrand func; in other words, integrate color times func over the part
+        // of this pixel that lies inside triangle t
+        // TODO: make this work for non-constant functions
         double doubleIntegral(double (*func)(double, double), Triangle &t);
 };
 
