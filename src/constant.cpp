@@ -141,7 +141,8 @@ void ConstantApprox::gradient(Triangle &triangle, Point &pt, double *gradX, doub
 }
 
 int ConstantApprox::gradUpdate() {
-
+    int badIndex = -1;
+    return badIndex;
 }
 
 void ConstantApprox::undo(int ind) {
@@ -149,7 +150,19 @@ void ConstantApprox::undo(int ind) {
 }
 
 void ConstantApprox::updateApprox() {
-
+    for(Triangle &t : triangles) {
+        double val = 0;
+        // compute total value of image by iterating over pixels
+        for(int x = 0; x < maxX; x++) {
+            for(int y = 0; y < maxY; y++) {
+                Pixel *p = &(image->at(x).at(y));
+                double area = p->intersectionArea(t);
+                val += area * (p->getColor());
+            }
+        }
+        // take average value
+        approx[&t] = (val / t.getArea());
+    }
 }
 
 void ConstantApprox::run(int maxIter, double eps) {
