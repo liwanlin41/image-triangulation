@@ -4,7 +4,7 @@
 #include "../src/lineIntegral.hpp"
 #include "../src/doubleIntegral.hpp"
 #include "../src/matrix.hpp"
-//#include "../src/constant.hpp"
+#include "../src/constant.hpp"
 using namespace std;
 
 const double eps = 0.001;
@@ -26,7 +26,7 @@ vector<vector<Pixel>> generateFakeImage() {
 
 vector<vector<Pixel>> image = generateFakeImage();
 // create testing objects
-//ConstantApprox approx(&image, 10, 0.5);
+ConstantApprox approx(&image, 10, 0.5);
 
 // gradient when moving point pt at velocity (vx, vy)
 double linearGradient(Triangle &triangle, Point &pt, double vx, double vy, vector<vector<Pixel>> &image) {
@@ -201,7 +201,7 @@ TEST(ConstantTest, FixedTriangle) {
 
 // test derivative for energy function with constant approximation
 // over a single triangle
-TEST(ConstantTest, ConstantApprox) {
+TEST(ConstantTest, ConstantApproximation) {
     // for just integrating the given function
     for(int i = 0; i < num_iter; i++) {
         cout << "iteration " << i << endl;
@@ -225,56 +225,6 @@ TEST(ConstantTest, ConstantApprox) {
         }
         Triangle triangle(&a, &b, &c);
         double gradApprox = linearGradient(triangle, a, vx, vy, image);
-        /*
-        // for integrating v dot n in the line integral when a is moving
-        // at a velocity of (1, 0);
-        // (x, y) will be on some side of the triangle
-        auto vn = [&a, &b, &c](double x, double y, bool dirX) {
-            Point current(x, y);
-            // to more robustly determine which segment contains (x, y),
-            // check which segment (x, y) is closest to
-            double areaAB = Triangle::getSignedArea(&a, &b, &current);
-            double areaBC = Triangle::getSignedArea(&b, &c, &current);
-            double areaCA = Triangle::getSignedArea(&c, &a, &current);
-            double minArea = min(areaAB, min(areaBC, areaCA));
-            if (minArea == areaBC) { // point is closest to side BC, the stationary side
-                return 0.0;
-            }
-            Point segmentEnd = (minArea == areaAB) ? b : c;
-            // compute velocity at this point by scaling
-            double distanceToVertex = current.distance(segmentEnd);
-            // preserve orientation for outward normal
-            Segment gamma = (segmentEnd == b) ? Segment(&a, &b) : Segment(&c, &a);
-            double scale = distanceToVertex / gamma.length(); // 1 if at a, 0 if at opposite edge
-            // determine whether x or y gradient is being computed
-            double velX = (dirX) ? scale : 0;
-            Matrix v(velX, scale - velX);
-            Matrix n = gamma.unitNormal();
-            return v.transpose().multiply(n).get(0,0);
-        };
-        // break down into x and y components
-        auto vnx = [&vn](double x, double y) {
-            return vn(x, y, true);
-        };
-        auto vny = [&vn](double x, double y) {
-            return vn(x, y, false);
-        };
-        // integral of fdA
-        double imageIntegral = DoubleIntegral::evaluate(identity, &image, &triangle);
-        double area = triangle.getArea();
-        double dA[2] = {triangle.gradX(&a), triangle.gradY(&a)};
-        double boundaryChange[2];
-        // compute gradient in x direction
-        boundaryChange[0] = LineIntegral::evaluate(vnx, &image, &triangle);
-        // compute gradient in y direction
-        boundaryChange[1] = LineIntegral::evaluate(vny, &image, &triangle);
-        double gradient[2];
-        for(int j = 0; j < 2; j++) {
-            gradient[j] = (2 * area * imageIntegral * boundaryChange[j]
-                - imageIntegral * imageIntegral * dA[j]) / (area * area);
-        }
-        double gradApprox = gradient[0] * vx + gradient[1] * vy;
-        */
 
         // now compute central finite difference
         a.move(eps * vx, eps * vy);
@@ -288,17 +238,50 @@ TEST(ConstantTest, ConstantApprox) {
         double pastEnergy = pastImgInt * pastImgInt / pastArea;
 
         double finiteApprox = (futureEnergy - pastEnergy) / (2 * eps);
-        /*
-        if (abs(finiteApprox - gradApprox) > 0.1) {
-            cout << "vertices: (" << a.getX() << ", " << a.getY() << "), (" << b.getX() << ", " << b.getY() << "), (" << c.getX() << ", " << c.getY() << ")\n";
-            cout << "velocity: " << vx << ", " << vy << endl;
-            cout << "imageIntegral " << imageIntegral << endl;
-            cout << "area: " << area << endl;
-            cout << "dA: " << dA[0] << ", " << dA[1] << endl;
-            cout << "boundaryChange values " << boundaryChange[0] << ", " << boundaryChange[1] << endl;
-            cout << "gradient values: " << gradient[0] << ", " << gradient[1] << endl;
+        ASSERT_FLOAT_EQ(finiteApprox, gradApprox);
+    }
+}
+
+// test derivative for energy function with constant approximation
+// over a single triangle using ConstantApprox
+TEST(ConstantTest, ClassTest) {
+    for(int i = 0; i < num_iter; i++) {
+        cout << "iteration " << i << endl;
+        // pick a random number from -1 to 1 for velocity directions
+        // for testing, point a will be moved
+        double vx = 2 * ((double) rand() / RAND_MAX) - 1;
+        double vy = 2 * ((double) rand() / RAND_MAX) - 1;
+        // generate some random triangle with coordinates < 100
+        double random_coords[6];
+        for(int j = 0; j < 6; j++) {
+            random_coords[j] = (double) rand() / RAND_MAX * 99;
         }
-        */
+        Point a(random_coords[0], random_coords[1]);
+        Point b(random_coords[2], random_coords[3]);
+        Point c(random_coords[4], random_coords[5]);
+        // orientation
+        if (Triangle::getSignedArea(&a, &b, &c) < 0) {
+            Point temp = a;
+            a = c;
+            c = temp;
+        }
+        Triangle triangle(&a, &b, &c);
+        double gradX, gradY;
+        approx.gradient(triangle, a, &gradX, &gradY);
+        double gradApprox = gradX * vx + gradY * vy;
+
+        // now compute central finite difference
+        a.move(eps * vx, eps * vy);
+        double futureImgInt = DoubleIntegral::evaluate(identity, &image, &triangle);
+        double futureArea = triangle.getArea();
+        double futureEnergy = futureImgInt * futureImgInt / futureArea;
+
+        a.move(-2 * eps * vx, -2 * eps * vy);
+        double pastImgInt = DoubleIntegral::evaluate(identity, &image, &triangle);
+        double pastArea = triangle.getArea();
+        double pastEnergy = pastImgInt * pastImgInt / pastArea;
+
+        double finiteApprox = (futureEnergy - pastEnergy) / (2 * eps);
         ASSERT_FLOAT_EQ(finiteApprox, gradApprox);
     }
 }
