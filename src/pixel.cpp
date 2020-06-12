@@ -36,6 +36,7 @@ double shoelace(vector<Point> &points) {
         area += (x0 * y1 - x1 * y0);
     }
     // in practice points is supposed to be ccw
+    /*
     if (!isCCW(points)) {
         cout << "POINTS START" << endl;
         for(Point pt : points) {
@@ -44,10 +45,9 @@ double shoelace(vector<Point> &points) {
         cout << "POINTS END" << endl;
     }
     assert(area >= 0);
-    /*
+    */
     // account for sign
     if (area < 0) area *= -1;
-    */
     // don't forget to divide by 2
     return area/2;
 }
