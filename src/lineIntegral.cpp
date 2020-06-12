@@ -3,7 +3,7 @@
 
 LineIntegral::LineIntegral() {}
 
-double LineIntegral::evaluate(double (*func)(double, double), vector<vector<Pixel>> *pixVec, Triangle *triangle) {
+double LineIntegral::evaluate(function<double(double x, double y)> func, vector<vector<Pixel>> *pixVec, Triangle *triangle) {
     int xMin, xMax, yMin, yMax;
     // compute bounding box of triangle, in pixels
     triangle->boundingBox(xMin, xMax, yMin, yMax);
@@ -23,7 +23,7 @@ double LineIntegral::evaluate(double (*func)(double, double), vector<vector<Pixe
     return integral;
 }
 
-double LineIntegral::evaluate(double (*func)(double, double), vector<vector<Pixel>> *pixVec, Point *a, Point *b, Point *c) {
+double LineIntegral::evaluate(function<double(double, double)> func, vector<vector<Pixel>> *pixVec, Point *a, Point *b, Point *c) {
     // first compute bounding box
     double ax = a->getX();
     double ay = a->getY();

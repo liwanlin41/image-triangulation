@@ -2,6 +2,7 @@
 #define pixel_h
 
 #include <vector>
+#include <functional>
 #include "point.hpp"
 #include "segment.hpp"
 #include "triangle.hpp"
@@ -30,7 +31,7 @@ class Pixel {
         // return approximate line integral contribution of this pixel when multiplied
         // with integrand func (exact for func linear); in other words, integrate
         // color times func over the subsegment of e lying in this pixel
-        double lineIntegral(double (*func)(double, double), Segment &e);
+        double lineIntegral(function<double(double, double)> func, Segment &e);
 
         // compute area of the intersection of this pixel with Triangle t (may be 0);
         // store the boundary of the intersection in polygon if available
@@ -40,7 +41,7 @@ class Pixel {
         // with integrand func; in other words, integrate color times func over the part
         // of this pixel that lies inside triangle t;
         // approximation by average value of x, y in intersection of pixel and triangle
-        double doubleIntegral(double (*func)(double, double), Triangle &t);
+        double doubleIntegral(function<double(double, double)> func, Triangle &t);
 };
 
 #endif

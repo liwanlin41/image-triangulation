@@ -2,6 +2,7 @@
 #define double_integral_h
 
 #include <vector>
+#include <functional>
 #include "triangle.hpp"
 #include "pixel.hpp"
 
@@ -15,7 +16,7 @@ class DoubleIntegral {
         DoubleIntegral();
     public:
         // static method for evaluating integral of func over triangle in image with pixels pixVec
-        static double evaluate(double (*func)(double, double), vector<vector<Pixel>> *pixVec, Triangle *triangle);
+        static double evaluate(function<double(double, double)> func, vector<vector<Pixel>> *pixVec, Triangle *triangle);
 };
 
 #endif

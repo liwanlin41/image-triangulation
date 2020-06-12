@@ -116,13 +116,13 @@ double Pixel::intersectionLength(Segment &e, double *x, double *y) {
     return contained.length();
 }
 
-double Pixel::lineIntegral(double (*func)(double, double), Segment &e) {
+double Pixel::lineIntegral(function<double(double, double)> func, Segment &e) {
     double midX, midY;
     double length = intersectionLength(e, &midX, &midY);
     if (length == 0) {
         return 0;
     }
-    return (*func)(midX, midY) * length * color;
+    return func(midX, midY) * length * color;
 }
 
 double Pixel::intersectionArea(Triangle &t, vector<Point> *polygon) {
@@ -182,7 +182,7 @@ double Pixel::intersectionArea(Triangle &t, vector<Point> *polygon) {
     return shoelace(boundary);
 }
 
-double Pixel::doubleIntegral(double (*func)(double, double), Triangle &t) {
+double Pixel::doubleIntegral(function<double(double, double)> func, Triangle &t) {
     vector<Point> boundary;
     double area = intersectionArea(t, &boundary);
     if (area == 0) {
@@ -192,5 +192,5 @@ double Pixel::doubleIntegral(double (*func)(double, double), Triangle &t) {
     double avgX, avgY;
     Point center(x,y);
     averageXY(&avgX, &avgY, boundary, center);
-    return (*func)(avgX, avgY) * area * color;
+    return func(avgX, avgY) * area * color;
 }
