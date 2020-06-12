@@ -1,1 +1,1 @@
-Floating point errors: matrix inverse, computing intersection point of two segments, double integral area
+Floating point errors: matrix inverse, computing intersection point of two segments, double integral area, collinearity determination

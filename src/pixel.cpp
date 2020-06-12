@@ -16,6 +16,11 @@ double shoelace(vector<Point> &points) {
         area += (x0 * y1 - x1 * y0);
     }
     // in practice points is supposed to be ccw
+    if (area < 0) {
+        for(Point pt : points) {
+            cout << pt.getX() << ", " << pt.getY() << endl;
+        }
+    }
     assert(area >= 0);
     /*
     // account for sign
@@ -136,10 +141,19 @@ double Pixel::intersectionArea(Triangle &t, vector<Point> *polygon) {
             boundary.push_back(triangleVertices.at(i));            
         }
     }
+    // determine corner to start so as to preserve ccw property
+    int start = 0;
+    // do this by starting from a corner outside the triangle (if it exists);
+    // if it doesn't exist start will stay at 0
+    for(int i = 0; i < 4; i++) {
+        if (!t.contains(corners.at(i))) {
+            start = i;
+        }
+    }
     for(int i = 0; i < 4; i++) {
         // first determine if corner of pixel is inside
-        Point corner = corners.at(i);
-        Segment side(&corners.at(i), &corners.at((i+1)%4));
+        Point corner = corners.at((i+start) % 4);
+        Segment side(&corner, &corners.at((i+start+1)%4));
         if (t.contains(corner)) {
             boundary.push_back(corner);
         }
@@ -149,7 +163,7 @@ double Pixel::intersectionArea(Triangle &t, vector<Point> *polygon) {
             if (side.intersects(e)) {
                 Point intersectionPoint = side.getIntersection(e);
                 // check to see if this point is already accounted for by corners
-                if (intersectionPoint != corner && intersectionPoint != corners.at((i+1)%4)) {
+                if (intersectionPoint != corner && intersectionPoint != corners.at((i+start+1)%4)) {
                     sideIntersections.push_back(intersectionPoint);
                 }
             }
