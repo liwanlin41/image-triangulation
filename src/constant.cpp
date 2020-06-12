@@ -1,7 +1,82 @@
 #include "constant.hpp"
 
-// gradient when moving point pt at velocity (vx, vy)
-double linearGradient(Triangle &triangle, Point &pt, double vx, double vy, vector<vector<Pixel>> &image) {
+ConstantApprox::ConstantApprox(vector<vector<Pixel>> *img, int n, double step) : image(img), stepSize(step){
+    // recall img.at(x).at(y) is pixel (x, y)
+    maxX = img->size();
+    maxY = img->at(0).size();
+    // for now, initialize triangulation using a horizontal line 
+    // of points across the middle of the image
+    double centerY = maxY / 2;
+    double distanceX = (double) maxX / (n+1);
+    // corners of image
+    Point topLeft(-0.5,-0.5);
+    Point bottomLeft(-0.5, -0.5+maxY);
+    Point topRight(-0.5+maxX, -0.5);
+    Point bottomRight(-0.5+maxX, -0.5+maxY);
+    corners.push_back(topLeft);
+    corners.push_back(topRight);
+    corners.push_back(bottomRight);
+    corners.push_back(bottomLeft);
+    for(int i = 0; i < n; i++) {
+        Point p(distanceX * (i+1), centerY);
+        points.push_back(p);
+    }
+    // leave the one or two middle points to be set separately
+    for(int i = 0; i < (n-2)/2; i++) {
+        Triangle upperLeft(&corners.at(0), &points.at(i), &points.at(i+1));
+        Triangle lowerLeft(&corners.at(3), &points.at(i), &points.at(i+1));
+        Triangle upperRight(&corners.at(1), &points.at(n-i-1), &points.at(n-i-2));
+        Triangle lowerRight(&corners.at(2), &points.at(n-i-1), &points.at(n-i-2));
+        triangles.push_back(upperLeft);
+        triangles.push_back(lowerLeft);
+        triangles.push_back(upperRight);
+        triangles.push_back(lowerRight);
+    }
+    if (n % 2 == 0) {
+        Triangle upperLeft(&corners.at(0), &points.at((n-2)/2), &points.at(n/2));
+        Triangle upperTop(&corners.at(0), &corners.at(1), &points.at(n/2));
+        Triangle lowerBottom(&corners.at(2), &corners.at(3), &points.at((n-2)/2));
+        Triangle lowerRight(&corners.at(2), &points.at(n/2-1), &points.at(n/2));
+        triangles.push_back(upperLeft);
+        triangles.push_back(upperTop);
+        triangles.push_back(lowerBottom);
+        triangles.push_back(lowerRight);
+    } else {
+        Triangle upper(&corners.at(0), &corners.at(1), &points.at((n-1)/2));
+        Triangle lower(&corners.at(2), &corners.at(3), &points.at((n-1)/2));
+    }
+    Triangle left(&corners.at(0), &corners.at(3), &points.at(0));
+    Triangle right(&corners.at(1), &corners.at(2), &points.at(n-1));
+    triangles.push_back(left);
+    triangles.push_back(right);
+    // compute initial approximation
+    updateApprox();
+}
+
+double ConstantApprox::computeEnergy() {
+    double energy = 0;
+    // iterate over pixels
+    for(int x = 0; x < maxX; x++) {
+        for(int y = 0; y < maxY; y++) {
+            // point to pixel being referenced
+            Pixel *p = &(image->at(x).at(y));
+            for(Triangle &t : triangles) {
+                // approximation is constant per pixel
+                double approxVal = approx[&t];
+                double area = p->intersectionArea(t);
+                double diff = approxVal - (p->getColor());
+                energy += (diff * diff) * area;
+            }
+        }
+    }
+    return energy;
+}
+
+void ConstantApprox::computeGrad() {
+
+}
+
+void ConstantApprox::gradient(Triangle &triangle, Point &pt, double *gradX, double *gradY) {
     auto identity = [](double x, double y) {return 1.0;};
     vector<Point> vertices = triangle.copyVertices();
     int movingInd;
@@ -45,19 +120,38 @@ double linearGradient(Triangle &triangle, Point &pt, double vx, double vy, vecto
         return vn(x, y, false);
     };
     // integral of fdA
-    double imageIntegral = DoubleIntegral::evaluate(identity, &image, &triangle);
+    double imageIntegral = DoubleIntegral::evaluate(identity, image, &triangle);
     double area = triangle.getArea();
     double dA[2] = {triangle.gradX(&pt), triangle.gradY(&pt)};
     double boundaryChange[2];
     // compute gradient in x direction
-    boundaryChange[0] = LineIntegral::evaluate(vnx, &image, &triangle);
+    boundaryChange[0] = LineIntegral::evaluate(vnx, image, &triangle);
     // compute gradient in y direction
-    boundaryChange[1] = LineIntegral::evaluate(vny, &image, &triangle);
+    boundaryChange[1] = LineIntegral::evaluate(vny, image, &triangle);
     double gradient[2];
     for(int j = 0; j < 2; j++) {
         gradient[j] = (2 * area * imageIntegral * boundaryChange[j]
             - imageIntegral * imageIntegral * dA[j]) / (area * area);
     }
-    double gradApprox = gradient[0] * vx + gradient[1] * vy;
-    return gradApprox;
+    // check for null pointers
+    if (gradX && gradY) {
+        *gradX = gradient[0];
+        *gradY = gradient[1];
+    }
+}
+
+int ConstantApprox::gradUpdate() {
+
+}
+
+void ConstantApprox::undo(int ind) {
+
+}
+
+void ConstantApprox::updateApprox() {
+
+}
+
+void ConstantApprox::run(int maxIter, double eps) {
+
 }

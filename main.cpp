@@ -27,7 +27,7 @@ int getLuminance(CImg<unsigned char> *img, int x, int y) {
 
 // eventually input will be the path to an image file?
 int main(int argc, char* argv[]) {
-	CImg<unsigned char> image("../images/piecewise_constant.png");
+	CImg<unsigned char> image("../images/black_white.png");
 	for(int x = 0; x < image.width(); x+= 20) {
 		for(int y = 0; y < image.height(); y+= 20) {
 			std::cout << x << ", " << y << ": " << getLuminance(&image, x, y) << std::endl;
