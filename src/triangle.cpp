@@ -106,3 +106,12 @@ bool Triangle::contains(Point &p) {
     }
     return (signs[0] == signs[1] && signs[1] == signs[2]);
 }
+
+ostream& Triangle::operator<<(ostream& os) {
+    os << "Triangle ";
+    for(Point *ptr : vertices) {
+        os << "(" << ptr->getX() << ", " << ptr->getY() << ") ";
+    }
+    os << "\n";
+    return os;
+}
