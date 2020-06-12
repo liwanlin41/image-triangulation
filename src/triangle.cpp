@@ -8,11 +8,11 @@ Triangle::Triangle(Point *a, Point *b, Point *c) {
     vertices.push_back(c);
     if(getSignedArea() < 0) {
         vertices.clear();
+        // reverse direction
+        vertices.push_back(a);
+        vertices.push_back(c);
+        vertices.push_back(b);
     }
-    // reverse direction
-    vertices.push_back(a);
-    vertices.push_back(c);
-    vertices.push_back(b);
 }
 
 double Triangle::getSignedArea() {
