@@ -1,5 +1,7 @@
 #ifndef point_h
 #define point_h
+
+#include <math.h>
 /**
  * represent a point (x,y) on the plane
  * mutable; allows perturbing vertices
@@ -12,6 +14,7 @@ class Point {
         Point(double x, double y);
         double getX();
         double getY();
+        double distance(Point &other);
         void move(double deltaX, double deltaY);
         bool operator==(const Point &other) const;
         bool operator!=(const Point &other) const;
