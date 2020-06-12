@@ -2,10 +2,13 @@
 #define point_h
 
 #include <math.h>
+#include <iostream>
 /**
  * represent a point (x,y) on the plane
  * mutable; allows perturbing vertices
  */
+
+using namespace std;
 
 class Point {
     private:
@@ -18,5 +21,6 @@ class Point {
         void move(double deltaX, double deltaY);
         bool operator==(const Point &other) const;
         bool operator!=(const Point &other) const;
+        ostream& operator<<(ostream &os);
 };
 #endif
