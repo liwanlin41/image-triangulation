@@ -84,6 +84,11 @@ double linearGradient(Triangle &triangle, Point &pt, double vx, double vy, vecto
             - imageIntegral * imageIntegral * dA[j]) / (area * area);
     }
     double gradApprox = gradient[0] * vx + gradient[1] * vy;
+    cout << "area: " << area << endl;
+    cout << "imageIntegral: " << imageIntegral << endl; // this value is incorrect
+    cout << "dA: " << dA[0] << ", " << dA[1] << endl;
+    cout << "boundaryChange values " << boundaryChange[0] << ", " << boundaryChange[1] << endl;
+    cout << "gradient values: " << gradient[0] << ", " << gradient[1] << endl;
     return gradApprox;
 }
 
@@ -218,7 +223,6 @@ TEST(ConstantTest, Bugged) {
     double vx = 0.353958; 
     double vy = -0.875836;
     double gradApprox = linearGradient(triangle, a, vx, vy, image);
-    cout << gradApprox << endl;
     // now compute central finite difference
     a.move(eps * vx, eps * vy);
     double futureImgInt = DoubleIntegral::evaluate(identity, &image, &triangle);
@@ -231,7 +235,7 @@ TEST(ConstantTest, Bugged) {
     double pastEnergy = pastImgInt * pastImgInt / pastArea;
     
     double finiteApprox = (futureEnergy - pastEnergy) / (2 * eps);
-    ASSERT_DOUBLE_EQ(finiteApprox, gradApprox);
+    ASSERT_FLOAT_EQ(finiteApprox, gradApprox);
 }
 
 TEST(ConstantTest, Function) {

@@ -102,7 +102,7 @@ TEST(AreaTest, Bug) {
     Point b(8.25, 8.75);
     Point c(10.25, 9.75);
     Triangle t(&a, &b, &c);
-    ASSERT_EQ(1.125/2, p.intersectionArea(t));
+    ASSERT_EQ(0.5625, p.intersectionArea(t));
 }
 
 int main(int argc, char **argv) {

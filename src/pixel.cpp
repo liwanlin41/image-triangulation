@@ -3,6 +3,26 @@
 
 // helper functions
 
+// check to ensure points is a valid ccw polygon
+bool isCCW(vector<Point> &points) {
+    double centroidX = 0;
+    double centroidY = 0;
+    int n = points.size();
+    for(int i = 0; i < n; i++) {
+        centroidX += points.at(i).getX();
+        centroidY += points.at(i).getY();
+    }
+    centroidX /= n;
+    centroidY /= n;
+    Point centroid(centroidX, centroidY);
+    for(int i = 0; i < n; i++) {
+        if (Triangle::getSignedArea(&centroid, &points.at(i), &points.at((i+1)%n)) < 0) {
+            return false;
+        }
+    }
+    return true;
+}
+
 // compute (unsigned) area of the polygon enclosed by points,
 // where edges of the polygon are given by points.at(i) -- points.at(i+1)
 double shoelace(vector<Point> &points) {
@@ -16,10 +36,12 @@ double shoelace(vector<Point> &points) {
         area += (x0 * y1 - x1 * y0);
     }
     // in practice points is supposed to be ccw
-    if (area < 0) {
+    if (!isCCW(points)) {
+        cout << "POINTS START" << endl;
         for(Point pt : points) {
             cout << pt.getX() << ", " << pt.getY() << endl;
         }
+        cout << "POINTS END" << endl;
     }
     assert(area >= 0);
     /*
@@ -31,7 +53,8 @@ double shoelace(vector<Point> &points) {
 }
 
 // compute integral of x over polygon points and store in totalX, similar for y
-// center is a reference point inside the polygon
+// center is a reference point inside the pixel; even if it lies outside the polygon,
+// using signed areas means the result will still be correct
 void integrateXY(double *totalX, double *totalY, vector<Point> &points, Point &center) {
     double sumX = 0;
     double sumY = 0;
@@ -134,10 +157,12 @@ double Pixel::intersectionArea(Triangle &t, vector<Point> *polygon) {
     vector<Point> boundary; // hold vertices of polygon formed by intersection
     vector<Point> triangleVertices = t.copyVertices();
     vector<Segment> triangleSides; // hold sides of triangle
+    int inInd; // index of some triangle vertex inside pixel
     for(int i = 0; i < 3; i++) {
         triangleSides.push_back(Segment(&triangleVertices.at(i),&triangleVertices.at((i+1) % 3)));
         // add triangle vertices which may be inside the pixel
         if (containsPoint(triangleVertices.at(i))) {
+            inInd = i;
             boundary.push_back(triangleVertices.at(i));            
         }
     }
@@ -146,7 +171,13 @@ double Pixel::intersectionArea(Triangle &t, vector<Point> *polygon) {
     // do this by starting from a corner outside the triangle (if it exists);
     // if it doesn't exist start will stay at 0
     for(int i = 0; i < 4; i++) {
-        if (!t.contains(corners.at(i))) {
+        // additionally, if there is exactly one point inside the triangle, make sure to start
+        // at a corner on the same side of the interior point so that the first edge
+        // interior point -- intersection point is correct (avoid issues of pixel corners inside
+        // the triangle being non-adjacent)
+        bool safelyOriented = (boundary.size() != 1) || 
+            (Triangle::getSignedArea(&corners.at(i), &triangleVertices.at((inInd+1)%3), &triangleVertices.at((inInd+2)%3)) >= 0);
+        if (!t.contains(corners.at(i)) && safelyOriented) {
             start = i;
         }
     }
