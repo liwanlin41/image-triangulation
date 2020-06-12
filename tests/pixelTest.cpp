@@ -94,6 +94,17 @@ TEST(AreaTest, EdgeInside) {
     ASSERT_EQ(0.25 * 0.75, p.intersectionArea(t));
 }
 
+// one vertex inside pixel, intersection resembles a "stripe"
+// down the middle
+TEST(AreaTest, Bug) {
+    Pixel p(10,10,255);
+    Point a(10.25, 10.75);
+    Point b(8.25, 8.75);
+    Point c(10.25, 9.75);
+    Triangle t(&a, &b, &c);
+    ASSERT_EQ(1.125/2, p.intersectionArea(t));
+}
+
 int main(int argc, char **argv) {
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
