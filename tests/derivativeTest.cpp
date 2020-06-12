@@ -4,6 +4,7 @@
 #include "../src/lineIntegral.hpp"
 #include "../src/doubleIntegral.hpp"
 #include "../src/matrix.hpp"
+//#include "../src/constant.hpp"
 using namespace std;
 
 const double eps = 0.001;
@@ -24,6 +25,8 @@ vector<vector<Pixel>> generateFakeImage() {
 }
 
 vector<vector<Pixel>> image = generateFakeImage();
+// create testing objects
+//ConstantApprox approx(&image, 10, 0.5);
 
 // gradient when moving point pt at velocity (vx, vy)
 double linearGradient(Triangle &triangle, Point &pt, double vx, double vy, vector<vector<Pixel>> &image) {
@@ -84,11 +87,6 @@ double linearGradient(Triangle &triangle, Point &pt, double vx, double vy, vecto
             - imageIntegral * imageIntegral * dA[j]) / (area * area);
     }
     double gradApprox = gradient[0] * vx + gradient[1] * vy;
-    cout << "area: " << area << endl;
-    cout << "imageIntegral: " << imageIntegral << endl; // this value is incorrect
-    cout << "dA: " << dA[0] << ", " << dA[1] << endl;
-    cout << "boundaryChange values " << boundaryChange[0] << ", " << boundaryChange[1] << endl;
-    cout << "gradient values: " << gradient[0] << ", " << gradient[1] << endl;
     return gradApprox;
 }
 
@@ -148,74 +146,12 @@ TEST(DerivativeTest, TriangleArea) {
     }
 }
 
-TEST(ConstantTest, FixedTriangle) {
-    auto identity = [](double x, double y) {return 1.0;};
-    Point a(0,0);
-    Point b(3,0);
-    Point c(0,4);
-    Triangle triangle(&a, &b, &c);
-    // move vertex c
-    double vx = 0.6;
-    double vy = 0.8;
-    auto vn = [&a, &b, &c](double x, double y, bool dirX) {
-        Point current(x, y);
-        // to more robustly determine which segment contains (x, y)
-        double areaAB = Triangle::getSignedArea(&a, &b, &current);
-        double areaBC = Triangle::getSignedArea(&b, &c, &current);
-        double areaCA = Triangle::getSignedArea(&c, &a, &current);
-        double minArea = min(areaAB, min(areaBC, areaCA));
-        if (minArea == areaAB) { // point is closest to side AB, the stationary side
-            return 0.0;
-        }
-        Point segmentEnd = (minArea == areaCA) ? a : b;
-        double distanceToVertex = current.distance(segmentEnd);
-        Segment gamma = (segmentEnd == a) ? Segment(&c, &a) : Segment(&b, &c);
-        double scale = distanceToVertex / gamma.length();
-        double velX = (dirX) ? scale : 0;
-        Matrix v(velX, scale - velX);
-        Matrix n = gamma.unitNormal();
-        return v.transpose().multiply(n).get(0,0);
-    };
-    auto vnx = [&vn](double x, double y) {
-        return vn(x, y, true);
-    };
-    auto vny = [&vn](double x, double y) {
-        return vn(x, y, false);
-    };
-    // integral of fdA
-    double imageIntegral = DoubleIntegral::evaluate(identity, &image, &triangle);
-    double area = triangle.getArea();
-    double dA[2] = {triangle.gradX(&c), triangle.gradY(&c)};
-    double boundaryChange[2];
-    // compute gradient in x direction
-    boundaryChange[0] = LineIntegral::evaluate(vnx, &image, &triangle);
-    // compute gradient in y direction
-    boundaryChange[1] = LineIntegral::evaluate(vny, &image, &triangle);
-    double gradient[2];
-    for(int j = 0; j < 2; j++) {
-        gradient[j] = (2 * area * imageIntegral * boundaryChange[j]
-            - imageIntegral * imageIntegral * dA[j]) / (area * area);
-    }
-    double gradApprox = gradient[0] * vx + gradient[1] * vy;
-    
-    // now compute central finite difference
-    c.move(eps * vx, eps * vy);
-    double futureImgInt = DoubleIntegral::evaluate(identity, &image, &triangle);
-    double futureArea = triangle.getArea();
-    double futureEnergy = futureImgInt * futureImgInt / futureArea;
-    
-    c.move(-2 * eps * vx, -2 * eps * vy);
-    double pastImgInt = DoubleIntegral::evaluate(identity, &image, &triangle);
-    double pastArea = triangle.getArea();
-    double pastEnergy = pastImgInt * pastImgInt / pastArea;
-    
-    double finiteApprox = (futureEnergy - pastEnergy) / (2 * eps);
-    ASSERT_TRUE(abs(gradApprox - finiteApprox) < tolerance);
-}
+// tests for constant approximation gradient
+
+auto identity = [](double x, double y) {return 1.0;};
 
 // test broken case
 TEST(ConstantTest, Bugged) {
-    auto identity = [](double x, double y) {return 1.0;};
     Point a(46.8693, 78.12); 
     Point b(14.6368, 45.3289); 
     Point c(42.7346, 73.5944);
@@ -238,8 +174,7 @@ TEST(ConstantTest, Bugged) {
     ASSERT_FLOAT_EQ(finiteApprox, gradApprox);
 }
 
-TEST(ConstantTest, Function) {
-    auto identity = [](double x, double y) {return 1.0;};
+TEST(ConstantTest, FixedTriangle) {
     Point a(0,0);
     Point b(3,0);
     Point c(0,4);
@@ -248,7 +183,6 @@ TEST(ConstantTest, Function) {
     double vx = 0.6;
     double vy = 0.8;
     double gradApprox = linearGradient(triangle, c, vx, vy, image);
-    cout << gradApprox << endl;
 
     // now compute central finite difference
     c.move(eps * vx, eps * vy);
@@ -269,7 +203,6 @@ TEST(ConstantTest, Function) {
 // over a single triangle
 TEST(ConstantTest, ConstantApprox) {
     // for just integrating the given function
-    auto identity = [](double x, double y) {return 1.0;};
     for(int i = 0; i < num_iter; i++) {
         cout << "iteration " << i << endl;
         // pick a random number from -1 to 1 for velocity directions
@@ -291,6 +224,8 @@ TEST(ConstantTest, ConstantApprox) {
             c = temp;
         }
         Triangle triangle(&a, &b, &c);
+        double gradApprox = linearGradient(triangle, a, vx, vy, image);
+        /*
         // for integrating v dot n in the line integral when a is moving
         // at a velocity of (1, 0);
         // (x, y) will be on some side of the triangle
@@ -339,6 +274,7 @@ TEST(ConstantTest, ConstantApprox) {
                 - imageIntegral * imageIntegral * dA[j]) / (area * area);
         }
         double gradApprox = gradient[0] * vx + gradient[1] * vy;
+        */
 
         // now compute central finite difference
         a.move(eps * vx, eps * vy);
@@ -352,6 +288,7 @@ TEST(ConstantTest, ConstantApprox) {
         double pastEnergy = pastImgInt * pastImgInt / pastArea;
 
         double finiteApprox = (futureEnergy - pastEnergy) / (2 * eps);
+        /*
         if (abs(finiteApprox - gradApprox) > 0.1) {
             cout << "vertices: (" << a.getX() << ", " << a.getY() << "), (" << b.getX() << ", " << b.getY() << "), (" << c.getX() << ", " << c.getY() << ")\n";
             cout << "velocity: " << vx << ", " << vy << endl;
@@ -361,6 +298,7 @@ TEST(ConstantTest, ConstantApprox) {
             cout << "boundaryChange values " << boundaryChange[0] << ", " << boundaryChange[1] << endl;
             cout << "gradient values: " << gradient[0] << ", " << gradient[1] << endl;
         }
+        */
         ASSERT_FLOAT_EQ(finiteApprox, gradApprox);
     }
 }
