@@ -74,7 +74,7 @@ bool Pixel::containsPoint(Point &p) {
     return (-0.5 + x <= px && px <= 0.5 + x) && (-0.5 + y <= py && py <= 0.5 + y);
 }
 
-double Pixel::intersectionLength(Segment &e, double *x, double *y) {
+double Pixel::intersectionLength(Segment &e, double *xVal, double *yVal) {
     vector<Point> intersections; // hold intersections
     for(int i = 0; i < 4; i++) {
         // retrieve a side of the pixel; at most two will have an intersection
@@ -109,9 +109,9 @@ double Pixel::intersectionLength(Segment &e, double *x, double *y) {
     assert(intersections.size() == 2);
     Segment contained(&intersections.at(0), &intersections.at(1));
     // check for null pointers, assign midpoint coords
-    if (x && y) {
-        *x = (intersections.at(0).getX() + intersections.at(1).getX())/2;
-        *y = (intersections.at(0).getY() + intersections.at(1).getY())/2;
+    if (xVal && yVal) {
+        *xVal = (intersections.at(0).getX() + intersections.at(1).getX())/2;
+        *yVal = (intersections.at(0).getY() + intersections.at(1).getY())/2;
     }
     return contained.length();
 }

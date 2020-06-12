@@ -86,6 +86,7 @@ TEST(DerivativeTest, ConstantApprox) {
     auto identity = [](double x, double y) {return 1.0;};
     vector<vector<Pixel>> image = generateFakeImage();
     for(int i = 0; i < num_iter; i++) {
+        cout << "iteration " << i << endl;
         // pick a random number from -1 to 1 for velocity directions
         // for testing, point a will be moved
         double vx = 2 * ((double) rand() / RAND_MAX) - 1;
@@ -102,28 +103,65 @@ TEST(DerivativeTest, ConstantApprox) {
         // for integrating v dot n in the line integral when a is moving
         // at a velocity of (1, 0);
         // (x, y) will be on either ab or ca
-        bool dirX;
-        auto vnX = [&a, &b, &c, dirX](double x, double y) {
+        auto vn = [&a, &b, &c](double x, double y, bool dirX) {
             Point current(x, y);
             // determine which segment current is on
-            Point segmentEnd = (Triangle::getSignedArea(&a, &b, &current) == 0) ? b : a;
+            Point segmentEnd = (Triangle::getSignedArea(&a, &b, &current) == 0) ? b : c;
             // compute velocity at this point by scaling
             double distanceToVertex = current.distance(segmentEnd);
+            cout << "distanceToVertex: " << distanceToVertex << endl;
             Segment gamma(&a, &segmentEnd);
             double scale = distanceToVertex / gamma.length(); // 1 if at a, 0 if at opposite edge
+            cout << "scale factor " << scale << endl;
             // determine whether x or y gradient is being computed
             double velX = (dirX) ? scale : 0;
             Matrix v(velX, scale - velX);
             Matrix n = gamma.unitNormal();
-            return v.transpose().multiply(n).get(0, 0);
+            return (v.transpose().multiply(n)).get(0, 0);
+        };
+        // break down into x and y components
+        auto vnx = [&vn](double x, double y) {
+            return vn(x, y, true);
+        };
+        auto vny = [&vn](double x, double y) {
+            return vn(x, y, false);
         };
         // integral of fdA
         double imageIntegral = DoubleIntegral::evaluate(identity, &image, &triangle);
+        cout << "imageIntegral " << imageIntegral << endl;
         double area = triangle.getArea();
+        cout << "area: " << area << endl;
+        double dA[2] = {triangle.gradX(&a), triangle.gradY(&a)};
+        cout << "dA: " << dA[0] << ", " << dA[1] << endl;
+        double boundaryChange[2];
         // compute gradient in x direction
-        dirX = true;
-        double boundaryChangeX = LineIntegral::evaluate(vnX, &image, &triangle);
-        double gradX = 2 * area * imageIntegral
+        boundaryChange[0] = LineIntegral::evaluate(vnx, &image, &triangle);
+        // compute gradient in y direction
+        boundaryChange[1] = LineIntegral::evaluate(vny, &image, &triangle);
+        cout << "boundaryChange values " << boundaryChange[0] << ", " << boundaryChange[1] << endl;
+        double gradient[2];
+        for(int j = 0; j < 2; j++) {
+            gradient[j] = (2 * area * imageIntegral * boundaryChange[j]
+                - imageIntegral * imageIntegral * dA[j]) / (area * area);
+        }
+        cout << "gradient values: " << gradient[0] << ", " << gradient[1] << endl;
+        double gradApprox = gradient[0] * vx + gradient[1] * vy;
+
+        // now compute central finite difference
+        a.move(eps * vx, eps * vy);
+        double futureImgInt = DoubleIntegral::evaluate(identity, &image, &triangle);
+        double futureArea = triangle.getArea();
+        double futureEnergy = futureImgInt * futureImgInt / futureArea;
+
+        a.move(-2 * eps * vx, -2 * eps * vy);
+        double pastImgInt = DoubleIntegral::evaluate(identity, &image, &triangle);
+        double pastArea = triangle.getArea();
+        double pastEnergy = pastImgInt * pastImgInt / pastArea;
+
+        double finiteApprox = (futureEnergy - pastEnergy) / (2 * eps);
+        cout << "finiteApprox " << finiteApprox << endl;
+        cout << "gradApprox " << gradApprox << endl;
+        ASSERT_TRUE(abs(gradApprox - finiteApprox) < tolerance);
     }
 }
 
