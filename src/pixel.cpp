@@ -17,6 +17,7 @@ bool isCCW(vector<Point> &points) {
     Point centroid(centroidX, centroidY);
     for(int i = 0; i < n; i++) {
         if (Triangle::getSignedArea(&centroid, &points.at(i), &points.at((i+1)%n)) < 0) {
+            cout << points.at(i) << "--" << points.at((i+1)%n) << " is bad\n";
             return false;
         }
     }
@@ -36,16 +37,14 @@ double shoelace(vector<Point> &points) {
         area += (x0 * y1 - x1 * y0);
     }
     // in practice points is supposed to be ccw
-    /*
     if (!isCCW(points)) {
         cout << "POINTS START" << endl;
         for(Point pt : points) {
-            cout << pt.getX() << ", " << pt.getY() << endl;
+            cout << pt << endl;
         }
         cout << "POINTS END" << endl;
     }
     assert(area >= 0);
-    */
     // account for sign
     if (area < 0) area *= -1;
     // don't forget to divide by 2
@@ -160,8 +159,13 @@ double Pixel::intersectionArea(Triangle &t, vector<Point> *polygon) {
     int inInd; // index of some triangle vertex inside pixel
     for(int i = 0; i < 3; i++) {
         triangleSides.push_back(Segment(&triangleVertices.at(i),&triangleVertices.at((i+1) % 3)));
-        // add triangle vertices which may be inside the pixel
-        if (containsPoint(triangleVertices.at(i))) {
+        // add triangle vertices which may be inside the pixel, but don't add corners
+        bool isCorner = false;
+        for(int j = 0; j < 4; j++) {
+            if (triangleVertices.at(i) == corners.at(j)) isCorner = true;
+        }
+        if (!isCorner && containsPoint(triangleVertices.at(i))) {
+            cout << triangleVertices.at(i) << " is not a corner\n";
             inInd = i;
             boundary.push_back(triangleVertices.at(i));            
         }
@@ -186,6 +190,7 @@ double Pixel::intersectionArea(Triangle &t, vector<Point> *polygon) {
         Point corner = corners.at((i+start) % 4);
         Segment side(&corner, &corners.at((i+start+1)%4));
         if (t.contains(corner)) {
+            cout << "corner " << corner << " added in " << x << ", " << y << endl;
             boundary.push_back(corner);
         }
         // determine intersections with side (i, i+1)
@@ -194,13 +199,30 @@ double Pixel::intersectionArea(Triangle &t, vector<Point> *polygon) {
             if (side.intersects(e)) {
                 Point intersectionPoint = side.getIntersection(e);
                 // check to see if this point is already accounted for by corners
+                // or by triangle vertices
                 if (intersectionPoint != corner && intersectionPoint != corners.at((i+start+1)%4)) {
-                    sideIntersections.push_back(intersectionPoint);
+                    bool isVertex = false;
+                    for(Point tVertex : triangleVertices) {
+                        if (intersectionPoint == tVertex) {
+                            isVertex = true;
+                        }
+                    }
+                    if (!isVertex) {
+                        sideIntersections.push_back(intersectionPoint);
+                        cout << intersectionPoint << " is not a vertex of " << side << " with " << e << endl;
+                    }
                 }
             }
         }
         // note a triangle can intersect a given side at most twice
         assert(sideIntersections.size() <= 2);
+        if (sideIntersections.size() > 0) {
+            cout << "points of intersection\n";
+            for(Point inter : sideIntersections) {
+                cout << inter << endl;
+            }
+            cout << "end\n";
+        }
         // handle normal case where there is only one intersection with this side
         if (sideIntersections.size() == 1) {
             boundary.push_back(sideIntersections.at(0));

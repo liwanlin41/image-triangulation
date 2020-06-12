@@ -24,7 +24,7 @@ TEST(EnergyTest, Initial) {
     ConstantApprox approx(&image, 3, 0.5);
     // top and left triangles are the only two
     // with positive energy contribution; difference is 0.5
-    double expectedEnergy = 0.25 * (75 * 25);
+    double expectedEnergy = 0.25 * (26 * 51 + 26 * 101) / 2;
     ASSERT_EQ(expectedEnergy, approx.computeEnergy());
 }
 

@@ -122,7 +122,7 @@ Matrix Segment::scaledNormal() {
     return Matrix(deltaY/2, -deltaX/2);
 }
 
-ostream& Segment::operator<<(ostream& os) {
-    os << "(" << endpoint1->getX() << ", " << endpoint1->getY() << ") -- (" << endpoint2->getX() << ", " << endpoint2->getY() << ")\n";
+ostream& operator<<(ostream& os, const Segment &seg) {
+    os << *seg.endpoint1 << "--" << *seg.endpoint2 << endl;
     return os;
 }

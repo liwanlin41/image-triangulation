@@ -1,12 +1,15 @@
 #include "constant.hpp"
 
+using namespace std;
+
 ConstantApprox::ConstantApprox(vector<vector<Pixel>> *img, int n, double step) : image(img), stepSize(step){
+    cout << "constructor called\n";
     // recall img.at(x).at(y) is pixel (x, y)
     maxX = img->size();
     maxY = img->at(0).size();
     // for now, initialize triangulation using a horizontal line 
     // of points across the middle of the image
-    double centerY = maxY / 2;
+    double centerY = maxY / 2 - 0.5;
     double distanceX = (double) maxX / (n+1);
     // corners of image
     Point topLeft(-0.5,-0.5);
@@ -18,11 +21,11 @@ ConstantApprox::ConstantApprox(vector<vector<Pixel>> *img, int n, double step) :
     corners.push_back(bottomRight);
     corners.push_back(bottomLeft);
     for(int i = 0; i < n; i++) {
-        Point p(distanceX * (i+1), centerY);
+        Point p(distanceX * (i+1) - 0.5, centerY);
         points.push_back(p);
     }
     // leave the one or two middle points to be set separately
-    for(int i = 0; i < (n-2)/2; i++) {
+    for(int i = 0; i < (n-2)/2.0; i++) {
         Triangle upperLeft(&corners.at(0), &points.at(i), &points.at(i+1));
         Triangle lowerLeft(&corners.at(3), &points.at(i), &points.at(i+1));
         Triangle upperRight(&corners.at(1), &points.at(n-i-1), &points.at(n-i-2));
@@ -44,11 +47,19 @@ ConstantApprox::ConstantApprox(vector<vector<Pixel>> *img, int n, double step) :
     } else {
         Triangle upper(&corners.at(0), &corners.at(1), &points.at((n-1)/2));
         Triangle lower(&corners.at(2), &corners.at(3), &points.at((n-1)/2));
+        triangles.push_back(upper);
+        triangles.push_back(lower);
     }
     Triangle left(&corners.at(0), &corners.at(3), &points.at(0));
     Triangle right(&corners.at(1), &corners.at(2), &points.at(n-1));
     triangles.push_back(left);
     triangles.push_back(right);
+    /*
+    // for testing: determine where these triangles actually are
+    for(Triangle &t : triangles) {
+        cout << t;
+    }
+    */
     // compute initial approximation
     updateApprox();
 }
@@ -150,6 +161,13 @@ void ConstantApprox::undo(int ind) {
 }
 
 void ConstantApprox::updateApprox() {
+    double val = 0;
+    Pixel *p = &(image->at(9).at(49));
+    for(Triangle &t : triangles) {
+        cout << t;
+        val += p->intersectionArea(t);
+    }
+    /*
     for(Triangle &t : triangles) {
         double val = 0;
         // compute total value of image by iterating over pixels
@@ -163,6 +181,7 @@ void ConstantApprox::updateApprox() {
         // take average value
         approx[&t] = (val / t.getArea());
     }
+    */
 }
 
 void ConstantApprox::run(int maxIter, double eps) {
