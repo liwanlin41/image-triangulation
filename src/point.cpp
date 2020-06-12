@@ -13,6 +13,12 @@ double Point::getY() {
     return y;
 }
 
+double Point::distance(Point &other) {
+    double deltaX = x - other.getX();
+    double deltaY = y - other.getY();
+    return pow(deltaX * deltaX + deltaY * deltaY, 0.5);
+}
+
 void Point::move(double deltaX, double deltaY) {
     x += deltaX;
     y += deltaY;
