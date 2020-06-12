@@ -36,10 +36,10 @@ class Triangle {
         // determine if triangle contains point p
         bool contains(Point &p);
 
-        ostream& operator<<(ostream& os);
-        
         // static signed area function
         static double getSignedArea(Point *a, Point *b, Point *c);
+        
+        friend ostream& operator<<(ostream& os, const Triangle &t);
 };
 
 #endif

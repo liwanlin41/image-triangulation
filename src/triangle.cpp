@@ -107,10 +107,10 @@ bool Triangle::contains(Point &p) {
     return (signs[0] == signs[1] && signs[1] == signs[2]);
 }
 
-ostream& Triangle::operator<<(ostream& os) {
+ostream& operator<<(ostream& os, const Triangle &t) {
     os << "Triangle ";
-    for(Point *ptr : vertices) {
-        os << "(" << ptr->getX() << ", " << ptr->getY() << ") ";
+    for(Point *ptr : t.vertices) {
+        os << *ptr << " ";
     }
     os << "\n";
     return os;

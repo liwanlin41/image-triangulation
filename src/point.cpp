@@ -32,7 +32,7 @@ bool Point::operator!=(const Point &other) const {
     return !(*this == other);
 }
 
-ostream& Point::operator<<(ostream& os) {
-    os << "(" << x << ", " << y << ")";
+ostream& operator<<(ostream& os, const Point &p) {
+    os << "(" << p.x << ", " << p.y << ")";
     return os;
 }

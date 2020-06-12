@@ -21,6 +21,6 @@ class Point {
         void move(double deltaX, double deltaY);
         bool operator==(const Point &other) const;
         bool operator!=(const Point &other) const;
-        ostream& operator<<(ostream &os);
+        friend ostream& operator<<(ostream &os, const Point &p);
 };
 #endif
