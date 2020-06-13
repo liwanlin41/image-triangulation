@@ -44,7 +44,9 @@ double shoelace(vector<Point> &points) {
         double y1 = points.at((i+1) % n).getY();
         area += (x0 * y1 - x1 * y0);
     }
-    // in practice points is supposed to be ccw
+    // in practice points is supposed to be ccw up to floating point errors
+    // that do not affect area
+    /*
     if (!isCCW(points)) {
         cout << "POINTS START" << endl;
         for(Point pt : points) {
@@ -52,9 +54,12 @@ double shoelace(vector<Point> &points) {
         }
         cout << "POINTS END" << endl;
     }
+    */
     assert(area >= 0);
+    /*
     // account for sign
     if (area < 0) area *= -1;
+    */
     // don't forget to divide by 2
     return area/2;
 }
@@ -207,7 +212,8 @@ double Pixel::intersectionArea(Triangle &t, vector<Point> *polygon) {
             if (side.intersects(e)) {
                 Point intersectionPoint = side.getIntersection(e);
                 // check to see if this point is already accounted for by corners
-                // or by triangle vertices
+                // or by triangle vertices; if it isn't exactly equal it won't contribute to area
+                // (and the lack of exact equality is likely due to floating point error)
                 if (!approxEqual(intersectionPoint, corner) && !approxEqual(intersectionPoint, corners.at((i+start+1)%4))) {
                     bool isVertex = false;
                     for(Point tVertex : triangleVertices) {
@@ -217,7 +223,6 @@ double Pixel::intersectionArea(Triangle &t, vector<Point> *polygon) {
                     }
                     if (!isVertex) {
                         sideIntersections.push_back(intersectionPoint);
-                        // cout << intersectionPoint << " is not a vertex of " << side << " with " << e << endl;
                     }
                 }
             }
