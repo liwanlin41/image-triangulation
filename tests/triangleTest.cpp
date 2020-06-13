@@ -3,6 +3,30 @@
 
 using namespace std;
 
+// test vector constructor
+TEST(ConstructorTest, CounterClockwise) {
+    Point a(0,0);
+    Point b(3,0);
+    Point c(0,4);
+    vector<Point*> vertices = {&a, &b, &c};
+    Triangle triangle(vertices);
+    ASSERT_EQ(6, triangle.getSignedArea());
+    ASSERT_EQ(&b, vertices.at(1));
+}
+
+// make sure the input vector is modified
+TEST(ConstructorTest, Clockwise) {
+    Point a(0,0);
+    Point b(0,3);
+    Point c(4,0);
+    vector<Point*> vertices = {&a, &b, &c};
+    Triangle triangle(vertices);
+    ASSERT_EQ(6, triangle.getSignedArea());
+    ASSERT_EQ(&a, vertices.at(0));
+    ASSERT_EQ(&c, vertices.at(1));
+    ASSERT_EQ(&b, vertices.at(2));
+}
+
 // test area of degenerate triangle
 TEST(AreaTest, Degenerate) {
     Point a(0,0);
