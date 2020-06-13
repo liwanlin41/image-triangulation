@@ -161,13 +161,14 @@ void ConstantApprox::undo(int ind) {
 }
 
 void ConstantApprox::updateApprox() {
+    /*
     double val = 0;
-    Pixel *p = &(image->at(9).at(49));
+    Pixel *p = &(image->at(15).at(49));
     for(Triangle &t : triangles) {
         cout << t;
         val += p->intersectionArea(t);
     }
-    /*
+    */
     for(Triangle &t : triangles) {
         double val = 0;
         // compute total value of image by iterating over pixels
@@ -181,7 +182,6 @@ void ConstantApprox::updateApprox() {
         // take average value
         approx[&t] = (val / t.getArea());
     }
-    */
 }
 
 void ConstantApprox::run(int maxIter, double eps) {
