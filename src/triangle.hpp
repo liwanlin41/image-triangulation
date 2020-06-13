@@ -19,9 +19,6 @@ class Triangle {
     public:
         // construct from three Point pointers and orient in ccw direction
         Triangle(Point *a, Point *b, Point *c);
-        // construct from a vector of Point pointers AND
-        // orient pointers to be ccw
-        Triangle(vector<Point*> &pointers);
         double getArea();
         // get signed area based on the order of vertices
         // with ccw direction positive
@@ -43,6 +40,8 @@ class Triangle {
         static double getSignedArea(Point *a, Point *b, Point *c);
         
         friend ostream& operator<<(ostream& os, const Triangle &t);
+        // allow approximation classes to view vertex pointers
+        friend class ConstantApprox;
 };
 
 #endif

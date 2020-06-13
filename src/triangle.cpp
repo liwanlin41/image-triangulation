@@ -27,27 +27,6 @@ Triangle::Triangle(Point *a, Point *b, Point *c) {
     }
 }
 
-Triangle::Triangle(vector<Point*> &pointers) {
-    if(pointers.size() != 3) {
-        throw domain_error("incorrect number of triangle vertices");
-    }
-    if(Triangle::getSignedArea(pointers.at(0), pointers.at(1), pointers.at(2)) < 0) {
-        // first set for this triangle
-        vertices.push_back(pointers.at(0));
-        vertices.push_back(pointers.at(2));
-        vertices.push_back(pointers.at(1));
-        // modify pointers to go in correct direction
-        pointers.clear();
-        for(int i = 0; i < 3; i++) {
-            pointers.push_back(vertices.at(i));
-        }
-    } else {
-        for(int i = 0; i < 3; i++) {
-            vertices.push_back(pointers.at(i));
-        }
-    }
-}
-
 double Triangle::getSignedArea() {
     double ax = vertices.at(0)->getX();
     double ay = vertices.at(0)->getY();

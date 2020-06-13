@@ -19,9 +19,9 @@ vector<vector<Pixel>> generateFakeImage() {
 }
 
 vector<vector<Pixel>> image = generateFakeImage();
+ConstantApprox approx(&image, 3, 0.5);
 
 TEST(EnergyTest, Initial) {
-    ConstantApprox approx(&image, 3, 0.5);
     // top and left triangles are the only two
     // with positive energy contribution; difference is 0.5
     double expectedEnergy = 0.25 * (25 * 50 + 100 * 25) / 2;
@@ -29,7 +29,6 @@ TEST(EnergyTest, Initial) {
 }
 
 TEST(GradientTest, Syntax) {
-    ConstantApprox approx(&image, 4, 0.5);
     approx.computeGrad();
 }
 

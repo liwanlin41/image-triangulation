@@ -261,9 +261,9 @@ TEST(ConstantTest, ClassTest) {
         Point c(random_coords[4], random_coords[5]);
         // orientation
         vector<Point*> vertices = {&a, &b, &c};
-        Triangle triangle(vertices);
+        Triangle triangle(&a, &b, &c);
         double gradX, gradY;
-        approx.gradient(triangle, vertices, 0, &gradX, &gradY);
+        approx.gradient(triangle, 0, &gradX, &gradY);
         double gradApprox = gradX * vx + gradY * vy;
 
         // now compute central finite difference
