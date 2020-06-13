@@ -8,8 +8,10 @@
 #include "lineIntegral.hpp"
 #include "doubleIntegral.hpp"
 #include "matrix.hpp"
+#include "CImg.h"
 
 using namespace std;
+using namespace cimg_library;
 
 /**
  * compute a piecewise constant coarse triangular approximation of an image

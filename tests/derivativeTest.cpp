@@ -268,13 +268,11 @@ TEST(ConstantTest, ClassTest) {
 
         // now compute central finite difference
         a.move(eps * vx, eps * vy);
-        //cout << a << " after move one\n";
         double futureImgInt = DoubleIntegral::evaluate(identity, &image, &triangle);
         double futureArea = triangle.getArea();
         double futureEnergy = futureImgInt * futureImgInt / futureArea;
 
         a.move(-2 * eps * vx, -2 * eps * vy);
-        //cout << a << " after move two\n";
         double pastImgInt = DoubleIntegral::evaluate(identity, &image, &triangle);
         double pastArea = triangle.getArea();
         double pastEnergy = pastImgInt * pastImgInt / pastArea;

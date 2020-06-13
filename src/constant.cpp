@@ -2,6 +2,18 @@
 
 using namespace std;
 
+// custom rounding function to support needed pixel rounding
+int pixelRound(double x) {
+    int floor = (int) x;
+    if (abs(x - floor) <= 0.5) {
+        return floor;
+    }
+    else if (x > 0) {
+        return floor + 1;
+    }
+    return floor - 1;
+}
+
 // identity lambda function
 auto identity = [](double x, double y) {return 1.0;};
 
@@ -218,5 +230,18 @@ void ConstantApprox::run(int maxIter, double eps) {
 }
 
 void ConstantApprox::show() {
-
+    // if unassigned, fill with 0
+    CImg<unsigned char> result(maxX, maxY, 1, 1, 0);
+    for(Triangle &t : triangles) {
+        int coords[6];
+        for(int i = 0; i < 3; i++) {
+            coords[2 * i] = pixelRound(t.vertices.at(i)->getX());
+            coords[2 * i + 1] = pixelRound(t.vertices.at(i)->getY());
+        }
+        int approxColor = (int) approx.at(&t);
+        unsigned char color[] = {approxColor, approxColor, approxColor};
+        result.draw_triangle(coords[0], coords[1], coords[2], coords[3],
+            coords[4], coords[5], color, 1);
+    }
+    result.display("Result");
 }

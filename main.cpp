@@ -4,12 +4,7 @@
 #define cimg_use_jpg 1
 #include "CImg.h"
 
-/*
-#include "point.hpp"
-#include "segment.hpp"
-#include "matrix.hpp"
-#include "triangle.hpp"
-*/
+#include "constant.hpp"
 
 using namespace cimg_library;
 
@@ -25,8 +20,23 @@ int getLuminance(CImg<unsigned char> *img, int x, int y) {
 	return round(red_val * RED_LUMINANCE + green_val * GREEN_LUMINANCE + blue_val * BLUE_LUMINANCE);
 }
 
+vector<vector<Pixel>> generateFakeImage() {
+    vector<vector<Pixel>> image;
+    for(int i = 0; i < 100; i++) {
+        vector<Pixel> column;
+        for(int j = 0; j < 50; j++) {
+            int color = (i < 50 && j < 25) ? 0 : 1;
+            Pixel p(i, j, color);
+            column.push_back(p);
+        }
+        image.push_back(column);
+    }
+    return image;
+}
+
 // eventually input will be the path to an image file?
 int main(int argc, char* argv[]) {
+	/*
 	CImg<unsigned char> image("../images/black_white.png");
 	for(int x = 0; x < image.width(); x+= 20) {
 		for(int y = 0; y < image.height(); y+= 20) {
@@ -35,4 +45,9 @@ int main(int argc, char* argv[]) {
 	}
 	image.display("Image");
 	return 0;
+	*/
+	vector<vector<Pixel>> image = generateFakeImage();
+	ConstantApprox approx(&image, 3, 0.5);
+	approx.run();
+	approx.show();
 }

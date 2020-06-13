@@ -36,6 +36,7 @@ TEST(GradientTest, Syntax) {
 
 TEST(RunTest, Syntax) {
     approx.run();
+    approx.show();
 }
 
 int main(int argc, char **argv) {
