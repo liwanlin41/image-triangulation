@@ -22,6 +22,7 @@ class ConstantApprox {
         vector<vector<Pixel>> *image; // image.at(x).at(y) is the pixel located at (x, y)
         vector<Point> points; // store movable vertices of triangulation
         vector<Triangle> triangles; // store triangles of triangulation
+        map<Triangle*, vector<Point*>> trianglesToPoints; // map triangles to points of triangle
         map<Point*, double> gradX; // map points to gradient x values
         map<Point*, double> gradY; // map points to gradient y values
         map<Triangle*, double> approx; // map triangles to approximation values
@@ -35,8 +36,9 @@ class ConstantApprox {
         // compute gradient at this instant, updating gradX and gradY
         void computeGrad();
         // store gradient values in gradX, gradY of
-        // energy over Triangle t of movement of Point pt
-        void gradient(Triangle &t, Point &pt, double *gradX, double *gradY);
+        // energy over Triangle t (with provided vertices for space) of movement 
+        // of the point with index movingPt
+        void gradient(Triangle &t, vector<Point> &vertices, int movingPt, double *gradX, double *gradY);
         // move points according to gradient values and
         // return the index of the first point whose movement
         // causes a triangle to invert (-1 if none)

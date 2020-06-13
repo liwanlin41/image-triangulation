@@ -266,8 +266,9 @@ TEST(ConstantTest, ClassTest) {
             c = temp;
         }
         Triangle triangle(&a, &b, &c);
+        vector<Point> vertices = {a, b, c};
         double gradX, gradY;
-        approx.gradient(triangle, a, &gradX, &gradY);
+        approx.gradient(triangle, vertices, 0, &gradX, &gradY);
         double gradApprox = gradX * vx + gradY * vy;
 
         // now compute central finite difference
