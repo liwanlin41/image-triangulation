@@ -55,7 +55,7 @@ class ConstantApprox {
         void run(int maxIter = 1000, double eps = 0.0001);
 
         // display image
-        void show();
+        CImg<unsigned char> show();
 };
 
 #endif
