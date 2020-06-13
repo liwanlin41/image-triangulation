@@ -90,7 +90,7 @@ double linearGradient(Triangle &triangle, Point &pt, double vx, double vy, vecto
     return gradApprox;
 }
 
-TEST(DerivativeTest, DISABLED_FixedTriangle) {
+TEST(DerivativeTest, FixedTriangle) {
     double vx = 2 * ((double) rand() / RAND_MAX) - 1;
     // pick unit vector
     double vy = pow((1 - vx * vx), 0.5);
@@ -118,7 +118,7 @@ TEST(DerivativeTest, DISABLED_FixedTriangle) {
     ASSERT_TRUE(abs(gradApprox - finiteDiff) < tolerance);
 }
 
-TEST(DerivativeTest, DISABLED_TriangleArea) {
+TEST(DerivativeTest, TriangleArea) {
     for(int i = 0; i < num_iter; i++) {
         // pick a random number from -1 to 1 for velocity
         double vx = 2 * ((double) rand() / RAND_MAX) - 1;
@@ -151,7 +151,7 @@ TEST(DerivativeTest, DISABLED_TriangleArea) {
 auto identity = [](double x, double y) {return 1.0;};
 
 // test broken case
-TEST(ConstantTest, DISABLED_Bugged) {
+TEST(ConstantTest, Bugged) {
     Point a(46.8693, 78.12); 
     Point b(14.6368, 45.3289); 
     Point c(42.7346, 73.5944);
@@ -174,7 +174,7 @@ TEST(ConstantTest, DISABLED_Bugged) {
     ASSERT_FLOAT_EQ(finiteApprox, gradApprox);
 }
 
-TEST(ConstantTest, DISABLED_FixedTriangle) {
+TEST(ConstantTest, FixedTriangle) {
     Point a(0,0);
     Point b(3,0);
     Point c(0,4);
@@ -244,7 +244,7 @@ TEST(ConstantTest, DISABLED_ConstantApproximation) {
 
 // test derivative for energy function with constant approximation
 // over a single triangle using ConstantApprox
-TEST(ConstantTest, DISABLED_ClassTest) {
+TEST(ConstantTest, ClassTest) {
     for(int i = 0; i < num_iter; i++) {
         cout << "iteration " << i << endl;
         // pick a random number from -1 to 1 for velocity directions
