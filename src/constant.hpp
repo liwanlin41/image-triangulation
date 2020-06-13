@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <map>
+#include <assert.h>
 #include "triangle.hpp"
 #include "lineIntegral.hpp"
 #include "doubleIntegral.hpp"
@@ -51,6 +52,9 @@ class ConstantApprox {
         // run the entire procedure for either maxIter iterations or until
         // largest gradient norm is at most eps
         void run(int maxIter = 10000, double eps = 0.001);
+
+        // check to ensure dictionary trianglesToPoints is referenced correctly
+        void crossCheck();
 };
 
 #endif

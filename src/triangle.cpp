@@ -2,6 +2,18 @@
 
 using namespace std;
 
+// custom rounding function to support needed pixel rounding
+int pixelRound(double x) {
+    int floor = (int) x;
+    if (abs(x - floor) <= 0.5) {
+        return floor;
+    }
+    else if (x > 0) {
+        return floor + 1;
+    }
+    return floor - 1;
+}
+
 Triangle::Triangle(Point *a, Point *b, Point *c) {
     vertices.push_back(a);
     vertices.push_back(b);
@@ -92,10 +104,10 @@ void Triangle::boundingBox(int &xMin, int &xMax, int &yMin, int &yMax) {
     double cx = vertices.at(2)->getX();
     double cy = vertices.at(2)->getY();
     // round to nearest to get pixel coords
-    xMin = round(min(ax, min(bx, cx)));
-    xMax = round(max(ax, max(bx, cx)));
-    yMin = round(min(ay, min(by, cy)));
-    yMax = round(max(ay, max(by, cy)));
+    xMin = pixelRound(min(ax, min(bx, cx)));
+    xMax = pixelRound(max(ax, max(bx, cx)));
+    yMin = pixelRound(min(ay, min(by, cy)));
+    yMax = pixelRound(max(ay, max(by, cy)));
 }
 
 vector<Point> Triangle::copyVertices() {

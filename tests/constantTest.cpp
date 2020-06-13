@@ -28,6 +28,11 @@ TEST(EnergyTest, Initial) {
     ASSERT_EQ(expectedEnergy, approx.computeEnergy());
 }
 
+TEST(GradientTest, Syntax) {
+    ConstantApprox approx(&image, 4, 0.5);
+    approx.computeGrad();
+}
+
 int main(int argc, char **argv) {
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
