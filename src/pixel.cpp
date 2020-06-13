@@ -146,6 +146,13 @@ double Pixel::intersectionLength(Segment &e, double *xVal, double *yVal) {
     if (intersections.size() < 2) {
         return 0;
     }
+    if (intersections.size() > 2) {
+        cout << "BAD POINTS\n";
+        for (Point pt : intersections) {
+            cout << pt << endl;
+        }
+        cout << "END BAD POINTS\n";
+    }
     assert(intersections.size() == 2);
     Segment contained(&intersections.at(0), &intersections.at(1));
     // check for null pointers, assign midpoint coords

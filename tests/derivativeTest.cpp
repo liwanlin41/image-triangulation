@@ -270,12 +270,12 @@ TEST(ConstantTest, ClassTest) {
         a.move(eps * vx, eps * vy);
         double futureImgInt = DoubleIntegral::evaluate(identity, &image, &triangle);
         double futureArea = triangle.getArea();
-        double futureEnergy = futureImgInt * futureImgInt / futureArea;
+        double futureEnergy = - futureImgInt * futureImgInt / futureArea;
 
         a.move(-2 * eps * vx, -2 * eps * vy);
         double pastImgInt = DoubleIntegral::evaluate(identity, &image, &triangle);
         double pastArea = triangle.getArea();
-        double pastEnergy = pastImgInt * pastImgInt / pastArea;
+        double pastEnergy = - pastImgInt * pastImgInt / pastArea;
 
         double finiteApprox = (futureEnergy - pastEnergy) / (2 * eps);
         if (abs(finiteApprox - gradApprox) > 0.1) {

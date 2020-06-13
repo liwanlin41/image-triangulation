@@ -25,7 +25,7 @@ vector<vector<Pixel>> generateFakeImage() {
     for(int i = 0; i < 100; i++) {
         vector<Pixel> column;
         for(int j = 0; j < 50; j++) {
-            int color = (i < 50 && j < 25) ? 0 : 1;
+            int color = (i < 50 && j < 25) ? 0 : 255;
             Pixel p(i, j, color);
             column.push_back(p);
         }
@@ -48,6 +48,8 @@ int main(int argc, char* argv[]) {
 	*/
 	vector<vector<Pixel>> image = generateFakeImage();
 	ConstantApprox approx(&image, 3, 0.5);
+	CImg<unsigned char> before = approx.show();
+	before.display("Before");
 	approx.run();
 	CImg<unsigned char> result = approx.show();
 	result.display("Result");

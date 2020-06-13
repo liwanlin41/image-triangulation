@@ -165,7 +165,7 @@ void ConstantApprox::gradient(Triangle &triangle, int movingPt, double *gradX, d
     double gradient[2];
     for(int j = 0; j < 2; j++) {
         gradient[j] = (2 * area * imageIntegral * boundaryChange[j]
-            - imageIntegral * imageIntegral * dA[j]) / (area * area);
+            - imageIntegral * imageIntegral * dA[j]) / (-area * area);
     }
     // check for null pointers
     if (gradX && gradY) {
@@ -175,6 +175,7 @@ void ConstantApprox::gradient(Triangle &triangle, int movingPt, double *gradX, d
 }
 
 bool ConstantApprox::gradUpdate() {
+    cout << "update called\n";
     // gradient descent update for each point
     for (Point &p : points) {
         // assert(gradX.find(&p) != gradX.end());
@@ -182,12 +183,16 @@ bool ConstantApprox::gradUpdate() {
     }
     // now check validity of result
     for (Triangle &t : triangles) {
-        if (t.getSignedArea() < 0) return false;
+        if (t.getSignedArea() < 0) {
+            cout << "bad " << t;
+            return false;
+        }
     }
     return true;
 }
 
 void ConstantApprox::undo() {
+    cout << "undo called\n";
     for (Point &p : points) {
         p.move(stepSize * gradX.at(&p), stepSize * gradY.at(&p));
     }
@@ -216,7 +221,8 @@ void ConstantApprox::run(int maxIter, double eps) {
     // initialize to something higher than newEnergy
     double prevEnergy = newEnergy + 100 * eps;
     int iterCount = 0;
-    while(iterCount < maxIter && (prevEnergy-newEnergy) < eps) {
+    while(iterCount < maxIter && prevEnergy-newEnergy > eps) {
+        cout << "iteration " << iterCount << endl;
         computeGrad();
         while(!gradUpdate()) {
             undo(); // keep halving stepSize until it works
@@ -224,24 +230,30 @@ void ConstantApprox::run(int maxIter, double eps) {
         updateApprox();
         prevEnergy = newEnergy;
         newEnergy = computeEnergy();
-        assert(newEnergy < prevEnergy);
+        cout << "new energy: " << newEnergy << endl;
+        cout << "old energy: " << prevEnergy << endl;
+        assert(newEnergy <= prevEnergy);
         iterCount++;
     }
 }
 
+/*
 CImg<unsigned char> ConstantApprox::show() {
     // if unassigned, fill with 0
     CImg<unsigned char> result(maxX, maxY, 1, 1, 0);
     for(Triangle &t : triangles) {
+        cout << t;
         int coords[6];
         for(int i = 0; i < 3; i++) {
             coords[2 * i] = customRound(t.vertices.at(i)->getX());
             coords[2 * i + 1] = customRound(t.vertices.at(i)->getY());
         }
         int approxColor = (int) approx.at(&t);
+        cout << "color: " << approxColor << endl;
         unsigned char color[] = {approxColor, approxColor, approxColor};
         result.draw_triangle(coords[0], coords[1], coords[2], coords[3],
             coords[4], coords[5], color, 1);
     }
     return result;
 }
+*/

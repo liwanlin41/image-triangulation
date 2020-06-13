@@ -54,8 +54,8 @@ class ConstantApprox {
         // change in energy is at most eps
         void run(int maxIter = 1000, double eps = 0.0001);
 
-        // display image
-        CImg<unsigned char> show();
+        // return image to be displayed
+        //CImg<unsigned char> show();
 };
 
 #endif
