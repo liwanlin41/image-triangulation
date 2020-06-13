@@ -18,7 +18,7 @@ using namespace std;
 class ConstantApprox {
     private:
         int maxX, maxY; // dimensions of image
-        double stepSize;
+        double stepSize; // size of gradient descent step
         vector<Point> corners; // corners of image
         vector<vector<Pixel>> *image; // image.at(x).at(y) is the pixel located at (x, y)
         vector<Point> points; // store movable vertices of triangulation
@@ -40,17 +40,20 @@ class ConstantApprox {
         // of the point with index movingPt
         void gradient(Triangle &t, int movingPt, double *gradX, double *gradY);
         // move points according to gradient values and
-        // return the index of the first point whose movement
-        // causes a triangle to invert (-1 if none)
-        int gradUpdate();
+        // return true if movement was successful, i.e. no triangle inverts
+        // under this process
+        bool gradUpdate();
         // in the case that a triangle inverts, undo all the
         // changes at this step and halve the stepSize
-        void undo(int ind);
+        void undo();
         // update approximation value for each triangle
         void updateApprox();
         // run the entire procedure for either maxIter iterations or until
-        // largest gradient norm is at most eps
-        void run(int maxIter = 10000, double eps = 0.001);
+        // change in energy is at most eps
+        void run(int maxIter = 1000, double eps = 0.0001);
+
+        // display image
+        void show();
 };
 
 #endif

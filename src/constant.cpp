@@ -162,13 +162,24 @@ void ConstantApprox::gradient(Triangle &triangle, int movingPt, double *gradX, d
     }
 }
 
-int ConstantApprox::gradUpdate() {
-    int badIndex = -1;
-    return badIndex;
+bool ConstantApprox::gradUpdate() {
+    // gradient descent update for each point
+    for (Point &p : points) {
+        // assert(gradX.find(&p) != gradX.end());
+        p.move(-stepSize * gradX.at(&p), -stepSize * gradY.at(&p));
+    }
+    // now check validity of result
+    for (Triangle &t : triangles) {
+        if (t.getSignedArea() < 0) return false;
+    }
+    return true;
 }
 
-void ConstantApprox::undo(int ind) {
-
+void ConstantApprox::undo() {
+    for (Point &p : points) {
+        p.move(stepSize * gradX.at(&p), stepSize * gradY.at(&p));
+    }
+    stepSize /= 2;
 }
 
 void ConstantApprox::updateApprox() {
@@ -188,5 +199,24 @@ void ConstantApprox::updateApprox() {
 }
 
 void ConstantApprox::run(int maxIter, double eps) {
+    // track change in energy for stopping point
+    double newEnergy = computeEnergy();
+    // initialize to something higher than newEnergy
+    double prevEnergy = newEnergy + 100 * eps;
+    int iterCount = 0;
+    while(iterCount < maxIter && (prevEnergy-newEnergy) < eps) {
+        computeGrad();
+        while(!gradUpdate()) {
+            undo(); // keep halving stepSize until it works
+        }
+        updateApprox();
+        prevEnergy = newEnergy;
+        newEnergy = computeEnergy();
+        assert(newEnergy < prevEnergy);
+        iterCount++;
+    }
+}
+
+void ConstantApprox::show() {
 
 }

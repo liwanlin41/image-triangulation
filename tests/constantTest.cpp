@@ -28,8 +28,14 @@ TEST(EnergyTest, Initial) {
     ASSERT_EQ(expectedEnergy, approx.computeEnergy());
 }
 
+// check that all the assertions hold
 TEST(GradientTest, Syntax) {
     approx.computeGrad();
+    approx.gradUpdate();
+}
+
+TEST(RunTest, Syntax) {
+    approx.run();
 }
 
 int main(int argc, char **argv) {
