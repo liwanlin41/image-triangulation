@@ -3,7 +3,6 @@
 using namespace std;
 
 ConstantApprox::ConstantApprox(vector<vector<Pixel>> *img, int n, double step) : image(img), stepSize(step){
-    cout << "constructor called\n";
     // recall img.at(x).at(y) is pixel (x, y)
     maxX = img->size();
     maxY = img->at(0).size();
@@ -66,14 +65,13 @@ ConstantApprox::ConstantApprox(vector<vector<Pixel>> *img, int n, double step) :
 
 double ConstantApprox::computeEnergy() {
     double energy = 0;
-    // iterate over pixels
-    for(int x = 0; x < maxX; x++) {
-        for(int y = 0; y < maxY; y++) {
-            // point to pixel being referenced
-            Pixel *p = &(image->at(x).at(y));
-            for(Triangle &t : triangles) {
-                // approximation is constant per pixel
-                double approxVal = approx[&t];
+    for(Triangle &t: triangles) {
+        double approxVal = approx[&t];
+        // compute by iterating over pixels
+        for(int x = 0; x < maxX; x++) {
+            for(int y = 0; y < maxY; y++) {
+                //point to pixel being referenced
+                Pixel *p = &(image->at(x).at(y));
                 double area = p->intersectionArea(t);
                 double diff = approxVal - (p->getColor());
                 energy += (diff * diff) * area;
