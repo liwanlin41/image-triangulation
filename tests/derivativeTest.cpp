@@ -260,29 +260,32 @@ TEST(ConstantTest, ClassTest) {
         Point b(random_coords[2], random_coords[3]);
         Point c(random_coords[4], random_coords[5]);
         // orientation
-        if (Triangle::getSignedArea(&a, &b, &c) < 0) {
-            Point temp = a;
-            a = c;
-            c = temp;
-        }
-        Triangle triangle(&a, &b, &c);
-        vector<Point> vertices = {a, b, c};
+        vector<Point*> vertices = {&a, &b, &c};
+        Triangle triangle(vertices);
         double gradX, gradY;
         approx.gradient(triangle, vertices, 0, &gradX, &gradY);
         double gradApprox = gradX * vx + gradY * vy;
 
         // now compute central finite difference
         a.move(eps * vx, eps * vy);
+        //cout << a << " after move one\n";
         double futureImgInt = DoubleIntegral::evaluate(identity, &image, &triangle);
         double futureArea = triangle.getArea();
         double futureEnergy = futureImgInt * futureImgInt / futureArea;
 
         a.move(-2 * eps * vx, -2 * eps * vy);
+        //cout << a << " after move two\n";
         double pastImgInt = DoubleIntegral::evaluate(identity, &image, &triangle);
         double pastArea = triangle.getArea();
         double pastEnergy = pastImgInt * pastImgInt / pastArea;
 
         double finiteApprox = (futureEnergy - pastEnergy) / (2 * eps);
+        if (abs(finiteApprox - gradApprox) > 0.1) {
+            cout << triangle;
+            for (Point *p : vertices) {
+                cout << *p << endl;
+            }
+        }
         ASSERT_FLOAT_EQ(finiteApprox, gradApprox);
     }
 }

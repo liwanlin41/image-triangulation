@@ -38,7 +38,7 @@ class ConstantApprox {
         // store gradient values in gradX, gradY of
         // energy over Triangle t (with provided vertices for space) of movement 
         // of the point with index movingPt
-        void gradient(Triangle &t, vector<Point> &vertices, int movingPt, double *gradX, double *gradY);
+        void gradient(Triangle &t, vector<Point*> &vertices, int movingPt, double *gradX, double *gradY);
         // move points according to gradient values and
         // return the index of the first point whose movement
         // causes a triangle to invert (-1 if none)
