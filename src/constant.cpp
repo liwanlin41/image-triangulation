@@ -75,13 +75,25 @@ double ConstantApprox::computeEnergy() {
     double energy = 0;
     for(Triangle &t: triangles) {
         double approxVal = approx[&t];
+        if (isnan(approxVal)) {
+            cout << t;
+            throw domain_error("broken");
+        }
         // compute by iterating over pixels
         for(int x = 0; x < maxX; x++) {
             for(int y = 0; y < maxY; y++) {
                 //point to pixel being referenced
                 Pixel *p = &(image->at(x).at(y));
                 double area = p->intersectionArea(t);
+                if (isnan(area)) {
+                    cout << "pixel " << x << ", " << y << endl;
+                    cout << "area: " << area << endl;
+                }
                 double diff = approxVal - (p->getColor());
+                if (isnan(diff)) {
+                    cout << "pixel " << x << ", " << y << endl;
+                    cout << "diff: " << diff << endl;
+                }
                 energy += (diff * diff) * area;
             }
         }
@@ -111,6 +123,9 @@ void ConstantApprox::computeGrad() {
                 gradient(t, i, &changeX, &changeY);
                 gradX[t.vertices.at(i)] += changeX;
                 gradY[t.vertices.at(i)] += changeY;
+                if (isnan(changeX)) {
+                    cout << "SOMETHING WRONG IN GRADIENT\n";
+                }
             }
         }
     }
@@ -162,10 +177,18 @@ void ConstantApprox::gradient(Triangle &triangle, int movingPt, double *gradX, d
     boundaryChange[0] = LineIntegral::evaluate(vnx, image, &triangle);
     // compute gradient in y direction
     boundaryChange[1] = LineIntegral::evaluate(vny, image, &triangle);
+    if (area < 0.00001) {
+        cout << triangle;
+        cout << "DIVIDING BY ZERO\n";
+    }
     double gradient[2];
     for(int j = 0; j < 2; j++) {
         gradient[j] = (2 * area * imageIntegral * boundaryChange[j]
             - imageIntegral * imageIntegral * dA[j]) / (-area * area);
+    }
+    if (isnan(gradient[0])) {
+        cout << "WRONG A\n";
+        cout << setprecision(16) << area << endl;
     }
     // check for null pointers
     if (gradX && gradY) {

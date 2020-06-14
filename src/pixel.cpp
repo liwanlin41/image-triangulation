@@ -123,8 +123,8 @@ double Pixel::intersectionLength(Segment &e, double *xVal, double *yVal) {
         if (side.intersects(e)) {
             Point intersectionPoint = side.getIntersection(e);
             bool isNewPoint = true; // whether this intersection is a new distinct point
-            for(Point pt : intersections) {
-                if (pt == intersectionPoint) {
+            for(Point &pt : intersections) {
+                if (approxEqual(pt, intersectionPoint)) {
                     isNewPoint = false;
                 }
             }
