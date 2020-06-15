@@ -30,8 +30,8 @@ ConstantApprox::ConstantApprox(vector<vector<Pixel>> *img, int n, double step) :
     // corners of image
     for(int i = 0; i < 2; i++) {
         for(int j = 0; j < 2; j++) {
-            Point pixelCorner(-0.5 + maxX * ((i+j)%2), -0.5 + maxY * i);
-            corners.push_back(pixelCorner);
+            Point pixelCorner(-0.5 + maxX * ((i+j)%2), -0.5 + maxY * i, true, true);
+            points.push_back(pixelCorner);
         }
     }
     for(int i = 0; i < n; i++) {
@@ -40,67 +40,96 @@ ConstantApprox::ConstantApprox(vector<vector<Pixel>> *img, int n, double step) :
     }
     // leave the one or two middle points to be set separately
     for(int i = 0; i < (n-2)/2.0; i++) {
-        Triangle upperLeft(&corners.at(0), &points.at(i), &points.at(i+1));
-        Triangle lowerLeft(&corners.at(3), &points.at(i), &points.at(i+1));
-        Triangle upperRight(&corners.at(1), &points.at(n-i-1), &points.at(n-i-2));
-        Triangle lowerRight(&corners.at(2), &points.at(n-i-1), &points.at(n-i-2));
+        Triangle upperLeft(&points.at(0), &points.at(i+4), &points.at(i+5));
+        Triangle lowerLeft(&points.at(3), &points.at(i+4), &points.at(i+5));
+        Triangle upperRight(&points.at(1), &points.at(n-i+3), &points.at(n-i+2));
+        Triangle lowerRight(&points.at(2), &points.at(n-i+3), &points.at(n-i+2));
         triangles.push_back(upperLeft);
         triangles.push_back(lowerLeft);
         triangles.push_back(upperRight);
         triangles.push_back(lowerRight);
+        /*
+        int uL[3] = {0, i+4, i+5};
+        int lL[3] = {3, i+4, i+5};
+        int uR[3] = {1, n-i+3, n-i+2};
+        int lR[3] = {2, n-i+3, n-i+2};
+        */
+        triangleInd.push_back({0, i+4, i+5});
+        triangleInd.push_back({3, i+4, i+5});
+        triangleInd.push_back({1, n-i+3, n-i+2});
+        triangleInd.push_back({2, n-i+3, n-i+2});
     }
     if (n % 2 == 0) {
-        Triangle upperLeft(&corners.at(0), &points.at((n-2)/2), &points.at(n/2));
-        Triangle upperTop(&corners.at(0), &corners.at(1), &points.at(n/2));
-        Triangle lowerBottom(&corners.at(2), &corners.at(3), &points.at((n-2)/2));
-        Triangle lowerRight(&corners.at(2), &points.at(n/2-1), &points.at(n/2));
+        Triangle upperLeft(&points.at(0), &points.at(n/2+3), &points.at(n/2+4));
+        Triangle upperTop(&points.at(0), &points.at(1), &points.at(n/2+4));
+        Triangle lowerBottom(&points.at(2), &points.at(3), &points.at(n/2+3));
+        Triangle lowerRight(&points.at(2), &points.at(n/2+3), &points.at(n/2+4));
         triangles.push_back(upperLeft);
         triangles.push_back(upperTop);
         triangles.push_back(lowerBottom);
         triangles.push_back(lowerRight);
+        /*
+        int uL[3] = {0, (n-2)/2+4, n/2+4};
+        int uT[3] = {0, 1, n/2+4};
+        int lB[3] = {2, 3, n/2+3};
+        int lR[3] = {2, n/2+3, n/2+4};
+        */
+        triangleInd.push_back({0, n/2+3, n/2+4});
+        triangleInd.push_back({0, 1, n/2+4});
+        triangleInd.push_back({2, 3, n/2+3});
+        triangleInd.push_back({2, n/2+3, n/2+4});
     } else {
-        Triangle upper(&corners.at(0), &corners.at(1), &points.at((n-1)/2));
-        Triangle lower(&corners.at(2), &corners.at(3), &points.at((n-1)/2));
+        Triangle upper(&points.at(0), &points.at(1), &points.at((n-1)/2+4));
+        Triangle lower(&points.at(2), &points.at(3), &points.at((n-1)/2+4));
         triangles.push_back(upper);
         triangles.push_back(lower);
+        // int up[3] = {0, 1, (n-1)/2+4};
+        // int lo[3] = {2, 3, (n-1)/2+4};
+        triangleInd.push_back({0, 1, (n-1)/2+4});
+        triangleInd.push_back({2, 3, (n-1)/2+4});
     }
-    Triangle left(&corners.at(0), &corners.at(3), &points.at(0));
-    Triangle right(&corners.at(1), &corners.at(2), &points.at(n-1));
+    Triangle left(&points.at(0), &points.at(3), &points.at(4));
+    Triangle right(&points.at(1), &points.at(2), &points.at(n+3));
     triangles.push_back(left);
     triangles.push_back(right);
+    // int le[3] = {0, 3, 4};
+    // int ri[3] = {1, 2, n+3};
+    triangleInd.push_back({0, 3, 4});
+    triangleInd.push_back({1, 2, n+3});
     // for testing: determine where these triangles actually are
     // compute initial approximation
     updateApprox();
-    // put corners in gradient vectors, even though these values won't be used
-    for(Point &cor : corners) {
-        gradX[&cor] = 0;
-        gradY[&cor] = 0;
-    }
 }
 
 double ConstantApprox::computeEnergy() {
     double energy = 0;
     for(Triangle &t: triangles) {
         double approxVal = approx[&t];
+        /*
         if (isnan(approxVal)) {
             cout << t;
             throw domain_error("broken");
         }
+        */
         // compute by iterating over pixels
         for(int x = 0; x < maxX; x++) {
             for(int y = 0; y < maxY; y++) {
                 //point to pixel being referenced
                 Pixel *p = &(image->at(x).at(y));
                 double area = p->intersectionArea(t);
+                /*
                 if (isnan(area)) {
                     cout << "pixel " << x << ", " << y << endl;
                     cout << "area: " << area << endl;
                 }
+                */
                 double diff = approxVal - (p->getColor());
+                /*
                 if (isnan(diff)) {
                     cout << "pixel " << x << ", " << y << endl;
                     cout << "diff: " << diff << endl;
                 }
+                */
                 energy += (diff * diff) * area;
             }
         }
@@ -243,7 +272,7 @@ void ConstantApprox::run(int maxIter, double eps) {
     // initialize to something higher than newEnergy
     double prevEnergy = newEnergy + 100 * eps;
     int iterCount = 0;
-    while(iterCount < maxIter && prevEnergy-newEnergy > eps) {
+    while(iterCount < maxIter && abs(prevEnergy-newEnergy) > eps) {
         cout << "iteration " << iterCount << endl;
         computeGrad();
         while(!gradUpdate()) {
@@ -265,6 +294,29 @@ void ConstantApprox::run(int maxIter, double eps) {
         cout << "step size: " << stepSize << endl;
         iterCount++;
     }
+}
+
+vector<Point> ConstantApprox::getVertices() {
+    return points;
+}
+
+vector<array<int,3>> ConstantApprox::getFaces() {
+    return triangleInd;
+}
+
+vector<array<double,3>> ConstantApprox::getColors() {
+    vector<array<double,3>> colors;
+    for(int i = 0; i < triangles.size(); i++) {
+        double approxColor = approx.at(&triangles.at(i));
+        // double grayScale[3] = {approxColor, approxColor, approxColor};
+        cout << approxColor << " on " << triangles.at(i);
+        colors.push_back({approxColor, approxColor, approxColor});
+        for(int ind : triangleInd[i]) {
+            cout << ind << " ";
+        }
+        cout << endl;
+    }
+    return colors;
 }
 
 /*

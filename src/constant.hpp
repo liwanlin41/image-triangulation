@@ -2,6 +2,7 @@
 #define constant_h
 
 #include <vector>
+#include <array>
 #include <map>
 #include <assert.h>
 #include "triangle.hpp"
@@ -21,13 +22,13 @@ class ConstantApprox {
     private:
         int maxX, maxY; // dimensions of image
         double stepSize; // size of gradient descent step
-        vector<Point> corners; // corners of image
         vector<vector<Pixel>> *image; // image.at(x).at(y) is the pixel located at (x, y)
-        vector<Point> points; // store movable vertices of triangulation
+        vector<Point> points; // store vertices of triangulation
         vector<Triangle> triangles; // store triangles of triangulation
         map<Point*, double> gradX; // map points to gradient x values
         map<Point*, double> gradY; // map points to gradient y values
         map<Triangle*, double> approx; // map triangles to approximation values
+        vector<array<int, 3>> triangleInd; // triangleInd[i] are the indices in points of vertices of triangles[i]
     public:
         // create a constant approximation triangulation on img with n+4 vertices
         // and a given gradient stepsize
@@ -54,8 +55,14 @@ class ConstantApprox {
         // change in energy is at most eps
         void run(int maxIter = 1000, double eps = 0.0001);
 
-        // return image to be displayed
-        //CImg<unsigned char> show();
+        // return data for image to be displayed
+        
+        // get points of triangulation
+        vector<Point> getVertices();
+        // get edges of triangulation as vertex indices
+        vector<array<int, 3>> getFaces();
+        // get colors for each triangle
+        vector<array<double,3>> getColors();
 };
 
 #endif
