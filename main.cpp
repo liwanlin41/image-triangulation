@@ -47,9 +47,39 @@ int main(int argc, char* argv[]) {
 	return 0;
 	*/
 	vector<vector<Pixel>> image = generateFakeImage();
-	ConstantApprox approx(&image, 4, 0.5);
+	ConstantApprox approx(&image, 4, 0.05);
 	CImg<unsigned char> before = approx.show();
 	before.display("Before");
+	// step by step runthrough
+	/*
+	double newEnergy = approx.computeEnergy();
+    // initialize to something higher than newEnergy
+	int maxIter = 1000;
+	double eps = 0.0001;
+    double prevEnergy = newEnergy + 100 * eps;
+    int iterCount = 0;
+    while(iterCount < maxIter && prevEnergy-newEnergy > eps) {
+        cout << "iteration " << iterCount << endl;
+        approx.computeGrad();
+        while(!approx.gradUpdate()) {
+            approx.undo(); // keep halving stepSize until it works
+        }
+        approx.updateApprox();
+        prevEnergy = newEnergy;
+        newEnergy = approx.computeEnergy();
+        while(newEnergy > prevEnergy) { // overshot optimum?
+            do {
+                approx.undo();
+            } while (!approx.gradUpdate());
+            approx.updateApprox();
+            newEnergy = approx.computeEnergy();
+        }
+        cout << "new energy: " << newEnergy << endl;
+        iterCount++;
+		CImg<unsigned char> result = approx.show();
+		result.display("Step");
+    }
+	*/
 	approx.run();
 	CImg<unsigned char> result = approx.show();
 	result.display("Result");

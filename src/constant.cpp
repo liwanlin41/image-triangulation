@@ -71,6 +71,11 @@ ConstantApprox::ConstantApprox(vector<vector<Pixel>> *img, int n, double step) :
     // for testing: determine where these triangles actually are
     // compute initial approximation
     updateApprox();
+    // put corners in gradient vectors, even though these values won't be used
+    for(Point &cor : corners) {
+        gradX[&cor] = 0;
+        gradY[&cor] = 0;
+    }
 }
 
 double ConstantApprox::computeEnergy() {
@@ -112,23 +117,10 @@ void ConstantApprox::computeGrad() {
     for (Triangle &t : triangles) {
         for(int i = 0; i < 3; i++) { // note: this may include image corners
             // which are immovable and are thus not in points
-            Point *ptr = t.vertices.at(i);
-            bool isCorner = false;
-            for(int j = 0; j < 4; j++) {
-                if (ptr == &corners.at(j)) {
-                    isCorner = true;
-                }
-            }
-            if (!isCorner) {
-                // assert(gradX.find(ptr) != gradX.end());
-                double changeX, changeY;
-                gradient(t, i, &changeX, &changeY);
-                gradX[t.vertices.at(i)] += changeX;
-                gradY[t.vertices.at(i)] += changeY;
-                if (isnan(changeX)) {
-                    cout << "SOMETHING WRONG IN GRADIENT\n";
-                }
-            }
+            double changeX, changeY;
+            gradient(t, i, &changeX, &changeY);
+            gradX[t.vertices.at(i)] += changeX;
+            gradY[t.vertices.at(i)] += changeY;
         }
     }
 }
@@ -188,10 +180,6 @@ void ConstantApprox::gradient(Triangle &triangle, int movingPt, double *gradX, d
                 - imageIntegral * imageIntegral * dA[j]) / (-area * area);
         }
     }
-    if (isnan(gradient[0])) {
-        cout << "WRONG A\n";
-        cout << setprecision(16) << area << endl;
-    }
     // check for null pointers
     if (gradX && gradY) {
         *gradX = gradient[0];
@@ -237,7 +225,7 @@ void ConstantApprox::updateApprox() {
         // handle degeneracy
         if (isnan(approxVal)) {
             assert(t.getArea() < tolerance);
-            approxVal = 0; // TODO: do something better than this            
+            approxVal = 255; // TODO: do something better than this            
         }
         approx[&t] = approxVal;
     }
@@ -266,7 +254,6 @@ void ConstantApprox::run(int maxIter, double eps) {
             newEnergy = computeEnergy();
         }
         cout << "new energy: " << newEnergy << endl;
-        cout << "old energy: " << prevEnergy << endl;
         iterCount++;
     }
 }

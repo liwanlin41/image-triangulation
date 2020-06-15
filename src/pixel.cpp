@@ -146,13 +146,6 @@ double Pixel::intersectionLength(Segment &e, double *xVal, double *yVal) {
     if (intersections.size() < 2) {
         return 0;
     }
-    if (intersections.size() > 2) {
-        cout << "BAD POINTS\n";
-        for (Point pt : intersections) {
-            cout << pt << endl;
-        }
-        cout << "END BAD POINTS\n";
-    }
     assert(intersections.size() == 2);
     Segment contained(&intersections.at(0), &intersections.at(1));
     // check for null pointers, assign midpoint coords
@@ -236,15 +229,6 @@ double Pixel::intersectionArea(Triangle &t, vector<Point> *polygon) {
         }
         // note a triangle can intersect a given side at most twice
         assert(sideIntersections.size() <= 2);
-        /*
-        if (sideIntersections.size() > 0) {
-            cout << "points of intersection\n";
-            for(Point inter : sideIntersections) {
-                cout << inter << endl;
-            }
-            cout << "end\n";
-        }
-        */
         // handle normal case where there is only one intersection with this side
         if (sideIntersections.size() == 1) {
             boundary.push_back(sideIntersections.at(0));

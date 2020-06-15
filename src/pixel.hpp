@@ -23,7 +23,7 @@ class Pixel {
         int getColor();
         // compute the length of the intersection of Segment e
         // with this pixel (may be 0); if x, y are given, store the coordinates
-        // of the midpoint of the segment in x, y
+        // of the midpoint of the segment in x, y; DOES NOT SET x, y if length is 0
         double intersectionLength(Segment &e, double *x = NULL, double *y = NULL);
         // return true if this pixel contains point p (p is inside or on the boundary)
         bool containsPoint(Point &p);
