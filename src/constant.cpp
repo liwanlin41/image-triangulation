@@ -246,6 +246,7 @@ void ConstantApprox::run(int maxIter, double eps) {
         updateApprox();
         prevEnergy = newEnergy;
         newEnergy = computeEnergy();
+        /*
         while(newEnergy > prevEnergy) { // overshot optimum?
             do {
                 undo();
@@ -253,11 +254,14 @@ void ConstantApprox::run(int maxIter, double eps) {
             updateApprox();
             newEnergy = computeEnergy();
         }
+        */
         cout << "new energy: " << newEnergy << endl;
+        cout << "step size: " << stepSize << endl;
         iterCount++;
     }
 }
 
+/*
 CImg<unsigned char> ConstantApprox::show() {
     // if unassigned, fill with 0
     CImg<unsigned char> result(maxX, maxY, 1, 1, 0);
@@ -274,5 +278,7 @@ CImg<unsigned char> ConstantApprox::show() {
         result.draw_triangle(coords[0], coords[1], coords[2], coords[3],
             coords[4], coords[5], color, 1);
     }
+    cout << "stepsize: " << stepSize << endl;
     return result;
 }
+*/

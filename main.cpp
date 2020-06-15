@@ -1,12 +1,13 @@
 #include <iostream>
 //#include <fstream>
-#define cimg_use_png 1
-#define cimg_use_jpg 1
-#include "CImg.h"
+//#define cimg_use_png 1
+//#define cimg_use_jpg 1
+//#include "CImg.h"
+#include "polyscope/polyscope.h"
 
 #include "constant.hpp"
 
-using namespace cimg_library;
+//using namespace cimg_library;
 
 const double RED_LUMINANCE = 0.2126;
 const double GREEN_LUMINANCE = 0.7152;
@@ -46,12 +47,13 @@ int main(int argc, char* argv[]) {
 	image.display("Image");
 	return 0;
 	*/
+    polyscope::init();
 	vector<vector<Pixel>> image = generateFakeImage();
 	ConstantApprox approx(&image, 4, 0.05);
+    /*
 	CImg<unsigned char> before = approx.show();
 	before.display("Before");
 	// step by step runthrough
-	/*
 	double newEnergy = approx.computeEnergy();
     // initialize to something higher than newEnergy
 	int maxIter = 1000;
@@ -79,9 +81,9 @@ int main(int argc, char* argv[]) {
 		CImg<unsigned char> result = approx.show();
 		result.display("Step");
     }
-	*/
 	approx.run();
 	CImg<unsigned char> result = approx.show();
 	result.display("Result");
+    */
 	return 0;
 }
