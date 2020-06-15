@@ -115,10 +115,16 @@ void ConstantApprox::computeGrad() {
         gradY[&p] = 0;
     }
     for (Triangle &t : triangles) {
-        for(int i = 0; i < 3; i++) { // note: this may include image corners
-            // which are immovable and are thus not in points
+        for(int i = 0; i < 3; i++) { 
             double changeX, changeY;
             gradient(t, i, &changeX, &changeY);
+            // constrain points on boundary of image
+            if(t.vertices.at(i)->isBorderX()) {
+                changeX = 0;
+            }
+            if(t.vertices.at(i)->isBorderY()) {
+                changeY = 0;
+            }
             gradX[t.vertices.at(i)] += changeX;
             gradY[t.vertices.at(i)] += changeY;
         }

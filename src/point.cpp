@@ -1,16 +1,26 @@
 #include "point.hpp"
 
-Point::Point(double _x, double _y) {
+Point::Point(double _x, double _y, bool border_x, bool border_y) {
     x = _x;
     y = _y;
+    borderX = border_x;
+    borderY = border_y;
 }
 
-double Point::getX() {
+double Point::getX() const {
     return x;
 }
 
-double Point::getY() {
+double Point::getY() const {
     return y;
+}
+
+bool Point::isBorderX() const {
+    return borderX;
+}
+
+bool Point::isBorderY() const {
+    return borderY;
 }
 
 double Point::distance(Point &other) {
