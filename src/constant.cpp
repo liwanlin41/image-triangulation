@@ -2,6 +2,8 @@
 
 using namespace std;
 
+double tolerance = 1e-10;
+
 // custom rounding function to support needed pixel rounding
 int customRound(double x) {
     int floor = (int) x;
@@ -168,23 +170,23 @@ void ConstantApprox::gradient(Triangle &triangle, int movingPt, double *gradX, d
     auto vny = [&vn](double x, double y) {
         return vn(x, y, false);
     };
-    // integral of fdA
-    double imageIntegral = DoubleIntegral::evaluate(identity, image, &triangle);
+    // to save time, only compute integrals if triangle is non-degenerate;
+    // degenerate triangle has 0 energy and is locally optimal, set gradient to 0
     double area = triangle.getArea();
-    double dA[2] = {triangle.gradX(triangle.vertices.at(movingPt)), triangle.gradY(triangle.vertices.at(movingPt))};
-    double boundaryChange[2];
-    // compute gradient in x direction
-    boundaryChange[0] = LineIntegral::evaluate(vnx, image, &triangle);
-    // compute gradient in y direction
-    boundaryChange[1] = LineIntegral::evaluate(vny, image, &triangle);
-    if (area < 0.00001) {
-        cout << triangle;
-        cout << "DIVIDING BY ZERO\n";
-    }
-    double gradient[2];
-    for(int j = 0; j < 2; j++) {
-        gradient[j] = (2 * area * imageIntegral * boundaryChange[j]
-            - imageIntegral * imageIntegral * dA[j]) / (-area * area);
+    double gradient[2] = {0, 0};
+    if (area > tolerance) {
+        // integral of fdA
+        double imageIntegral = DoubleIntegral::evaluate(identity, image, &triangle);
+        double dA[2] = {triangle.gradX(triangle.vertices.at(movingPt)), triangle.gradY(triangle.vertices.at(movingPt))};
+        double boundaryChange[2];
+        // compute gradient in x direction
+        boundaryChange[0] = LineIntegral::evaluate(vnx, image, &triangle);
+        // compute gradient in y direction
+        boundaryChange[1] = LineIntegral::evaluate(vny, image, &triangle);
+        for(int j = 0; j < 2; j++) {
+            gradient[j] = (2 * area * imageIntegral * boundaryChange[j]
+                - imageIntegral * imageIntegral * dA[j]) / (-area * area);
+        }
     }
     if (isnan(gradient[0])) {
         cout << "WRONG A\n";
