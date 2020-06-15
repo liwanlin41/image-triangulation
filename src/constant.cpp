@@ -307,14 +307,9 @@ vector<array<int,3>> ConstantApprox::getFaces() {
 vector<array<double,3>> ConstantApprox::getColors() {
     vector<array<double,3>> colors;
     for(int i = 0; i < triangles.size(); i++) {
-        double approxColor = approx.at(&triangles.at(i));
+        double approxColor = approx.at(&triangles.at(i))/127;
         // double grayScale[3] = {approxColor, approxColor, approxColor};
-        cout << approxColor << " on " << triangles.at(i);
         colors.push_back({approxColor, approxColor, approxColor});
-        for(int ind : triangleInd[i]) {
-            cout << ind << " ";
-        }
-        cout << endl;
     }
     return colors;
 }
