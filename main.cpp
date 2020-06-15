@@ -47,7 +47,7 @@ int main(int argc, char* argv[]) {
 	return 0;
 	*/
 	vector<vector<Pixel>> image = generateFakeImage();
-	ConstantApprox approx(&image, 3, 0.5);
+	ConstantApprox approx(&image, 4, 0.5);
 	CImg<unsigned char> before = approx.show();
 	before.display("Before");
 	approx.run();

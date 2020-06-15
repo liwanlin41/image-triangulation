@@ -200,7 +200,6 @@ void ConstantApprox::gradient(Triangle &triangle, int movingPt, double *gradX, d
 }
 
 bool ConstantApprox::gradUpdate() {
-    cout << "update called\n";
     // gradient descent update for each point
     for (Point &p : points) {
         // assert(gradX.find(&p) != gradX.end());
@@ -209,7 +208,6 @@ bool ConstantApprox::gradUpdate() {
     // now check validity of result
     for (Triangle &t : triangles) {
         if (t.getSignedArea() < 0) {
-            cout << "bad " << t;
             return false;
         }
     }
@@ -217,7 +215,6 @@ bool ConstantApprox::gradUpdate() {
 }
 
 void ConstantApprox::undo() {
-    cout << "undo called\n";
     for (Point &p : points) {
         p.move(stepSize * gradX.at(&p), stepSize * gradY.at(&p));
     }
@@ -236,7 +233,13 @@ void ConstantApprox::updateApprox() {
             }
         }
         // take average value
-        approx[&t] = (val / t.getArea());
+        double approxVal = val / t.getArea();
+        // handle degeneracy
+        if (isnan(approxVal)) {
+            assert(t.getArea() < tolerance);
+            approxVal = 0; // TODO: do something better than this            
+        }
+        approx[&t] = approxVal;
     }
 }
 
@@ -255,14 +258,19 @@ void ConstantApprox::run(int maxIter, double eps) {
         updateApprox();
         prevEnergy = newEnergy;
         newEnergy = computeEnergy();
+        while(newEnergy > prevEnergy) { // overshot optimum?
+            do {
+                undo();
+            } while (!gradUpdate());
+            updateApprox();
+            newEnergy = computeEnergy();
+        }
         cout << "new energy: " << newEnergy << endl;
         cout << "old energy: " << prevEnergy << endl;
-        assert(newEnergy <= prevEnergy);
         iterCount++;
     }
 }
 
-/*
 CImg<unsigned char> ConstantApprox::show() {
     // if unassigned, fill with 0
     CImg<unsigned char> result(maxX, maxY, 1, 1, 0);
@@ -281,4 +289,3 @@ CImg<unsigned char> ConstantApprox::show() {
     }
     return result;
 }
-*/
