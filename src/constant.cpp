@@ -228,23 +228,23 @@ void ConstantApprox::undo() {
 
 void ConstantApprox::updateApprox() {
     for(Triangle &t : triangles) {
-        cout << t;
+        // cout << t;
         double val = 0;
-        double A = 0;
         // compute total value of image by iterating over pixels
         for(int x = 0; x < maxX; x++) {
             for(int y = 0; y < maxY; y++) {
                 Pixel *p = &(image->at(x).at(y));
                 double area = p->intersectionArea(t);
-                A += area;
                 val += area * (p->getColor());
             }
         }
         // take average value
         double approxVal = val / t.getArea();
+        /*
         cout << approxVal << endl;
         cout << "area " << t.getArea() << endl;
         cout << "computed area " << A << endl;
+        */
         // handle degeneracy
         if (isnan(approxVal)) {
             assert(t.getArea() < tolerance);

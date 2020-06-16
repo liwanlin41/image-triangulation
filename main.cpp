@@ -28,8 +28,11 @@ double adaptorF_custom_accessVector2Value(const Point& p, unsigned int ind) {
     return -1.;
 }
 
-const int maxIter = 1000;
-const double eps = 0.001;
+int maxIter = 1000;
+double eps = 0.001;
+double prevEnergy = 100 * eps; // placeholder values
+double newEnergy = 0;
+int iterCount = 0;
 
 vector<vector<Pixel>> generateFakeImage() {
     vector<vector<Pixel>> image;
@@ -45,19 +48,74 @@ vector<vector<Pixel>> generateFakeImage() {
     return image;
 }
 
+// initialize needed objects
+vector<vector<Pixel>> image = generateFakeImage();
+ConstantApprox approx(&image, 4, 0.5);
+
+void initialize() {
+    auto triangulation = polyscope::registerSurfaceMesh2D("Triangulation", approx.getVertices(), approx.getFaces());
+    auto colors = triangulation->addFaceColorQuantity("approximate colors", approx.getColors());
+    // allow colors by default
+    colors->setEnabled(true);
+    // setup gradient descent
+    newEnergy = approx.computeEnergy();
+    // initialize to something higher than newEnergy
+    prevEnergy = newEnergy + 100 * eps;
+    iterCount = 0;
+}
+
+// run the triangulation process
+void step() {
+    if(iterCount < maxIter && prevEnergy - newEnergy > eps) {
+        cout << "iteration " << iterCount << endl;
+        approx.computeGrad();
+        while(!approx.gradUpdate()) {
+            approx.undo(); // keep halving stepSize until it works
+        }
+        approx.updateApprox();
+        prevEnergy = newEnergy;
+        newEnergy = approx.computeEnergy();
+        cout << "new energy: " << newEnergy << endl;
+        cout << "Step size: " << approx.getStep() << endl;
+        iterCount++;
+        auto triangulation = polyscope::getSurfaceMesh("Triangulation");
+        triangulation->updateVertexPositions2D(approx.getVertices());
+        triangulation->addFaceColorQuantity("approximate colors", approx.getColors());
+    } else {
+        polyscope::warning("done");
+    }
+}
+
+// callback function to play mesh updates on GUI
+void callback() {
+    ImGui::InputInt("max iterations", &maxIter); 
+    ImGui::InputDouble("stopping condition", &eps);  
+
+    if (ImGui::Button("Start")) {
+        initialize();
+    }
+    // run the triangulation
+    if (ImGui::Button("Step")) {
+        step();
+    }
+}
+
 // eventually input will be the path to an image file?
 int main(int argc, char* argv[]) {
     polyscope::init();
     polyscope::view::style = polyscope::view::NavigateStyle::Planar;
+    polyscope::state::userCallback = callback;
+    polyscope::show();
 
+    /*
 	vector<vector<Pixel>> image = generateFakeImage();
 	ConstantApprox approx(&image, 4, 0.5);
     auto triangulation = polyscope::registerSurfaceMesh2D("Triangulation", approx.getVertices(), approx.getFaces());
-    //auto colors = polyscope::getSurfaceMesh("Triangulation")->addFaceColorQuantity("approxiate colors", approx.getColors());
-    // auto colors = triangulation->addFaceColorQuantity("approximate colors", approx.getColors());
+    auto colors = triangulation->addFaceColorQuantity("approximate colors", approx.getColors());
     // allow colors by default
-    // colors->setEnabled(true);
-    // polyscope::show();
+    colors->setEnabled(true);
+    polyscope::show();
+    */
 
     /*
     // track change in energy for stopping point
@@ -82,11 +140,11 @@ int main(int argc, char* argv[]) {
         polyscope::draw();
     }
     */
+    /*
     approx.run();
     triangulation->updateVertexPositions2D(approx.getVertices());
-    auto colors = triangulation->addFaceColorQuantity("approximate colors", approx.getColors());
-    colors->setEnabled(true);
-    // polyscope::getSurfaceMesh("Triangulation")->addFaceColorQuantity("approximate colors", approx.getColors());
+    triangulation->addFaceColorQuantity("approximate colors", approx.getColors());
     polyscope::show();
+    */
 	return 0;
 }
