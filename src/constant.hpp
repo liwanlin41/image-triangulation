@@ -57,6 +57,7 @@ class ConstantApprox {
 
         // return data for image to be displayed
         
+        double getStep();
         // get points of triangulation
         vector<Point> getVertices();
         // get edges of triangulation as vertex indices

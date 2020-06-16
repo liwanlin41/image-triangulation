@@ -4,6 +4,20 @@
 
 using namespace std;
 
+vector<vector<Pixel>> generateFakeImage() {
+    vector<vector<Pixel>> image;
+    for(int i = 0; i < 100; i++) {
+        vector<Pixel> column;
+        for(int j = 0; j < 50; j++) {
+            int color = (i < 50 && j < 25) ? 0 : 255;
+            Pixel p(i, j, color);
+            column.push_back(p);
+        }
+        image.push_back(column);
+    }
+    return image;
+}
+
 TEST(LengthTest, NoIntersect){
     Pixel p(0,0, 255);
     Point a(1,1);
@@ -103,6 +117,43 @@ TEST(AreaTest, Bug) {
     Point c(10.25, 9.75);
     Triangle t(&a, &b, &c);
     ASSERT_EQ(0.5625, p.intersectionArea(t));
+}
+
+// reason for failure: very small parts of the triangle lie outside
+// the image and are not counted; in practice hopefully this
+// will not happen due to boundary points preventing movement outside
+TEST(AreaTest, Bug2) {
+    Point a(-0.5, -0.5);
+    Point b(58.2550236, -0.5000000000001);
+    Point c(40.53696033, 13.74525581);
+    vector<vector<Pixel>> img = generateFakeImage();
+    Triangle t(&a, &b, &c);
+    double area = 0;
+    for(int i = 0; i < img.size(); i++) {
+        for(int j = 0; j < img.at(0).size(); j++) {
+            Pixel p = img.at(i).at(j);
+            double A = p.intersectionArea(t);            
+            area += A;
+        }
+    }
+    ASSERT_FLOAT_EQ(t.getArea(), area);
+}
+
+TEST(AreaTest, Bug3) {
+    Point a(99.5, -0.5);
+    Point b(79.5, 14.57797241);
+    Point c(58.2550236, -0.5);
+    vector<vector<Pixel>> img = generateFakeImage();
+    Triangle t(&a, &b, &c);
+    double area = 0;
+    for(int i = 0; i < img.size(); i++) {
+        for(int j = 0; j < img.at(0).size(); j++) {
+            Pixel p = img.at(i).at(j);
+            double A = p.intersectionArea(t);
+            area += A;
+        }
+    }
+    ASSERT_FLOAT_EQ(t.getArea(), area);
 }
 
 int main(int argc, char **argv) {

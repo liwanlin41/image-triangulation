@@ -48,12 +48,6 @@ ConstantApprox::ConstantApprox(vector<vector<Pixel>> *img, int n, double step) :
         triangles.push_back(lowerLeft);
         triangles.push_back(upperRight);
         triangles.push_back(lowerRight);
-        /*
-        int uL[3] = {0, i+4, i+5};
-        int lL[3] = {3, i+4, i+5};
-        int uR[3] = {1, n-i+3, n-i+2};
-        int lR[3] = {2, n-i+3, n-i+2};
-        */
         triangleInd.push_back({0, i+4, i+5});
         triangleInd.push_back({3, i+4, i+5});
         triangleInd.push_back({1, n-i+3, n-i+2});
@@ -68,12 +62,6 @@ ConstantApprox::ConstantApprox(vector<vector<Pixel>> *img, int n, double step) :
         triangles.push_back(upperTop);
         triangles.push_back(lowerBottom);
         triangles.push_back(lowerRight);
-        /*
-        int uL[3] = {0, (n-2)/2+4, n/2+4};
-        int uT[3] = {0, 1, n/2+4};
-        int lB[3] = {2, 3, n/2+3};
-        int lR[3] = {2, n/2+3, n/2+4};
-        */
         triangleInd.push_back({0, n/2+3, n/2+4});
         triangleInd.push_back({0, 1, n/2+4});
         triangleInd.push_back({2, 3, n/2+3});
@@ -105,12 +93,6 @@ double ConstantApprox::computeEnergy() {
     double energy = 0;
     for(Triangle &t: triangles) {
         double approxVal = approx[&t];
-        /*
-        if (isnan(approxVal)) {
-            cout << t;
-            throw domain_error("broken");
-        }
-        */
         // compute by iterating over pixels
         for(int x = 0; x < maxX; x++) {
             for(int y = 0; y < maxY; y++) {
@@ -246,17 +228,23 @@ void ConstantApprox::undo() {
 
 void ConstantApprox::updateApprox() {
     for(Triangle &t : triangles) {
+        cout << t;
         double val = 0;
+        double A = 0;
         // compute total value of image by iterating over pixels
         for(int x = 0; x < maxX; x++) {
             for(int y = 0; y < maxY; y++) {
                 Pixel *p = &(image->at(x).at(y));
                 double area = p->intersectionArea(t);
+                A += area;
                 val += area * (p->getColor());
             }
         }
         // take average value
         double approxVal = val / t.getArea();
+        cout << approxVal << endl;
+        cout << "area " << t.getArea() << endl;
+        cout << "computed area " << A << endl;
         // handle degeneracy
         if (isnan(approxVal)) {
             assert(t.getArea() < tolerance);
@@ -296,6 +284,10 @@ void ConstantApprox::run(int maxIter, double eps) {
     }
 }
 
+double ConstantApprox::getStep() {
+    return stepSize;
+}
+
 vector<Point> ConstantApprox::getVertices() {
     return points;
 }
@@ -307,31 +299,11 @@ vector<array<int,3>> ConstantApprox::getFaces() {
 vector<array<double,3>> ConstantApprox::getColors() {
     vector<array<double,3>> colors;
     for(int i = 0; i < triangles.size(); i++) {
-        double approxColor = approx.at(&triangles.at(i))/127;
+        // scale to fit polyscope colors TODO: check that this is correct
+        double approxColor = approx.at(&triangles.at(i))/255;
         // double grayScale[3] = {approxColor, approxColor, approxColor};
         colors.push_back({approxColor, approxColor, approxColor});
+        cout << approxColor * 255 << " on " << triangles.at(i);
     }
     return colors;
 }
-
-/*
-CImg<unsigned char> ConstantApprox::show() {
-    // if unassigned, fill with 0
-    CImg<unsigned char> result(maxX, maxY, 1, 1, 0);
-    for(Triangle &t : triangles) {
-        cout << t;
-        int coords[6];
-        for(int i = 0; i < 3; i++) {
-            coords[2 * i] = customRound(t.vertices.at(i)->getX());
-            coords[2 * i + 1] = customRound(t.vertices.at(i)->getY());
-        }
-        int approxColor = (int) approx.at(&t);
-        cout << "color: " << approxColor << endl;
-        unsigned char color[] = {approxColor, approxColor, approxColor};
-        result.draw_triangle(coords[0], coords[1], coords[2], coords[3],
-            coords[4], coords[5], color, 1);
-    }
-    cout << "stepsize: " << stepSize << endl;
-    return result;
-}
-*/
