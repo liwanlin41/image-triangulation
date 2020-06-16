@@ -4,7 +4,7 @@
 // helper functions
 
 // determine whether two points are "essentially" equal (floating point error)
-bool approxEqual(Point &a, Point &b, double tolerance = 1e-12) {
+bool approxEqual(Point &a, Point &b, double tolerance = 1e-16) {
     return (a.distance(b) < tolerance);
 }
 
@@ -22,7 +22,7 @@ bool isCCW(vector<Point> &points) {
     Point centroid(centroidX, centroidY);
     for(int i = 0; i < n; i++) {
         if (Triangle::getSignedArea(&centroid, &points.at(i), &points.at((i+1)%n)) < 0) {
-            cout << points.at(i) << "--" << points.at((i+1)%n) << " is bad\n";
+            // cout << points.at(i) << "--" << points.at((i+1)%n) << " is bad\n";
             return false;
         }
     }
@@ -53,6 +53,7 @@ double shoelace(vector<Point> &points) {
             cout << pt << endl;
         }
         cout << "POINTS END" << endl;
+        cout << "AREA: " << area/2 << endl;
     }
     */
     assert(area >= 0);

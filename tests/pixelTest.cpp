@@ -119,13 +119,12 @@ TEST(AreaTest, Bug) {
     ASSERT_EQ(0.5625, p.intersectionArea(t));
 }
 
-// reason for failure: very small parts of the triangle lie outside
-// the image and are not counted; in practice hopefully this
-// will not happen due to boundary points preventing movement outside
+// bug here when err < the tolerance of pixel approxEqual
 TEST(AreaTest, Bug2) {
-    Point a(-0.5, -0.5);
-    Point b(58.2550236, -0.5000000000001);
-    Point c(40.53696033, 13.74525581);
+    double err = 1e-20;
+    Point a(-0.5, 0.5);
+    Point b(58.2550236, 0.5 - err);
+    Point c(40.53696033, 14.74525581);
     vector<vector<Pixel>> img = generateFakeImage();
     Triangle t(&a, &b, &c);
     double area = 0;
@@ -139,17 +138,41 @@ TEST(AreaTest, Bug2) {
     ASSERT_FLOAT_EQ(t.getArea(), area);
 }
 
+// for whatever reason, this fails but storing
+// values as the double values of 100.0/11, 200.0/11 
+// instead of the raw values works; currently no fix
+// (17.68181818, 49.5) (8.590909091, 49.5)
 TEST(AreaTest, Bug3) {
-    Point a(99.5, -0.5);
-    Point b(79.5, 14.57797241);
-    Point c(58.2550236, -0.5);
+    Point a(-0.5, -0.5);
+    double bx = 200.0/11 - 0.5;
+    double cx = 100.0/11 - 0.5;
+    cout << setprecision(30) << cx << endl;
+    Point b(bx, 49.5);
+    Point c(cx, 49.5);
     vector<vector<Pixel>> img = generateFakeImage();
     Triangle t(&a, &b, &c);
     double area = 0;
     for(int i = 0; i < img.size(); i++) {
         for(int j = 0; j < img.at(0).size(); j++) {
             Pixel p = img.at(i).at(j);
-            double A = p.intersectionArea(t);
+            double A = p.intersectionArea(t);            
+            area += A;
+        }
+    }
+    ASSERT_FLOAT_EQ(t.getArea(), area);
+}
+
+TEST(AreaTest, Bug3_5) {
+    Point a(-0.5, -0.5);
+    Point b(17.68181818181818181818181818, 49.5);
+    Point c(8.590909090909090909090909 - 0.5, 49.5);
+    vector<vector<Pixel>> img = generateFakeImage();
+    Triangle t(&a, &b, &c);
+    double area = 0;
+    for(int i = 0; i < img.size(); i++) {
+        for(int j = 0; j < img.at(0).size(); j++) {
+            Pixel p = img.at(i).at(j);
+            double A = p.intersectionArea(t);            
             area += A;
         }
     }
