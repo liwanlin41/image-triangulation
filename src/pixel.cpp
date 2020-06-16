@@ -4,7 +4,7 @@
 // helper functions
 
 // determine whether two points are "essentially" equal (floating point error)
-bool approxEqual(Point &a, Point &b, double tolerance = 1e-16) {
+bool approxEqual(Point &a, Point &b, double tolerance = 1e-12) {
     return (a.distance(b) < tolerance);
 }
 
@@ -146,6 +146,12 @@ double Pixel::intersectionLength(Segment &e, double *xVal, double *yVal) {
     }
     if (intersections.size() < 2) {
         return 0;
+    }
+    if(intersections.size() > 2) {
+        for(Point &p : intersections) {
+            cout << p << " ";
+        }
+        cout << endl;
     }
     assert(intersections.size() == 2);
     Segment contained(&intersections.at(0), &intersections.at(1));

@@ -19,73 +19,26 @@ int customRound(double x) {
 // identity lambda function
 auto identity = [](double x, double y) {return 1.0;};
 
-ConstantApprox::ConstantApprox(vector<vector<Pixel>> *img, int n, double step) : image(img), stepSize(step){
-    // recall img.at(x).at(y) is pixel (x, y)
+ConstantApprox::ConstantApprox(vector<vector<Pixel>> *img, vector<Point> *pts, vector<array<int, 3>> &inds, double step)
+    : image(img), points(pts), triangleInd(inds), stepSize(step) {
     maxX = img->size();
     maxY = img->at(0).size();
-    // for now, initialize triangulation using a horizontal line 
-    // of points across the middle of the image
-    double centerY = maxY / 2 - 0.5;
-    double distanceX = (double) maxX / (n+1);
-    // corners of image
-    for(int i = 0; i < 2; i++) {
-        for(int j = 0; j < 2; j++) {
-            Point pixelCorner(-0.5 + maxX * ((i+j)%2), -0.5 + maxY * i, true, true);
-            points.push_back(pixelCorner);
-        }
+    // create triangles
+    for(int i = 0; i < inds.size(); i++) {
+        Triangle t(&points->at(inds.at(i).at(0)), &points->at(inds.at(i).at(1)), &points->at(inds.at(i).at(2)));
+        triangles.push_back(t);
     }
-    for(int i = 0; i < n; i++) {
-        Point p(distanceX * (i+1) - 0.5, centerY);
-        points.push_back(p);
+    /*
+    cout << "POINT ADDRESSES\n";
+    for(Point &p : *points) {
+        cout << &p << endl;
     }
-    // leave the one or two middle points to be set separately
-    for(int i = 0; i < (n-2)/2.0; i++) {
-        Triangle upperLeft(&points.at(0), &points.at(i+4), &points.at(i+5));
-        Triangle lowerLeft(&points.at(3), &points.at(i+4), &points.at(i+5));
-        Triangle upperRight(&points.at(1), &points.at(n-i+3), &points.at(n-i+2));
-        Triangle lowerRight(&points.at(2), &points.at(n-i+3), &points.at(n-i+2));
-        triangles.push_back(upperLeft);
-        triangles.push_back(lowerLeft);
-        triangles.push_back(upperRight);
-        triangles.push_back(lowerRight);
-        triangleInd.push_back({0, i+4, i+5});
-        triangleInd.push_back({3, i+4, i+5});
-        triangleInd.push_back({1, n-i+3, n-i+2});
-        triangleInd.push_back({2, n-i+3, n-i+2});
+    cout << "END POINT ADDRESSES\nSTART TRIANGLE ADDRESSES\n";
+    for(Triangle &t : triangles) {
+        cout << t.vertices.at(0) << " " << t.vertices.at(1) << " " << t.vertices.at(2) << endl;
     }
-    if (n % 2 == 0) {
-        Triangle upperLeft(&points.at(0), &points.at(n/2+3), &points.at(n/2+4));
-        Triangle upperTop(&points.at(0), &points.at(1), &points.at(n/2+4));
-        Triangle lowerBottom(&points.at(2), &points.at(3), &points.at(n/2+3));
-        Triangle lowerRight(&points.at(2), &points.at(n/2+3), &points.at(n/2+4));
-        triangles.push_back(upperLeft);
-        triangles.push_back(upperTop);
-        triangles.push_back(lowerBottom);
-        triangles.push_back(lowerRight);
-        triangleInd.push_back({0, n/2+3, n/2+4});
-        triangleInd.push_back({0, 1, n/2+4});
-        triangleInd.push_back({2, 3, n/2+3});
-        triangleInd.push_back({2, n/2+3, n/2+4});
-    } else {
-        Triangle upper(&points.at(0), &points.at(1), &points.at((n-1)/2+4));
-        Triangle lower(&points.at(2), &points.at(3), &points.at((n-1)/2+4));
-        triangles.push_back(upper);
-        triangles.push_back(lower);
-        // int up[3] = {0, 1, (n-1)/2+4};
-        // int lo[3] = {2, 3, (n-1)/2+4};
-        triangleInd.push_back({0, 1, (n-1)/2+4});
-        triangleInd.push_back({2, 3, (n-1)/2+4});
-    }
-    Triangle left(&points.at(0), &points.at(3), &points.at(4));
-    Triangle right(&points.at(1), &points.at(2), &points.at(n+3));
-    triangles.push_back(left);
-    triangles.push_back(right);
-    // int le[3] = {0, 3, 4};
-    // int ri[3] = {1, 2, n+3};
-    triangleInd.push_back({0, 3, 4});
-    triangleInd.push_back({1, 2, n+3});
-    // for testing: determine where these triangles actually are
-    // compute initial approximation
+    cout << "END\n";
+    */
     updateApprox();
 }
 
@@ -121,7 +74,7 @@ double ConstantApprox::computeEnergy() {
 
 void ConstantApprox::computeGrad() {
     // clear gradients from last iteration
-    for (Point &p : points) {
+    for (Point &p : *points) {
         gradX[&p] = 0;
         gradY[&p] = 0;
     }
@@ -206,7 +159,7 @@ void ConstantApprox::gradient(Triangle &triangle, int movingPt, double *gradX, d
 
 bool ConstantApprox::gradUpdate() {
     // gradient descent update for each point
-    for (Point &p : points) {
+    for (Point &p : *points) {
         // assert(gradX.find(&p) != gradX.end());
         p.move(-stepSize * gradX.at(&p), -stepSize * gradY.at(&p));
     }
@@ -220,7 +173,7 @@ bool ConstantApprox::gradUpdate() {
 }
 
 void ConstantApprox::undo() {
-    for (Point &p : points) {
+    for (Point &p : *points) {
         p.move(stepSize * gradX.at(&p), stepSize * gradY.at(&p));
     }
     stepSize /= 2;
@@ -289,7 +242,7 @@ double ConstantApprox::getStep() {
 }
 
 vector<Point> ConstantApprox::getVertices() {
-    return points;
+    return *points;
 }
 
 vector<array<int,3>> ConstantApprox::getFaces() {
@@ -303,7 +256,7 @@ vector<array<double,3>> ConstantApprox::getColors() {
         double approxColor = approx.at(&triangles.at(i))/255;
         // double grayScale[3] = {approxColor, approxColor, approxColor};
         colors.push_back({approxColor, approxColor, approxColor});
-        cout << approxColor * 255 << " on " << triangles.at(i);
+        // cout << approxColor * 255 << " on " << triangles.at(i);
     }
     return colors;
 }

@@ -30,7 +30,7 @@ int getLuminance(CImg<unsigned char> *img, int x, int y) {
 double adaptorF_custom_accessVector2Value(const Point& p, unsigned int ind) {
     // reflect everything so that it displays correctly
     if (ind == 0) return -p.getX(); 
-    if (ind == 1) return -p.getY();
+    if (ind == 1) return p.getY();
     throw std::logic_error("bad access");
     return -1.;
 }
@@ -61,6 +61,7 @@ int main(int argc, char* argv[]) {
 		}
         pixVec.push_back(imCol);
 	}
+    cout << image.width() << " x " << image.height() << endl;
 
     // start matlab to get initial triangulation
     std::unique_ptr<MATLABEngine> matlabPtr = startMATLAB();
@@ -81,7 +82,7 @@ int main(int argc, char* argv[]) {
     // generate triangulation
     vector<matlab::data::Array> tArgs({
         img,
-        factory.createScalar<double>(0) // density TODO: figure out how to set this        
+        factory.createScalar<double>(0.1) // density TODO: figure out how to set this        
     });
     vector<matlab::data::Array> output = matlabPtr->feval(u"imtriangulate", 3, tArgs);
     // vertices of triangulation
@@ -104,20 +105,20 @@ int main(int argc, char* argv[]) {
     }
 
     // convert connections to vector<vector<int>>
-    vector<vector<int>> edges;
+    vector<array<int, 3>> edges;
     int f = triangleConnections.getDimensions().at(0); // number of triangles
     for(int i = 0; i < f; i++) {
-        vector<int> vertexInds;
+        array<int, 3> vertexInds;
         for(int j = 0; j < 3; j++) {
             // matlab is 1 indexed for some bizarre reason;
             // change back to zero indexing
             int ind = triangleConnections[i][j];
-            vertexInds.push_back(ind - 1);
+            vertexInds[j] = ind - 1;
         }
         edges.push_back(vertexInds);
     }
 
-    ConstantApprox approx(&pixVec, 4, 0.5);
+    ConstantApprox approx(&pixVec, &points, edges, 0.5);
 
     // lambda for initializing triangulation
     auto initialize = [&approx, &newEnergy, &prevEnergy, &eps, &iterCount]() {
@@ -134,7 +135,7 @@ int main(int argc, char* argv[]) {
 
     // lambda for running a step
     auto step = [&]() {
-        if(iterCount < maxIter && prevEnergy - newEnergy > eps) {
+        if(iterCount < maxIter && abs(prevEnergy - newEnergy) > eps) {
             cout << "iteration " << iterCount << endl;
             approx.computeGrad();
             while(!approx.gradUpdate()) {
@@ -143,6 +144,13 @@ int main(int argc, char* argv[]) {
             approx.updateApprox();
             prevEnergy = newEnergy;
             newEnergy = approx.computeEnergy();
+            if(newEnergy > prevEnergy) { // overshot optimum?
+                do {
+                    approx.undo();
+                } while (!approx.gradUpdate());
+                approx.updateApprox();
+                newEnergy = approx.computeEnergy();
+            }
             cout << "new energy: " << newEnergy << endl;
             cout << "Step size: " << approx.getStep() << endl;
             iterCount++;
