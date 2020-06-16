@@ -6,10 +6,12 @@
 #define cimg_use_jpg 1
 #include "CImg.h"
 #include "MatlabEngine.hpp"
+#include "MatlabDataArray.hpp"
 
 #include "constant.hpp"
 
 using namespace cimg_library;
+using namespace matlab::engine;
 
 
 const double RED_LUMINANCE = 0.2126;
@@ -35,6 +37,12 @@ double adaptorF_custom_accessVector2Value(const Point& p, unsigned int ind) {
 
 // eventually input will be the path to an image file?
 int main(int argc, char* argv[]) {
+    string imgPath;
+    if (argc >= 2) {
+        imgPath = argv[1];
+    } else {
+        imgPath = "../images/black_white.png"; // default image path
+    }
     int maxIter = 10;
     double eps = 0.001;
     double prevEnergy = 100 * eps; // placeholder values
@@ -53,6 +61,61 @@ int main(int argc, char* argv[]) {
 		}
         pixVec.push_back(imCol);
 	}
+
+    // start matlab to get initial triangulation
+    std::unique_ptr<MATLABEngine> matlabPtr = startMATLAB();
+    matlab::data::ArrayFactory factory;
+    // add path to TRIM code
+    vector<matlab::data::Array> genPathArgs({
+        factory.createCharArray("../deps/trim")
+    });
+    auto generatedPath = matlabPtr->feval(u"genpath",genPathArgs);
+    matlabPtr->feval(u"addpath", generatedPath);
+
+    // read image
+    vector<matlab::data::Array> pathToImage({
+        factory.createCharArray(imgPath)
+    });
+    auto img = matlabPtr->feval(u"imread", pathToImage);
+
+    // generate triangulation
+    vector<matlab::data::Array> tArgs({
+        img,
+        factory.createScalar<double>(0) // density TODO: figure out how to set this        
+    });
+    vector<matlab::data::Array> output = matlabPtr->feval(u"imtriangulate", 3, tArgs);
+    // vertices of triangulation
+    matlab::data::Array vertices = output.at(0);
+    matlab::data::Array triangleConnections = output.at(1);
+    int n = vertices.getDimensions().at(0); // number of points in triangulation
+
+    // initialize points of mesh
+    vector<Point> points;
+    for(int i = 0; i < n; i++) {
+        // note these are 1-indexed pixel values; will need
+        // to convert to usable points 
+        int x = vertices[i][0];
+        int y = vertices[i][1];
+        // determine whether this point lies on edge of image
+        bool isBorderX = (x == 1 || x == pixVec.size());
+        bool isBorderY = (y == 1 || y == pixVec.at(0).size());
+        Point p(x-1.5, y-1.5, isBorderX, isBorderY); // translate to coordinate system in this code
+        points.push_back(p);
+    }
+
+    // convert connections to vector<vector<int>>
+    vector<vector<int>> edges;
+    int f = triangleConnections.getDimensions().at(0); // number of triangles
+    for(int i = 0; i < f; i++) {
+        vector<int> vertexInds;
+        for(int j = 0; j < 3; j++) {
+            // matlab is 1 indexed for some bizarre reason;
+            // change back to zero indexing
+            vertexInds.push_back(triangleConnections[i][j] - 1);
+        }
+        edges.push_back(vertexInds);
+    }
+
     ConstantApprox approx(&pixVec, 4, 0.5);
 
     // lambda for initializing triangulation
