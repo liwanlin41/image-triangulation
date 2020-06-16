@@ -111,7 +111,8 @@ int main(int argc, char* argv[]) {
         for(int j = 0; j < 3; j++) {
             // matlab is 1 indexed for some bizarre reason;
             // change back to zero indexing
-            vertexInds.push_back(triangleConnections[i][j] - 1);
+            int ind = triangleConnections[i][j];
+            vertexInds.push_back(ind - 1);
         }
         edges.push_back(vertexInds);
     }
