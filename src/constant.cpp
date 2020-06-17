@@ -24,22 +24,15 @@ ConstantApprox::ConstantApprox(vector<vector<Pixel>> *img, vector<Point> *pts, v
     maxX = img->size();
     maxY = img->at(0).size();
     // create triangles
+    cout << "loading triangles... ";
     for(int i = 0; i < inds.size(); i++) {
         Triangle t(&points->at(inds.at(i).at(0)), &points->at(inds.at(i).at(1)), &points->at(inds.at(i).at(2)));
         triangles.push_back(t);
     }
-    /*
-    cout << "POINT ADDRESSES\n";
-    for(Point &p : *points) {
-        cout << &p << endl;
-    }
-    cout << "END POINT ADDRESSES\nSTART TRIANGLE ADDRESSES\n";
-    for(Triangle &t : triangles) {
-        cout << t.vertices.at(0) << " " << t.vertices.at(1) << " " << t.vertices.at(2) << endl;
-    }
-    cout << "END\n";
-    */
+    cout << "done\n";
+    cout << "initializing approximation..." << endl;
     updateApprox();
+    cout << "done\n";
 }
 
 double ConstantApprox::computeEnergy() {
@@ -181,7 +174,7 @@ void ConstantApprox::undo() {
 
 void ConstantApprox::updateApprox() {
     for(Triangle &t : triangles) {
-        // cout << t;
+        cout << t;
         double val = 0;
         // compute total value of image by iterating over pixels
         for(int x = 0; x < maxX; x++) {
