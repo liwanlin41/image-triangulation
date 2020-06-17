@@ -38,8 +38,13 @@ double adaptorF_custom_accessVector2Value(const Point& p, unsigned int ind) {
 // eventually input will be the path to an image file?
 int main(int argc, char* argv[]) {
     const char *imgPath = "../images/clouds.jpg";
+    double density = 0.005;
+    if (argc >= 2) {
+        density = atof(argv[1]);
+    }
+    cout << density << endl;
     /*
-    string imgPath;
+    // string imgPath;
     if (argc >= 2) {
         imgPath = argv[1];
     } else {
@@ -52,7 +57,7 @@ int main(int argc, char* argv[]) {
     double prevEnergy = 100 * eps; // placeholder values
     double newEnergy = 0;
     int iterCount = 0;
-    double density = 0.001; // TODO: figure out how to set this        
+    // double density = 0.005; // TODO: figure out how to set this        
 
     // take image input
     vector<vector<Pixel>> pixVec; // hold image pixels
@@ -150,7 +155,7 @@ int main(int argc, char* argv[]) {
         // allow colors by default
         colors->setEnabled(true);
         // setup gradient descent
-        cout << "finding energy... \t";
+        cout << "finding energy..." << endl;
         newEnergy = approx.computeEnergy();
         cout << "done\n";
         // initialize to something higher than newEnergy

@@ -174,7 +174,7 @@ void ConstantApprox::undo() {
 
 void ConstantApprox::updateApprox() {
     for(Triangle &t : triangles) {
-        cout << t;
+        // cout << t;
         double val = 0;
         // compute total value of image by iterating over pixels
         for(int x = 0; x < maxX; x++) {
