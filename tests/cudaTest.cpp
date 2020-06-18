@@ -3,6 +3,7 @@
 
 using namespace std;
 
+/*
 TEST(CudaTest, SumTest) {
     int size = pow(2, 18);
     double arr[size]; // try a large array; there is an upper bound
@@ -11,8 +12,14 @@ TEST(CudaTest, SumTest) {
         sum += i/2.0;
         arr[i] = i/2.0;
     }
-    double res = runSum(arr, size);
-    ASSERT_EQ(sum, res);
+    //double res = runSum(arr, size);
+    //ASSERT_EQ(sum, res);
+}
+*/
+
+TEST(CudaTest, SyntaxTest) {
+    double expected = 255;
+    ASSERT_EQ(expected, run());
 }
 
 int main(int argc, char **argv) {

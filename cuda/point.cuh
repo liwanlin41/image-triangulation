@@ -18,7 +18,7 @@ class Point {
 		// determine if point is on edge of image and thus cannot move
 		bool borderX, borderY;
 	public:
-		Point(double x, double y, bool borderX = false, bool borderY = false);
+		__host__ __device__ Point(double x, double y, bool borderX = false, bool borderY = false);
 		__host__ __device__ double getX() const;
 		__host__ __device__ double getY() const;
 		// return true if point was constructed on a vertical image edge

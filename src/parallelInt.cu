@@ -28,14 +28,14 @@ __global__ void sumBlock(double *arr, int size, double *result) {
 }
 
 // quickly sum an array with given size in parallel and return the result;
-// arr must already be shared between host and device 
-double sumArray(double *arr, int size) {
+// NOTE: arr, partialRes must already be shared between host and device 
+double sumArray(double *arr, int size, double *partialRes) {
 	int numThreads = 1024; // threads per block
 	// shared memory size for device
 	int memSize = numThreads * sizeof(double);
 	int numBlocks = (size + numThreads - 1) / numThreads;
-	double *partialRes; // block sums
-	cudaMallocManaged(&partialRes, numBlocks*sizeof(double));
+	// double *partialRes; // block sums
+	// cudaMallocManaged(&partialRes, numBlocks*sizeof(double));
 	sumBlock<<<numBlocks, numThreads, memSize>>>(arr, size, partialRes);
 	// number of elements to sum is now numBlocks
 	// number of blocks for next iteration
@@ -50,10 +50,32 @@ double sumArray(double *arr, int size) {
 	cudaDeviceSynchronize();
 	double output = partialRes[0];
 	// remember to free memory
-	cudaFree(partialRes);
+	// cudaFree(partialRes);
 	return output;
 }
 
+// compute double integral of func for a single pixel
+// pixArr is a 1D representation of image, where pixel (x,y) is at x * maxY + y
+// results holds the result for each pixel
+__global__ void pixDoubleInt(function<double(double, double)> func, Pixel *pixArr, int maxX, int maxY, Triangle *triangle, double *results) {
+	int x = blockIdx.x * blockDim.x + threadIdx.x;
+	int y = blockIdx.y * blockDim.y + threadIdx.y;
+	int ind = x * maxY + y; // index in pixArr
+	if(ind < maxX * maxY) { // check bounds
+		double area = pixArr[ind].intersectionArea(*triangle);
+		results[ind] = area;
+	}
+}
+
+double doubleIntEval(function<double(double, double)> func, Pixel *pixArr, int maxX, int maxY, Triangle *triArr, int numTri) {
+	return 0;
+}
+
+double constantEnergyEval(Pixel *pixArr, Triangle *triArr, map<Triangle*, double> colors) {
+	return 0;
+}
+
+/*
 double runSum(double *arr, int size) {
 	double *sharedArr;
 	cudaMallocManaged(&sharedArr, size*sizeof(double));
@@ -64,13 +86,39 @@ double runSum(double *arr, int size) {
 	cudaFree(sharedArr);
 	return sum;
 }
+*/
 
-double doubleIntEval(function<double(double, double)> func, vector<vector<Pixel>> *pixVec, Triangle *triangle) {
-	return 0;
-}
 
 double lineIntEval(function<double(double, double)> func, vector<vector<Pixel>> *pixVec, Triangle *triangle) {
 	return 0;
+}
+
+double run() {
+	Pixel *pixArr;
+	Triangle *triArr;
+	// dimensions of fake image
+	int maxX = 4;
+	int maxY = 3;
+	cudaMallocManaged(&pixArr, maxX * maxY *sizeof(Pixel));
+	cudaMallocManaged(&triArr, sizeof(Triangle));
+	for(int i = 0; i < maxX; i++) {
+		for(int j = 0; j < maxY; j++) {
+			pixArr[i*maxY + j] = Pixel(i, j, 255);
+		}
+	}
+	Point a(0,0);
+	Point b(2,0);
+	Point c(0,1);
+	Triangle t(&a, &b, &c);
+	triArr[0] = t;
+	
+	auto id = [](double x, double y) {
+		return 1;
+	};
+	double area = doubleIntEval(id, pixArr, maxX, maxY, triArr, 1);
+	cudaFree(pixArr);
+	cudaFree(triArr);
+	return area;
 }
 
 
