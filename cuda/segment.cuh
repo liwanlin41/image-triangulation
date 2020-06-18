@@ -13,6 +13,7 @@ class Segment {
 	private:
 		Point *endpoint1, *endpoint2;
 	public:
+		__device__ Segment(); // this just exists to create arrays
 		__device__ Segment(Point *a, Point *b);
 		__host__ __device__ double length();
 
@@ -31,6 +32,7 @@ class Segment {
 		// helper function that determines parameters at intersection point of e and f,
 		// storing as t1, t2; intersection is x0 * (t1 / det) + x1 * (1 - t1/det)
 		friend __device__ void parametrize(Segment &e, Segment &f, double *t1, double *t2, double *det);
+		friend class Pixel;
 };
 
 #endif 

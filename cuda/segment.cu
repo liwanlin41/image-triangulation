@@ -6,6 +6,8 @@ __device__ bool isBetween(const double &t, const double &a, const double &b) {
 	return (a <= t && t <= b) || (b <= t && t <= a);
 }
 
+__device__ Segment::Segment() {}
+
 __device__ Segment::Segment(Point *a, Point *b) : endpoint1(a), endpoint2(b) {}
 
 double Segment::length() {

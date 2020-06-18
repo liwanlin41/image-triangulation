@@ -1,5 +1,7 @@
 #include "point.cuh"
 
+Point::Point() {}
+
 Point::Point(double x_, double y_, bool border_x, bool border_y):
 	x(x_), y(y_), borderX(border_x), borderY(border_y) {}
 
