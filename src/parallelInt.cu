@@ -30,8 +30,7 @@ __global__ void sumBlock(double *arr, int size, double *result) {
 // quickly sum an array with given size in parallel and return the result;
 // arr must already be shared between host and device 
 double sumArray(double *arr, int size) {
-	// int numThreads = 1024; // threads per block
-	int numThreads = 16;
+	int numThreads = 1024; // threads per block
 	// shared memory size for device
 	int memSize = numThreads * sizeof(double);
 	int numBlocks = (size + numThreads - 1) / numThreads;
