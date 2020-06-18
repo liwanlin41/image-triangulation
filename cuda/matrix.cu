@@ -10,7 +10,7 @@ __device__ Matrix::Matrix(double *inputArr, int rows, int cols) :
 	}
 }
 
-__device__ Matrix::Matrix(double a, double b, double c, double d) {
+Matrix::Matrix(double a, double b, double c, double d) {
 	numRows = 2;
 	numCols = 2;
 	matrix = new double[4];
@@ -58,7 +58,7 @@ __device__ Matrix Matrix::multiply(Matrix &other) {
 	return result;
 }
 
-__device__ double Matrix::determinant() {
+double Matrix::determinant() {
 	return matrix[0] * matrix[3] - matrix[1] * matrix[2];
 }
 
@@ -83,6 +83,6 @@ __device__ Matrix Matrix::transpose() {
 	return result;
 }
 
-__device__ Matrix::~Matrix() {
+Matrix::~Matrix() {
 	delete[] matrix;
 }

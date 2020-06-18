@@ -16,11 +16,11 @@ class Matrix {
 		//__device__ Matrix(device_vector<double> const &inputVec, int rows, int cols);
 		__device__ Matrix(double *inputArr, int rows, int cols);
 		// special constructor for 2x2 matrix, creating the matrix [[a,b],[c,d]]
-		__device__ Matrix(double a, double b, double c, double d);
+		__host__ __device__ Matrix(double a, double b, double c, double d);
 		// special constructor for 2x1 vector matrix
 		__device__ Matrix(double a, double b);
 		
-		__device__ ~Matrix();
+		__host__ __device__ ~Matrix();
 
 		__device__ int getNumRows();
 		__device__ int getNumCols();
@@ -30,7 +30,7 @@ class Matrix {
 		__device__ Matrix multiply(Matrix &other);
 
 		// compute determinant of 2x2 matrix
-		__device__ double determinant();
+		__host__ __device__ double determinant();
 		// compute adjugate of 2x2 matrix
 		__device__ Matrix adjugate();
 		// compute inverse of 2x2 matrix
