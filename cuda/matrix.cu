@@ -85,3 +85,26 @@ Matrix Matrix::transpose() {
 Matrix::~Matrix() {
 	delete[] matrix;
 }
+
+Matrix::Matrix(const Matrix &m) {
+	numRows = m.numRows;
+	numCols = m.numCols;
+	matrix = new double[numRows * numCols];
+	for(int i = 0; i < numRows * numCols; i++) {
+		matrix[i] = m.matrix[i];
+	}
+}
+
+Matrix& Matrix::operator=(const Matrix &m) {
+	if (this != &m) {
+		numRows = m.numRows;
+		numCols = m.numCols;
+		double* newArray = new double[numRows * numCols];
+		for(int i = 0; i < numRows * numCols; i++) {
+			newArray[i] = m.matrix[i];
+		}
+		delete[] matrix;
+		matrix = newArray;
+	}
+	return *this;
+}

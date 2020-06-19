@@ -18,6 +18,11 @@ class Matrix {
 		__host__ __device__ Matrix(double a, double b, double c, double d);
 		// special constructor for 2x1 vector matrix
 		__host__ __device__ Matrix(double a, double b);
+
+		// copy constructor
+		__host__ __device__ Matrix(const Matrix &m);
+		// copy assignment
+		__host__ __device__ Matrix& operator=(const Matrix &m);
 		
 		__host__ __device__ ~Matrix();
 
