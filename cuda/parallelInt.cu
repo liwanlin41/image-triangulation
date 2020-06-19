@@ -1,4 +1,10 @@
-#include "parallelInt.h"
+#include "parallelInt.cuh"
+
+// thread setup
+int numThreadsX = 32;
+int numThreadsY = 32;
+dim3 threadsPerBlock(numThreadsX, numThreadsY);
+// NOTE: block grid will have to be set within each function
 
 // compute the sum of an array arr with given size, in parallel
 // with 1D thread/blocks, storing the result per block in result
@@ -34,8 +40,6 @@ double sumArray(double *arr, int size, double *partialRes) {
 	// shared memory size for device
 	int memSize = numThreads * sizeof(double);
 	int numBlocks = (size + numThreads - 1) / numThreads;
-	// double *partialRes; // block sums
-	// cudaMallocManaged(&partialRes, numBlocks*sizeof(double));
 	sumBlock<<<numBlocks, numThreads, memSize>>>(arr, size, partialRes);
 	// number of elements to sum is now numBlocks
 	// number of blocks for next iteration
@@ -49,50 +53,76 @@ double sumArray(double *arr, int size, double *partialRes) {
 	// at this point the array has been summed and the result is in partialRes[0]
 	cudaDeviceSynchronize();
 	double output = partialRes[0];
-	// remember to free memory
-	// cudaFree(partialRes);
 	return output;
 }
 
-// compute double integral of func for a single pixel
+// compute double integral of func for a single pixel and single triangle triArr[t]
 // pixArr is a 1D representation of image, where pixel (x,y) is at x * maxY + y
 // results holds the result for each pixel
-__global__ void pixDoubleInt(function<double(double, double)> func, Pixel *pixArr, int maxX, int maxY, Triangle *triangle, double *results) {
+__global__ void pixDoubleInt(nvstd::function<double(double, double)> &func, Pixel *pixArr, int &maxX, int &maxY, Triangle *triArr, int &t, double *results) {
 	int x = blockIdx.x * blockDim.x + threadIdx.x;
 	int y = blockIdx.y * blockDim.y + threadIdx.y;
 	int ind = x * maxY + y; // index in pixArr
 	if(ind < maxX * maxY) { // check bounds
-		double area = pixArr[ind].intersectionArea(*triangle);
-		results[ind] = area;
+		double integral = pixArr[ind].doubleIntegral(func, triArr[t]);
+		results[ind] = integral;
 	}
 }
 
-double doubleIntEval(function<double(double, double)> func, Pixel *pixArr, int maxX, int maxY, Triangle *triArr, int numTri) {
-	return 0;
+double doubleIntEval(nvstd::function<double(double, double)> func, Pixel *pixArr, int &maxX, int &maxY, Triangle *triArr, int &t, double *results) {
+	dim3 numBlocks((maxX + numThreadsX -1) / numThreadsX, (maxY + numThreadsY - 1) / numThreadsY);
+	// compute integral in parallel
+	pixDoubleInt<<<numBlocks, threadsPerBlock>>>(func, pixArr, maxX, maxY, triArr, t, results);
+	double answer = sumArray(results, maxX * maxY, results);
+	cudaDeviceSynchronize(); // wait for everything to finish
+	return answer;
 }
 
-double constantEnergyEval(Pixel *pixArr, Triangle *triArr, map<Triangle*, double> colors) {
-	return 0;
+// compute the energy of a single pixel on triangle triArr[t]
+__global__ void pixConstantEnergyInt(Pixel *pixArr, int &maxX, int &maxY, Triangle *triArr, double *colors, int &t, double *results) {
+	int x = blockIdx.x * blockDim.x + threadIdx.x;
+	int y = blockIdx.y * blockDim.y + threadIdx.y;
+	int ind = x * maxY + y; // index in pixArr;
+	if(ind < maxX * maxY) {
+		double area = pixArr[ind].intersectionArea(triArr[t]);
+		double diff = colors[t] - pixArr[ind].getColor();
+		results[ind] = diff * diff * area;
+	}
+}
+
+double constantEnergyEval(Pixel *pixArr, int &maxX, int &maxY, Triangle *triArr, double *colors, int &numTri, double *results) {
+	dim3 numBlocks((maxX + numThreadsX - 1) / numThreadsX, (maxY + numThreadsY - 1) / numThreadsY);
+	double totalEnergy = 0;
+	for(int t = 0; t < numTri; t++) {
+		pixConstantEnergyInt<<<numBlocks, threadsPerBlock>>>(pixArr, maxX, maxY, triArr, colors, t, results);
+		totalEnergy += sumArray(results, maxX * maxY, results); // add energy for this triangle
+	}
+	cudaDeviceSynchronize(); // wait to finish
+	return totalEnergy;
+}
+
+// compute the line integral contribution of a single pixel on triangle triArr[t]
+__global__ void pixLineInt(nvstd::function<double(double, double)> &func, Pixel *pixArr, int &maxX, int &maxY, Triangle *triArr, int &t, double *results) {
+	int x = blockIdx.x * blockDim.x + threadIdx.x;
+	int y = blockIdx.y * blockDim.y + threadIdx.y;
+	int ind = x * maxY + y;
+	if (ind < maxX * maxY) {
+		double integral = pixArr[ind].lineIntegral(func, triArr[t]);
+		results[ind] = integral;
+	}
+
+}
+
+double lineIntEval(nvstd::function<double(double, double)> func, Pixel *pixArr, int &maxX, int &maxY, Triangle *triArr, int &t, double *results) {
+	dim3 numBlocks((maxX + numThreadsX - 1) / numThreadsX, (maxY + numThreadsY - 1) / numThreadsY);
+	// integrate in parallel
+	pixLineInt<<<numBlocks, threadsPerBlock>>>(func, pixArr, maxX, maxY, triArr, t, results);
+	double answer = sumArray(results, maxX * maxY, results);
+	cudaDeviceSynchronize();
+	return answer;
 }
 
 /*
-double runSum(double *arr, int size) {
-	double *sharedArr;
-	cudaMallocManaged(&sharedArr, size*sizeof(double));
-	for(int i = 0; i < size; i++) {
-		sharedArr[i] = arr[i];
-	}
-	double sum = sumArray(sharedArr, size);
-	cudaFree(sharedArr);
-	return sum;
-}
-*/
-
-
-double lineIntEval(function<double(double, double)> func, vector<vector<Pixel>> *pixVec, Triangle *triangle) {
-	return 0;
-}
-
 double run() {
 	Pixel *pixArr;
 	Triangle *triArr;
@@ -120,6 +150,7 @@ double run() {
 	cudaFree(triArr);
 	return area;
 }
+*/
 
 
 
