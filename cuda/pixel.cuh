@@ -31,7 +31,10 @@ class Pixel {
 		// return approximate line integral contribution of this pixel when multiplied
 		// with integrand func (exact for func linear); in other words, integrate
 		// color times func over the subsegment of e lying in this pixel
-		__device__ double lineIntegral(nvstd::function<double(double, double)> func, Segment &e);
+		__device__ double lineIntegral(nvstd::function<double(double, double)> &func, Segment &e);
+
+		// approximate line integral contribution over a triangle
+		__device__ double lineIntegral(nvstd::function<double(double, double)> &func, Triangle &t);
 		
 		// compute area of the intersection of this pixel with Triangle t (may be 0);
 		// store the boundary of the intersection in polygon if available along
@@ -42,7 +45,7 @@ class Pixel {
 		// with integrand func; in other words, integrate color times func over the part
 		// of this pixel that lies inside triangle t;
 		// approximation by average value of x, y in intersection of pixel and triangle
-		__device__ double doubleIntegral(nvstd::function<double(double, double)> func, Triangle &t);
+		__device__ double doubleIntegral(nvstd::function<double(double, double)> &func, Triangle &t);
 };
 
 #endif
