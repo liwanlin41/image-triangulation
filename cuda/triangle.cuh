@@ -30,6 +30,9 @@ class Triangle {
 		// determine if triangle contains point p
 		__device__ bool contains(Point &p);
 
+		// get vertices of triangle, store in a, b, c
+		__device__ void copyVertices(Point *a, Point *b, Point *c);
+
 		// static signed area function
 		__host__ __device__ static double getSignedArea(Point *a, Point *b, Point *c);
 
