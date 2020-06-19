@@ -64,7 +64,7 @@ __device__ bool Triangle::contains(Point &p) {
 	return signs[0] == signs[1] && signs[1] == signs[2];
 }
 
-__device__ void Triangle::copyVertices(Point *ptrA, Point *ptrB, Point *ptrC) {
+void Triangle::copyVertices(Point *ptrA, Point *ptrB, Point *ptrC) {
 	*ptrA = *vertices[0];
 	*ptrB = *vertices[1];
 	*ptrC = *vertices[2];
