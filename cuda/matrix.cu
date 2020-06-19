@@ -1,7 +1,6 @@
 #include "matrix.cuh"
 
-//__device__ Matrix::Matrix(device_vector<double> const &inputVec, int rows, int cols) :
-__device__ Matrix::Matrix(double *inputArr, int rows, int cols) :
+Matrix::Matrix(double *inputArr, int rows, int cols) :
 	numRows(rows), numCols(cols) {
 	// defensive copy
 	matrix = new double[rows * cols];
@@ -20,7 +19,7 @@ Matrix::Matrix(double a, double b, double c, double d) {
 	matrix[3] = d;
 }
 
-__device__ Matrix::Matrix(double a, double b) {
+Matrix::Matrix(double a, double b) {
 	numRows = 2;
 	numCols = 1;
 	matrix = new double[2];
@@ -36,11 +35,11 @@ __device__ int Matrix::getNumCols() {
 	return numCols;
 }
 
-__device__ double Matrix::get(int i, int j) {
+double Matrix::get(int i, int j) {
 	return matrix[i * numCols + j];
 }
 
-__device__ Matrix Matrix::multiply(Matrix &other) {
+Matrix Matrix::multiply(Matrix &other) {
 	int rows = numRows;
 	int cols = other.numCols;
 	double *product = new double[rows * cols];
@@ -71,7 +70,7 @@ __device__ Matrix Matrix::inverse() {
 	return Matrix(matrix[3]/det, -matrix[1]/det, -matrix[2]/det, matrix[0]/det);
 }
 
-__device__ Matrix Matrix::transpose() {
+Matrix Matrix::transpose() {
 	double *transposeArr = new double[numRows * numCols];
 	for(int i = 0; i < numRows; i++) {
 		for(int j = 0; j < numCols; j++) {

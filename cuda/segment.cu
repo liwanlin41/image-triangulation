@@ -8,7 +8,7 @@ __device__ bool isBetween(const double &t, const double &a, const double &b) {
 
 __device__ Segment::Segment() {}
 
-__device__ Segment::Segment(Point *a, Point *b) : endpoint1(a), endpoint2(b) {}
+Segment::Segment(Point *a, Point *b) : endpoint1(a), endpoint2(b) {}
 
 double Segment::length() {
 	double x1 = endpoint1->getX();
@@ -73,7 +73,7 @@ __device__ Matrix Segment::unitNormal() {
 	return Matrix(unitY, -unitX);
 }
 
-__device__ Matrix Segment::scaledNormal() {
+Matrix Segment::scaledNormal() {
 	double deltaX = endpoint2->getX() - endpoint1->getX();
 	double deltaY = endpoint2->getY() - endpoint1->getY();
 	return Matrix(deltaY/2, -deltaX/2);

@@ -31,18 +31,12 @@ double Triangle::getArea() {
 	return signedArea;
 }
 
-__device__ double Triangle::dA(Point *p, double vx, double vy) {
+double Triangle::dA(int &p, double vx, double vy) {
 	// first extract the other two endpoints; note order matters
-	int index;
-	for(int i = 0; i < 3; i++) {
-		if(vertices[i] == p) {
-			index = i;
-		}
-	}
 	Point* edgePoints[2];
 	// retrieve in ccw order
-	edgePoints[0] = vertices[(index+1)%3];
-	edgePoints[1] = vertices[(index+2)%3];
+	edgePoints[0] = vertices[(p+1)%3];
+	edgePoints[1] = vertices[(p+2)%3];
 	// change is -velocity dot edge normal of length |e|/2
 	Segment opposite(edgePoints[0], edgePoints[1]);
 	Matrix velocity(vx, vy);
@@ -52,11 +46,11 @@ __device__ double Triangle::dA(Point *p, double vx, double vy) {
 	return -grad.get(0,0);
 }
 
-__device__ double Triangle::gradX(Point *p) {
+double Triangle::gradX(int &p) {
 	return dA(p, 1, 0);
 }
 
-__device__ double Triangle::gradY(Point *p) {
+double Triangle::gradY(int &p) {
 	return dA(p, 0, 1);
 }
 

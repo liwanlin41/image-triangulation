@@ -14,7 +14,7 @@ class Segment {
 		Point *endpoint1, *endpoint2;
 	public:
 		__device__ Segment(); // this just exists to create arrays
-		__device__ Segment(Point *a, Point *b);
+		__host__ __device__ Segment(Point *a, Point *b);
 		__host__ __device__ double length();
 
 		// return true if this segment intersects other in exactly one point
@@ -27,7 +27,7 @@ class Segment {
 		// going from endpoint 1 to endpoint 2
 		__device__ Matrix unitNormal();
 		// return the 2x1 normal to this segment that has length |segment|/2
-		__device__ Matrix scaledNormal();
+		Matrix scaledNormal();
 
 		// helper function that determines parameters at intersection point of e and f,
 		// storing as t1, t2; intersection is x0 * (t1 / det) + x1 * (1 - t1/det)

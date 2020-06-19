@@ -20,12 +20,12 @@ class Triangle {
 		// get signed area based on the order of vertices
 		// with ccw direction positive
 		__host__ __device__ double getSignedArea();
-		// get the change in area when the vertex *p is moving at velocity (vx, vy)
-		__device__ double dA(Point *p, double vx, double vy);
-		// get the gradient in the x direction for vertex *p
-		__device__ double gradX(Point *p);
-		// get the gradient in the y direction for vertex *p
-		__device__ double gradY(Point *p);
+		// get the change in area when the pth vertex is moving at velocity (vx, vy)
+		double dA(int &p, double vx, double vy);
+		// get the gradient in the x direction for pth vertex
+		double gradX(int &p);
+		// get the gradient in the y direction for pth vertex
+		double gradY(int &p);
 
 		// determine if triangle contains point p
 		__device__ bool contains(Point &p);

@@ -23,10 +23,10 @@ class Point {
 		__host__ __device__ double getX() const;
 		__host__ __device__ double getY() const;
 		// return true if point was constructed on a vertical image edge
-		__device__ bool isBorderX() const;
-		__device__ bool isBorderY() const;
+		bool isBorderX() const;
+		bool isBorderY() const;
 		__host__ __device__ double distance(Point &other);
-		__device__ void move(double deltaX, double deltaY);
+		void move(double deltaX, double deltaY);
 		__device__ bool operator==(const Point &other) const;
 		__device__ bool operator!=(const Point &other) const;
 

@@ -9,7 +9,7 @@ using namespace std;
 
 // parallelize integral computation
 
-// compute the double integral of func over triArr[t] in image represented by pixArr;
+// compute the double integral of func times image over triArr[t] in image represented by pixArr;
 // pixArr, results, triArr must already be shared between host and device
 // where results is created to avoid unnecessary memory allocation
 double doubleIntEval(nvstd::function<double(double, double)> func, Pixel *pixArr, int &maxX, int &maxY, Triangle *triArr, int &t, double *results);

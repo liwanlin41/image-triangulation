@@ -13,11 +13,11 @@ double Point::getY() const {
 	return y;
 }
 
-__device__ bool Point::isBorderX() const {
+bool Point::isBorderX() const {
 	return borderX;
 }
 
-__device__ bool Point::isBorderY() const {
+bool Point::isBorderY() const {
 	return borderY;
 }
 
@@ -27,7 +27,7 @@ double Point::distance(Point &other) {
 	return pow(deltaX * deltaX + deltaY * deltaY, 0.5);
 }
 
-__device__ void Point::move(double deltaX, double deltaY) {
+void Point::move(double deltaX, double deltaY) {
 	x += deltaX;
 	y += deltaY;
 }
