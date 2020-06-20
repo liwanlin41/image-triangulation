@@ -121,6 +121,7 @@ __device__ double Pixel::intersectionLength(Segment &e, double *xVal, double *yV
 	return contained.length();
 }
 
+/*
 __device__ double Pixel::lineIntegral(nvstd::function<double(double, double)> &func, Segment &e) {
 	double midX, midY;
 	double length = intersectionLength(e, &midX, &midY);
@@ -138,6 +139,7 @@ __device__ double Pixel::lineIntegral(nvstd::function<double(double, double)> &f
 	}
 	return total;
 }
+*/
 
 __device__ double Pixel::intersectionArea(Triangle &t, Point* polygon, int *size) {
 	int numPoints = 0; // track number of points in polygon
@@ -240,6 +242,7 @@ __device__ double Pixel::intersectionArea(Triangle &t, Point* polygon, int *size
     return shoelace(boundary, numPoints);
 }
 
+/*
 __device__ double Pixel::doubleIntegral(nvstd::function<double(double, double)> &func, Triangle &t) {
 	Point boundary[16]; // again, leave ample space
 	int size;
@@ -253,3 +256,4 @@ __device__ double Pixel::doubleIntegral(nvstd::function<double(double, double)> 
 	averageXY(&avgX, &avgY, boundary, size, center);
 	return func(avgX, avgY) * area * color;
 }
+*/

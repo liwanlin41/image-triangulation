@@ -8,7 +8,7 @@ add_subdirectory(src)
 
 set_target_properties(src PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 
-add_executable(CoarseTriangulation main.cu)
+add_executable(CoarseTriangulation main.cpp)
 #set_property(TARGET CoarseTriangulation PROPERTY CUDA_SEPARABLE_COMPILATION ON)
 
 # from https://stackoverflow.com/questions/38903996/

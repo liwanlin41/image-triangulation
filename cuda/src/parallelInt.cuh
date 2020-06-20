@@ -1,6 +1,5 @@
 #ifndef parallel_int_cuh
 #define parallel_int_cuh
-#include <nvfunctional>
 #include <assert.h>
 #include "pixel.cuh"
 #include "triangle.cuh"

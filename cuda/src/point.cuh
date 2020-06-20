@@ -1,6 +1,14 @@
 #ifndef point_cuh
 #define point_cuh
 
+#ifdef __CUDACC__
+#define CUDA_HOSTDEV __host__ __device__
+#define CUDA_DEV __device__
+#else
+#define CUDA_HOSTDEV
+#define CUDA_DEV
+#endif
+
 #include <math.h>
 #include <iostream>
 #include <iomanip>
@@ -18,17 +26,17 @@ class Point {
 		// determine if point is on edge of image and thus cannot move
 		bool borderX, borderY;
 	public:
-		__host__ __device__ Point();
-		__host__ __device__ Point(double x, double y, bool borderX = false, bool borderY = false);
-		__host__ __device__ double getX() const;
-		__host__ __device__ double getY() const;
+		CUDA_HOSTDEV Point();
+		CUDA_HOSTDEV Point(double x, double y, bool borderX = false, bool borderY = false);
+		CUDA_HOSTDEV double getX() const;
+		CUDA_HOSTDEV double getY() const;
 		// return true if point was constructed on a vertical image edge
 		bool isBorderX() const;
 		bool isBorderY() const;
-		__host__ __device__ double distance(Point &other);
+		CUDA_HOSTDEV double distance(Point &other);
 		void move(double deltaX, double deltaY);
-		__device__ bool operator==(const Point &other) const;
-		__device__ bool operator!=(const Point &other) const;
+		CUDA_DEV bool operator==(const Point &other) const;
+		CUDA_DEV bool operator!=(const Point &other) const;
 
 		friend ostream& operator<<(ostream& os, const Point &p);
 };

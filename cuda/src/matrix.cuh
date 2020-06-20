@@ -1,6 +1,14 @@
 #ifndef matrix_cuh
 #define matrix_cuh
 
+#ifdef __CUDACC__
+#define CUDA_HOSTDEV __host__ __device__
+#define CUDA_DEV __device__
+#else
+#define CUDA_HOSTDEV
+#define CUDA_DEV
+#endif
+
 /**
  * represent an immutable rectangular matrix of arbitrary size,
  * with special support for 2x2 matrices
@@ -13,35 +21,35 @@ class Matrix {
 	public:
 		// constructor assuming input vector is rectangular
 		//__device__ Matrix(device_vector<double> const &inputVec, int rows, int cols);
-		__host__ __device__ Matrix(double *inputArr, int rows, int cols);
+		CUDA_HOSTDEV Matrix(double *inputArr, int rows, int cols);
 		// special constructor for 2x2 matrix, creating the matrix [[a,b],[c,d]]
-		__host__ __device__ Matrix(double a, double b, double c, double d);
+		CUDA_HOSTDEV Matrix(double a, double b, double c, double d);
 		// special constructor for 2x1 vector matrix
-		__host__ __device__ Matrix(double a, double b);
+		CUDA_HOSTDEV Matrix(double a, double b);
 
 		// copy constructor
-		__host__ __device__ Matrix(const Matrix &m);
+		CUDA_HOSTDEV Matrix(const Matrix &m);
 		// copy assignment
-		__host__ __device__ Matrix& operator=(const Matrix &m);
+		CUDA_HOSTDEV Matrix& operator=(const Matrix &m);
 		
-		__host__ __device__ ~Matrix();
+		CUDA_HOSTDEV ~Matrix();
 
-		__device__ int getNumRows();
-		__device__ int getNumCols();
+		CUDA_DEV int getNumRows();
+		CUDA_DEV int getNumCols();
 		// return the element in row i, column j of the matrix
-		__host__ __device__ double get(int i, int j);
+		CUDA_HOSTDEV double get(int i, int j);
 		// return result of this times other for compatible matrices
-		__host__ __device__ Matrix multiply(Matrix &other);
+		CUDA_HOSTDEV Matrix multiply(Matrix &other);
 
 		// compute determinant of 2x2 matrix
-		__host__ __device__ double determinant();
+		CUDA_HOSTDEV double determinant();
 		// compute adjugate of 2x2 matrix
-		__device__ Matrix adjugate();
+		CUDA_DEV Matrix adjugate();
 		// compute inverse of 2x2 matrix
-		__device__ Matrix inverse();
+		CUDA_DEV Matrix inverse();
 	
 		// transpose a matrix of arbitrary dimension
-		__host__ __device__ Matrix transpose();
+		CUDA_HOSTDEV Matrix transpose();
 };
 
 #endif
