@@ -1,10 +1,40 @@
-# from https://stackoverflow.com/questions/3201154
-file(GLOB src_files "*.cpp" "*.cu")
-#add_library(src point.cpp segment.cpp matrix.cpp triangle.cpp)
-add_library(src ${src_files})
+cmake_minimum_required(VERSION 3.10)
+project(CoarseTriangulation LANGUAGES CXX CUDA)
 
-find_package(X11 REQUIRED)
-include_directories(${X11_INCLUDE_DIR})
-link_directories(${X11_LIBRARIES})
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-target_include_directories(src INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+add_subdirectory(src)
+
+set_target_properties(src PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+
+add_executable(CoarseTriangulation main.cu)
+#set_property(TARGET CoarseTriangulation PROPERTY CUDA_SEPARABLE_COMPILATION ON)
+
+# from https://stackoverflow.com/questions/38903996/
+# include png libraries
+find_package(PNG REQUIRED)
+include_directories(${PNG_INCLUDE_DIR})
+
+# include jpeg libraries
+find_package(JPEG REQUIRED)
+include_directories(${JPEG_INCLUDE_DIR})
+
+# include polyscope
+add_subdirectory(../deps/polyscope polyscope)
+
+# include matlab
+find_package(Matlab REQUIRED)
+include_directories("${Matlab_ROOT_DIR}/extern/include")
+
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
+target_link_libraries(CoarseTriangulation PUBLIC Threads::Threads)
+target_link_libraries(CoarseTriangulation PUBLIC ${PNG_LIBRARY})
+target_link_libraries(CoarseTriangulation PUBLIC ${JPEG_LIBRARY})
+target_link_libraries(CoarseTriangulation PUBLIC src)
+target_link_libraries(CoarseTriangulation PUBLIC polyscope)
+target_link_libraries(CoarseTriangulation PUBLIC ${Matlab_ROOT_DIR}/extern/bin/glnxa64/libMatlabEngine.so)
+target_link_libraries(CoarseTriangulation PUBLIC ${Matlab_ROOT_DIR}/extern/bin/glnxa64/libMatlabDataArray.so)
+
+target_include_directories(CoarseTriangulation PUBLIC "${PROJECT_BINARY_DIR}" "${PROJECT_SOURCE_DIR}/src")
