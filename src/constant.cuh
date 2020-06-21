@@ -22,7 +22,8 @@ class ConstantApprox {
 		int maxX, maxY; // dimensions of image
 		double stepSize; // size of gradient descent step
 		Pixel *pixArr; // pixel (x, y) is pixArr[x * maxY + y]
-		vector<Point> *points; // store vertices of triangulation
+		Point *points; // store vertices of triangulation
+		int numPoints;
 		Triangle *triArr; // store triangles of triangulation
 		int numTri; // number of triangles
 		map<Point*, double> gradX; // map points to gradient x values

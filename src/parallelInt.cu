@@ -65,8 +65,7 @@ __global__ void pixConstantDoubleInt(Pixel *pixArr, int maxX, int maxY, Triangle
 	int ind = x * maxY + y; // index in pixArr
 	if(ind < maxX * maxY) { // check bounds
 		double area = pixArr[ind].intersectionArea(triArr[t]);
-		printf("area is %d\n", 100);
-		//results[ind] = area * pixArr[ind].getColor();
+		results[ind] = area * pixArr[ind].getColor();
 	}
 }
 

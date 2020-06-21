@@ -189,7 +189,7 @@ __device__ double Pixel::intersectionArea(Triangle t, Point* polygon, int *size)
         }
         // determine intersections with side (i, i+1)
 		Point sideIntersections[2];
-		int intersectNum; // track index in sideIntersections
+		int intersectNum = 0; // track index in sideIntersections
         for(Segment e : triangleSides) {
             if (side.intersects(e)) {
                 Point intersectionPoint = side.getIntersection(e);
@@ -209,7 +209,16 @@ __device__ double Pixel::intersectionArea(Triangle t, Point* polygon, int *size)
                     }
                 }
             }
-        }
+		}
+		/*
+		if(intersectNum > 2) {
+			printf("INCORRECT INTERSECTION NUM: %d\n", intersectNum);
+			for(int k = 0; k < intersectNum; k++) {
+				printf("(%f, %f)\n", sideIntersections[k].getX(), sideIntersections[k].getY());
+			}
+			printf("END INCORRECT\n");
+		}
+		*/
         // note a triangle can intersect a given side at most twice
         assert(intersectNum <= 2);
         // handle normal case where there is only one intersection with this side

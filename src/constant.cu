@@ -27,7 +27,7 @@ int customRound(double x) {
 }
 
 ConstantApprox::ConstantApprox(CImg<unsigned char> *img, vector<Point> *pts, vector<array<int, 3>> &inds, double step) 
-: points(pts), stepSize(step) {
+: stepSize(step) {
 	// create pixel array representation
 	maxX = img->width();
 	maxY = img->height();
@@ -42,7 +42,16 @@ ConstantApprox::ConstantApprox(CImg<unsigned char> *img, vector<Point> *pts, vec
 			pixArr[x * maxY + y] = Pixel(x, y, color);
 		}
 	}
-	
+
+	// load in points of triangulation
+	numPoints = pts->size();
+	// allocate shared space for points
+	cudaMallocManaged(&points, numPoints * sizeof(Point));
+	// copy everything in TODO: make this more efficient (get directly from source)
+	for(int i = 0; i < numPoints; i++) {
+		points[i] = pts->at(i);
+	}
+
 	// now load in all the triangles
 	numTri = inds.size();
 	// allocate shared space for triangles and colors
@@ -50,7 +59,8 @@ ConstantApprox::ConstantApprox(CImg<unsigned char> *img, vector<Point> *pts, vec
 	cudaMallocManaged(&colors, numTri * sizeof(double));
 	for(int i = 0; i < numTri; i++) {
 		array<int, 3> t = inds.at(i); // vertex indices for this triangle
-		triArr[i] = Triangle(&points->at(t.at(0)), &points->at(t.at(1)), &points->at(t.at(2)));
+		// constructor takes point addresses
+		triArr[i] = Triangle(points + t.at(0), points + t.at(1), points + t.at(2));
 	}
 	// create an initial approximation based on this triangulation
 	updateApprox();
@@ -59,6 +69,7 @@ ConstantApprox::ConstantApprox(CImg<unsigned char> *img, vector<Point> *pts, vec
 ConstantApprox::~ConstantApprox() {
 	cudaFree(pixArr);
 	cudaFree(results);
+	cudaFree(points);
 	cudaFree(triArr);
 	cudaFree(colors);
 }
@@ -69,9 +80,9 @@ double ConstantApprox::computeEnergy() {
 
 void ConstantApprox::computeGrad() {
 	// clear gradients from last iteration
-	for(Point &p : *points) {
-		gradX[&p] = 0;
-		gradY[&p] = 0;
+	for(int i = 0; i < numPoints; i++) {
+		gradX[points + i] = 0;
+		gradY[points + i] = 0;
 	}
 	for(int i = 0; i < numTri; i++) {
 		for(int j = 0; j < 3; j++) {
@@ -118,8 +129,8 @@ void ConstantApprox::gradient(Triangle *triArr, int t, int movingPt, double *gra
 
 bool ConstantApprox::gradUpdate() {
 	// gradient descent update for each point
-	for(Point &p : *points) {
-		p.move(-stepSize * gradX.at(&p), -stepSize * gradY.at(&p));
+	for(int i = 0; i < numPoints; i++) {
+		points[i].move(-stepSize * gradX.at(points+i), -stepSize * gradY.at(points+i));
 	}
 	// check validity of result
 	for(int i = 0; i < numTri; i++) {
@@ -131,8 +142,8 @@ bool ConstantApprox::gradUpdate() {
 }
 
 void ConstantApprox::undo() {
-	for(Point &p : *points) {
-		p.move(stepSize * gradX.at(&p), stepSize * gradY.at(&p));
+	for(int i = 0; i < numPoints; i++) {
+		points[i].move(stepSize * gradX.at(points+i), stepSize * gradY.at(points+i));
 	}
 	stepSize /= 2;
 }
@@ -185,8 +196,13 @@ double ConstantApprox::getStep() {
 	return stepSize;
 }
 
+// inefficient
 vector<Point> ConstantApprox::getVertices() {
-	return *points;
+	vector<Point> vertices;
+	for(int i = 0; i < numPoints; i++) {
+		vertices.push_back(points[i]);
+	}
+	return vertices;
 }
 
 vector<array<double,3>> ConstantApprox::getColors() {
