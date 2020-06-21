@@ -46,7 +46,7 @@ class Pixel {
 		// compute area of the intersection of this pixel with Triangle t (may be 0);
 		// store the boundary of the intersection in polygon if available along
 		// with the size of the boundary
-		CUDA_DEV double intersectionArea(Triangle &t, Point* polygon = NULL, int* size = NULL);
+		CUDA_DEV double intersectionArea(Triangle t, Point* polygon = NULL, int* size = NULL);
 
 		// return approximate double integral contribution of this pixel when multiplied
 		// with integrand func; in other words, integrate color times func over the part

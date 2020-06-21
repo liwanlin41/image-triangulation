@@ -141,6 +141,7 @@ void ConstantApprox::updateApprox() {
 	for(int t = 0; t < numTri; t++) {
 		// compute image dA
 		double val = doubleIntEval(APPROXTYPE, pixArr, maxX, maxY, triArr, t, results);
+		cout << "value of " << val << " on " << triArr[t];;
 		// take average value
 		double approxVal = val / triArr[t].getArea();
 		// handle degeneracy

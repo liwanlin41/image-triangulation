@@ -8,23 +8,10 @@
 #include "MatlabEngine.hpp"
 #include "MatlabDataArray.hpp"
 
-#include "constant.hpp"
+#include "src/constant.cuh"
 
 using namespace cimg_library;
 using namespace matlab::engine;
-
-
-const double RED_LUMINANCE = 0.2126;
-const double GREEN_LUMINANCE = 0.7152;
-const double BLUE_LUMINANCE = 0.0722;
-
-// get the luminance at pixel (x, y) by standard luminance transformation
-int getLuminance(CImg<unsigned char> *img, int x, int y) {
-	int red_val = (int) (*img)(x, y, 0, 0);	
-	int green_val = (int) (*img)(x, y, 0, 1);
-	int blue_val = (int) (*img)(x, y, 0, 2);
-	return round(red_val * RED_LUMINANCE + green_val * GREEN_LUMINANCE + blue_val * BLUE_LUMINANCE);
-}
 
 // let polyscope read values from point
 double adaptorF_custom_accessVector2Value(const Point& p, unsigned int ind) {
@@ -42,14 +29,6 @@ int main(int argc, char* argv[]) {
     if (argc >= 2) {
         density = atof(argv[1]);
     }
-    /*
-    // string imgPath;
-    if (argc >= 2) {
-        imgPath = argv[1];
-    } else {
-        imgPath = "../images/tim.png"; // default image path
-    }
-    */
     // set default values
     int maxIter = 20;
     double eps = 0.001;
@@ -58,10 +37,9 @@ int main(int argc, char* argv[]) {
     int iterCount = 0;
     // double density = 0.005; // TODO: figure out how to set this        
 
-    // take image input
-    vector<vector<Pixel>> pixVec; // hold image pixels
-    // read image pixels
+    // create image to read pixels
     CImg<unsigned char> image(imgPath);
+    /*
     bool isGrayscale = (image.spectrum() == 1);
     cout << image.width() << " x " << image.height() << endl;
 	for(int x = 0; x < image.width(); x++) {
@@ -78,6 +56,7 @@ int main(int argc, char* argv[]) {
 		}
         pixVec.push_back(imCol);
 	}
+    */
 
     // start matlab to get initial triangulation
     std::unique_ptr<MATLABEngine> matlabPtr = startMATLAB();
@@ -117,8 +96,8 @@ int main(int argc, char* argv[]) {
         int x = vertices[i][0];
         int y = vertices[i][1];
         // determine whether this point lies on edge of image
-        bool isBorderX = (x == 1 || x == pixVec.size());
-        bool isBorderY = (y == 1 || y == pixVec.at(0).size());
+        bool isBorderX = (x == 1 || x == image.width());
+        bool isBorderY = (y == 1 || y == image.height());
         Point p(x-1.5, y-1.5, isBorderX, isBorderY); // translate to coordinate system in this code
         points.push_back(p);
     }
@@ -142,13 +121,13 @@ int main(int argc, char* argv[]) {
     cout << "done\n";
 
     cout << "Initializing mesh...\n";
-    ConstantApprox approx(&pixVec, &points, edges, 0.5);
+    ConstantApprox approx(&image, &points, edges, 0.5);
     cout << "ready\n";
 
     // lambda for initializing triangulation
-    auto initialize = [&approx, &newEnergy, &prevEnergy, &eps, &iterCount]() {
+    auto initialize = [&approx, &edges, &newEnergy, &prevEnergy, &eps, &iterCount]() {
         cout << "creating mesh\n";
-        auto triangulation = polyscope::registerSurfaceMesh2D("Triangulation", approx.getVertices(), approx.getFaces());
+        auto triangulation = polyscope::registerSurfaceMesh2D("Triangulation", approx.getVertices(), edges);
         cout << "getting colors\n";
         auto colors = triangulation->addFaceColorQuantity("approximate colors", approx.getColors());
         // allow colors by default

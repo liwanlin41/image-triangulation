@@ -141,7 +141,7 @@ __device__ double Pixel::lineIntegral(nvstd::function<double(double, double)> &f
 }
 */
 
-__device__ double Pixel::intersectionArea(Triangle &t, Point* polygon, int *size) {
+__device__ double Pixel::intersectionArea(Triangle t, Point* polygon, int *size) {
 	int numPoints = 0; // track number of points in polygon
 	Point boundary[16]; // there should only be max 10 points on the boundary,
 	// but allow some room for floating point error
