@@ -77,7 +77,7 @@ __device__ bool Pixel::containsPoint(Point &p) {
 
 __device__ double Pixel::intersectionLength(Segment &e, double *xVal, double *yVal) {
 	Point intersections[2]; // hold intersections
-	int numPts; // track number of intersection points detected thus far
+	int numPts = 0; // track number of intersection points detected thus far
 	for(int i = 0; i < 4; i++) {
 		// retrieve a side of the pixel; at most two will have an 
 		// intersection unless intersection is at corners
