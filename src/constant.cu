@@ -62,6 +62,9 @@ ConstantApprox::ConstantApprox(CImg<unsigned char> *img, vector<Point> *pts, vec
 		// constructor takes point addresses
 		triArr[i] = Triangle(points + t.at(0), points + t.at(1), points + t.at(2));
 	}
+	// create shared space for triangle iterations
+	cudaMallocManaged(&workingTriangle, 3 * sizeof(Triangle));
+
 	// create an initial approximation based on this triangulation
 	updateApprox();
 }
@@ -72,6 +75,7 @@ ConstantApprox::~ConstantApprox() {
 	cudaFree(points);
 	cudaFree(triArr);
 	cudaFree(colors);
+	cudaFree(workingTriangle);
 }
 
 double ConstantApprox::computeEnergy() {
@@ -87,7 +91,7 @@ void ConstantApprox::computeGrad() {
 	for(int i = 0; i < numTri; i++) {
 		for(int j = 0; j < 3; j++) {
 			double changeX, changeY;
-			gradient(triArr, i, j, &changeX, &changeY);
+			gradient(i, j, &changeX, &changeY);
 			// constrain points on boundary of image
 			if(triArr[i].vertices[j]->isBorderX()) {
 				changeX = 0;
@@ -101,7 +105,7 @@ void ConstantApprox::computeGrad() {
 	}
 }
 
-void ConstantApprox::gradient(Triangle *triArr, int t, int movingPt, double *gradX, double *gradY) {
+void ConstantApprox::gradient(int t, int movingPt, double *gradX, double *gradY) {
 	// to save time, only compute integrals if triangle is non-degenerate;
 	// degenerate triangle has 0 energy and is locally optimal, set gradient to 0
 	double area = triArr[t].getArea();
@@ -112,9 +116,9 @@ void ConstantApprox::gradient(Triangle *triArr, int t, int movingPt, double *gra
 		double dA[2] = {triArr[t].gradX(movingPt), triArr[t].gradY(movingPt)};
 		double boundaryChange[2];
 		// compute gradient in x direction
-		boundaryChange[0] = lineIntEval(APPROXTYPE, pixArr, maxX, maxY, triArr, t, movingPt, true, results);
+		boundaryChange[0] = lineIntEval(APPROXTYPE, pixArr, maxX, maxY, triArr, t, movingPt, true, results, workingTriangle);
 		// and in y direction
-		boundaryChange[1] = lineIntEval(APPROXTYPE, pixArr, maxX, maxY, triArr, t, movingPt, false, results);
+		boundaryChange[1] = lineIntEval(APPROXTYPE, pixArr, maxX, maxY, triArr, t, movingPt, false, results, workingTriangle);
 		for(int j = 0; j < 2; j++) {
 			gradient[j] = (2 * area * imageIntegral * boundaryChange[j]
 				- imageIntegral * imageIntegral * dA[j]) / (-area * area);
@@ -152,7 +156,6 @@ void ConstantApprox::updateApprox() {
 	for(int t = 0; t < numTri; t++) {
 		// compute image dA
 		double val = doubleIntEval(APPROXTYPE, pixArr, maxX, maxY, triArr, t, results);
-		cout << "value of " << val << " on " << triArr[t];;
 		// take average value
 		double approxVal = val / triArr[t].getArea();
 		// handle degeneracy
@@ -196,7 +199,7 @@ double ConstantApprox::getStep() {
 	return stepSize;
 }
 
-// inefficient
+// inefficient TODO: fix
 vector<Point> ConstantApprox::getVertices() {
 	vector<Point> vertices;
 	for(int i = 0; i < numPoints; i++) {

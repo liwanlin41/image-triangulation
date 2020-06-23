@@ -7,6 +7,8 @@
 #include "CImg.h"
 #include "MatlabEngine.hpp"
 #include "MatlabDataArray.hpp"
+#include <cuda.h>
+#include <cuda_runtime.h>
 
 #include "src/constant.cuh"
 
@@ -24,6 +26,42 @@ double adaptorF_custom_accessVector2Value(const Point& p, unsigned int ind) {
 
 // eventually input will be the path to an image file?
 int main(int argc, char* argv[]) {
+    /*
+    ApproxType APPROXTYPE = constant;
+    int MaxX = 4;
+    int MaxY = 5;
+    Pixel *PixArr;
+    double *results;
+    cudaMallocManaged(&PixArr, 20 * sizeof(Pixel));
+    cudaMallocManaged(&results, 20 * sizeof(double));
+    for(int i = 0; i < MaxX; i++) {
+        for(int j = 0; j < MaxY; j++) {
+            PixArr[MaxY*i+j] = Pixel(i,j,1);
+        }
+    }
+    Point *Points;
+    cudaMallocManaged(&Points, 3*sizeof(Point));
+    Points[0] = Point(0,0,true, true);
+    Points[1] = Point(3,0,true, true);
+    Points[2] = Point(0,4,true, true);
+    Triangle *tri;
+    Point *working;
+    cudaMallocManaged(&tri, sizeof(Triangle));
+    cudaMallocManaged(&working, 3*sizeof(Point));
+    tri[0] = Triangle(Points, Points+1, Points+2);
+    int t = 0;
+    int pt = 2;
+    double ans = lineIntEval(APPROXTYPE, PixArr, MaxX, MaxY, tri, t, pt, true, results, working);
+    cout << ans << endl;
+    double other = lineIntTest(APPROXTYPE, PixArr, MaxX, MaxY, tri, t, pt, true, results, working);
+    cout << other << endl;
+    cudaFree(PixArr);
+    cudaFree(results);
+    cudaFree(Points);
+    cudaFree(tri);
+    cudaFree(working);
+    */
+
     const char *imgPath = "../images/black_white.png";
     double density = 0.01;
     if (argc >= 2) {
@@ -39,24 +77,6 @@ int main(int argc, char* argv[]) {
 
     // create image to read pixels
     CImg<unsigned char> image(imgPath);
-    /*
-    bool isGrayscale = (image.spectrum() == 1);
-    cout << image.width() << " x " << image.height() << endl;
-	for(int x = 0; x < image.width(); x++) {
-        vector<Pixel> imCol; // column of image, but will be stored as row vector
-		for(int y = 0; y < image.height(); y++) {
-            int color;
-            if(isGrayscale) {
-                color = image(x, y);
-            } else {
-                color = getLuminance(&image, x, y);
-            }
-            Pixel pix(x, y, color);
-            imCol.push_back(pix);
-		}
-        pixVec.push_back(imCol);
-	}
-    */
 
     // start matlab to get initial triangulation
     std::unique_ptr<MATLABEngine> matlabPtr = startMATLAB();
@@ -135,7 +155,7 @@ int main(int argc, char* argv[]) {
         // setup gradient descent
         cout << "finding energy..." << endl;
         newEnergy = approx.computeEnergy();
-        cout << "done\n";
+        cout << "done, energy is " << newEnergy << endl;
         // initialize to something higher than newEnergy
         prevEnergy = newEnergy + 100 * eps;
         iterCount = 0;

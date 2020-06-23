@@ -1,5 +1,7 @@
 #include <gtest/gtest.h>
-#include "../src/parallelInt.h"
+#include <cuda.h>
+#include <cuda_runtime.h>
+#include "../src/parallelInt.cuh"
 
 using namespace std;
 
@@ -17,9 +19,38 @@ TEST(CudaTest, SumTest) {
 }
 */
 
-TEST(CudaTest, SyntaxTest) {
-    double expected = 255;
-    ASSERT_EQ(expected, run());
+TEST(LineTest, Triangle) {
+    ApproxType APPROXTYPE = constant;
+    int maxX = 5;
+    int maxY = 4;
+    Pixel *pixArr;
+    double *results;
+    cudaMallocManaged(&pixArr, 20 * sizeof(Pixel));
+    cudaMallocManaged(&results, 20 * sizeof(double));
+    for(int i = 0; i < 5; i++) {
+        for(int j = 0; j < 4; j++) {
+            pixArr[4*i+j] = Pixel(i,j,1);
+        }
+    }
+    Point *points;
+    cudaMallocManaged(&points, 3*sizeof(Point));
+    points[0] = Point(0,0,true, true);
+    points[1] = Point(4,0,true, true);
+    points[2] = Point(0,3,true, true);
+    Triangle *tri;
+    Point *working;
+    cudaMallocManaged(&tri, sizeof(Triangle));
+    cudaMallocManaged(&working, 3*sizeof(Point));
+    tri[0] = Triangle(points, points+1, points+2);
+    int t = 0;
+    int pt = 2;
+    double ans = lineIntEval(APPROXTYPE, pixArr, maxX, maxY, tri, t, pt, true, results, working);
+    EXPECT_EQ(0, ans);
+    cudaFree(pixArr);
+    cudaFree(results);
+    cudaFree(points);
+    cudaFree(tri);
+    cudaFree(working);
 }
 
 int main(int argc, char **argv) {

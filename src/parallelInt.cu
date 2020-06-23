@@ -1,7 +1,7 @@
 #include "parallelInt.cuh"
 
 // thread setup
-int numThreadsX = 16;
+int numThreadsX = 32;
 int numThreadsY = 16;
 dim3 threadsPerBlock(numThreadsX, numThreadsY);
 // NOTE: block grid will have to be set within each function
@@ -63,7 +63,7 @@ __global__ void pixConstantDoubleInt(Pixel *pixArr, int maxX, int maxY, Triangle
 	int x = blockIdx.x * blockDim.x + threadIdx.x;
 	int y = blockIdx.y * blockDim.y + threadIdx.y;
 	int ind = x * maxY + y; // index in pixArr
-	if(ind < maxX * maxY) { // check bounds
+	if(x < maxX && y < maxY) { // check bounds
 		double area = pixArr[ind].intersectionArea(triArr[t]);
 		results[ind] = area * pixArr[ind].getColor();
 	}
@@ -75,8 +75,6 @@ double doubleIntEval(ApproxType approx, Pixel *pixArr, int &maxX, int &maxY, Tri
 	switch (approx) {
 		case constant: {
 			pixConstantDoubleInt<<<numBlocks, threadsPerBlock>>>(pixArr, maxX, maxY, triArr, t, results);
-			cudaError_t cudaerr = cudaDeviceSynchronize();
-    		if (cudaerr != cudaSuccess) printf("kernel launch failed with error \"%s\".\n", cudaGetErrorString(cudaerr));
 			break;
 		}
 		case linear: // TODO: fill out
@@ -94,7 +92,7 @@ __global__ void pixConstantEnergyInt(Pixel *pixArr, int maxX, int maxY, Triangle
 	int x = blockIdx.x * blockDim.x + threadIdx.x;
 	int y = blockIdx.y * blockDim.y + threadIdx.y;
 	int ind = x * maxY + y; // index in pixArr;
-	if(ind < maxX * maxY) {
+	if(x < maxX && y < maxY) {
 		double area = pixArr[ind].intersectionArea(triArr[t]);
 		double diff = colors[t] - pixArr[ind].getColor();
 		results[ind] = diff * diff * area;
@@ -117,7 +115,7 @@ __global__ void pixConstantLineInt(Pixel *pixArr, int maxX, int maxY, Point *a, 
 	int x = blockIdx.x * blockDim.x + threadIdx.x;
 	int y = blockIdx.y * blockDim.y + threadIdx.y;
 	int ind = x * maxY + y;
-	if (ind < maxX * maxY) {
+	if (x < maxX && y < maxY) {
 		double answer = 0;
 		for(int i = 0; i < 2; i++) { // v dot n is nonzero only on a -- b and b -- c
 			// extract segment and maintain ccw order for outward normal
@@ -141,15 +139,19 @@ __global__ void pixConstantLineInt(Pixel *pixArr, int maxX, int maxY, Point *a, 
 	}
 }
 
-double lineIntEval(ApproxType approx, Pixel *pixArr, int &maxX, int &maxY, Triangle *triArr, int &t, int &pt, bool isX, double *results) {
+double lineIntEval(ApproxType approx, Pixel *pixArr, int &maxX, int &maxY, Triangle *triArr, int &t, int &pt, bool isX, double *results, Point *workingTri) {
 	dim3 numBlocks((maxX + numThreadsX - 1) / numThreadsX, (maxY + numThreadsY - 1) / numThreadsY);
-	Point vertices[3]; // vertices of triArr[t]
-	triArr[t].copyVertices(vertices, vertices+1, vertices+2);
+	triArr[t].copyVertices(workingTri, workingTri+1, workingTri+2);
 	// compute integral in parallel based on function to integrate
 	switch (approx) {
-		case constant:
-			pixConstantLineInt<<<numBlocks, threadsPerBlock>>>(pixArr, maxX, maxY, vertices + ((pt+2)%3), vertices + pt, vertices + ((pt+1)%3), isX, results);
+		case constant: {
+			pixConstantLineInt<<<numBlocks, threadsPerBlock>>>(pixArr, maxX, maxY, workingTri+((pt+2)%3), workingTri+pt, workingTri+((pt+1)%3), isX, results);
+			/*
+			cudaError_t cudaerr = cudaDeviceSynchronize();
+			if(cudaerr != cudaSuccess) printf("kernel line integral failed with error \"%s\".\n", cudaGetErrorString(cudaerr));
+			*/
 			break;
+		}
 		case linear: // TODO
 			break;
 		case quadratic: // TODO

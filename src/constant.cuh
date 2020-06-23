@@ -26,6 +26,7 @@ class ConstantApprox {
 		int numPoints;
 		Triangle *triArr; // store triangles of triangulation
 		int numTri; // number of triangles
+		Point *workingTriangle; // shared memory holder for points of triangle in line integral
 		map<Point*, double> gradX; // map points to gradient x values
 		map<Point*, double> gradY; // map points to gradient y values
 		double *colors; // colors[i] is the color of triangle triArr[i]
@@ -43,7 +44,7 @@ class ConstantApprox {
 		void computeGrad();
 		// store gradient values in gradX, gradY of energy over triangle triArr[t]
 		// of the point in t with index movingPt
-		void gradient(Triangle *triArr, int t, int movingPt, double *gradX, double *gradY);
+		void gradient(int t, int movingPt, double *gradX, double *gradY);
 		// move points according to gradient values and return true
 		// if movement was successful, i.e. no triangle inverts under the process
 		bool gradUpdate();
