@@ -1,3 +1,7 @@
 Averages per call
 
 6/23: pixDoubleInt 556ms; pixEnergyInt 550ms; pixLineInt 276ms; Pixel::intersectionArea 1.8ms which is the bulk of integration process
+
+6/24: intersecting all four sides of pixel with a segment takes 600us but intersecting all pixels takes 120ms; just creating the segments for intersection takes only 12us for all pixels though
+Significant speed increase: change segment intersection detection to avoid using Matrix class (which required dynamic allocation):
+New averages pixDoubleInt 83ms, pixEnergyInt 82ms, pixLineInt 1.1ms

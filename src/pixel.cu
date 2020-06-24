@@ -121,26 +121,6 @@ __device__ double Pixel::intersectionLength(Segment &e, double *xVal, double *yV
 	return contained.length();
 }
 
-/*
-__device__ double Pixel::lineIntegral(nvstd::function<double(double, double)> &func, Segment &e) {
-	double midX, midY;
-	double length = intersectionLength(e, &midX, &midY);
-	if (length == 0) {
-		return 0;
-	}
-	return func(midX, midY) * length * color;	
-}
-
-__device__ double Pixel::lineIntegral(nvstd::function<double(double, double)> &func, Triangle &t) {
-	double total = 0;
-	for(int i = 0; i < 3; i++) {
-		Segment seg(t.vertices[i], t.vertices[(i+1)%3]); // preserve orientation
-		total += lineIntegral(func, seg);
-	}
-	return total;
-}
-*/
-
 __device__ double Pixel::intersectionArea(Triangle t, Point* polygon, int *size) {
 	int numPoints = 0; // track number of points in polygon
 	Point boundary[16]; // there should only be max 10 points on the boundary,
@@ -250,19 +230,3 @@ __device__ double Pixel::intersectionArea(Triangle t, Point* polygon, int *size)
     }
     return shoelace(boundary, numPoints);
 }
-
-/*
-__device__ double Pixel::doubleIntegral(nvstd::function<double(double, double)> &func, Triangle &t) {
-	Point boundary[16]; // again, leave ample space
-	int size;
-	double area = intersectionArea(t, boundary, &size);
-	if (area == 0) {
-		return 0;
-	}
-	// approximate func by value at average x, average y
-	double avgX, avgY;
-	Point center(x, y);
-	averageXY(&avgX, &avgY, boundary, size, center);
-	return func(avgX, avgY) * area * color;
-}
-*/
