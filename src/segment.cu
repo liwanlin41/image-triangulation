@@ -45,26 +45,18 @@ __device__ void parametrize(Segment &e, Segment &f, double *t1, double *t2, doub
 	*det = determinant;
 }
 
-__device__ bool Segment::intersects(Segment &other) {
+__device__ bool Segment::intersection(Segment &other, Point *pt) {
 	double t1 = 0;
 	double t2 = 0;
 	double det = 0;
 	parametrize(*this, other, &t1, &t2, &det);
-	//return false;
-	if(det == 0) return false;
-	// otherwise need to check t1, t2 are both between 0 and determinant
-	return isBetween(t1, 0, det) && isBetween(t2, 0, det);
-}
-
-__device__ Point Segment::getIntersection(Segment &other) {
-	double t1 = 0;
-	double t2 = 0;
-	double det = 0;
-	parametrize(*this, other, &t1, &t2, &det);
-	double x = (endpoint1->getX() * t1 + endpoint2->getX() * (det - t1)) / det;
-	double y = (endpoint1->getY() * t1 + endpoint2->getY() * (det - t1)) / det;
-
-	return Point(x, y);
+	bool detect = (det != 0) && isBetween(t1, 0, det) && isBetween(t2, 0, det);
+	if(detect && pt) {
+		double x = (endpoint1->getX() * t1 + endpoint2->getX() * (det - t1)) / det;
+		double y = (endpoint1->getY() * t1 + endpoint2->getY() * (det - t1)) / det;
+		*pt = Point(x, y);
+	}
+	return detect;
 }
 
 __device__ Matrix Segment::unitNormal() {

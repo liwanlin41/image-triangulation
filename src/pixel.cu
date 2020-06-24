@@ -78,12 +78,13 @@ __device__ bool Pixel::containsPoint(Point &p) {
 __device__ double Pixel::intersectionLength(Segment &e, double *xVal, double *yVal) {
 	Point intersections[2]; // hold intersections
 	int numPts = 0; // track number of intersection points detected thus far
+	Point intersectionPoint; // hold current potential intersection point
 	for(int i = 0; i < 4; i++) {
 		// retrieve a side of the pixel; at most two will have an 
 		// intersection unless intersection is at corners
 		Segment side(&corners[i], &corners[(i+1)%4]);
-		if (side.intersects(e)) {
-			Point intersectionPoint = side.getIntersection(e);
+		bool collision = side.intersection(e, &intersectionPoint);
+		if (collision) {
 			bool isNewPoint = true; // whether this intersection is a new distinct point
 			for(int i = 0; i < numPts; i++) {
 				if(approxEqual(intersections[i], intersectionPoint)) {
@@ -170,9 +171,11 @@ __device__ double Pixel::intersectionArea(Triangle t, Point* polygon, int *size)
         // determine intersections with side (i, i+1)
 		Point sideIntersections[2];
 		int intersectNum = 0; // track index in sideIntersections
+		Point intersectionPoint; // track current intersection point
         for(Segment e : triangleSides) {
-            if (side.intersects(e)) {
-                Point intersectionPoint = side.getIntersection(e);
+			// true if intersection exists
+			bool collision = side.intersection(e, &intersectionPoint);
+			if (collision) {
                 // check to see if this point is already accounted for by corners
                 // or by triangle vertices; if it isn't exactly equal it won't contribute to area
                 // (and the lack of exact equality is likely due to floating point error)

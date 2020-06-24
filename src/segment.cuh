@@ -25,11 +25,11 @@ class Segment {
 		CUDA_HOSTDEV Segment(Point *a, Point *b);
 		CUDA_HOSTDEV double length();
 
-		// return true if this segment intersects other in exactly one point
-		CUDA_DEV bool intersects(Segment &other);
-		// return intersection point if this intersects other
-		// undefined behavior if intersection does not exist or if segments overlap with positive length
-		CUDA_DEV Point getIntersection(Segment &other);
+		// combine intersection determination and finding point of intersection;
+		// return true if this segment intersects other in exactly one point,
+		// store intersection point in pt if they intersect (undefined behavior if
+		// intersection does not exist or if segments overlap with positive length)
+		CUDA_DEV bool intersection(Segment &other, Point *pt = NULL);
 		
 		// return the 2x1 unit normal to this segment which lies on the right
 		// going from endpoint 1 to endpoint 2
