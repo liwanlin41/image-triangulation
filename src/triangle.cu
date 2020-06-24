@@ -19,8 +19,8 @@ double Triangle::getSignedArea() {
 	double by = vertices[1]->getY();
 	double cx = vertices[2]->getX();
 	double cy = vertices[2]->getY();
-	Matrix matrix(bx - ax, cx - ax, by - ay, cy - ay);
-	return matrix.determinant()/2;
+	// determinant of matrix [bx - ax, cx - ax, by - ay, cy - ay] / 2
+	return ((bx - ax) * (cy - ay) - (cx - ax) * (by - ay)) / 2;
 }
 
 double Triangle::getArea() {
