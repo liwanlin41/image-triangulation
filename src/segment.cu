@@ -21,7 +21,11 @@ double Segment::length() {
 __device__ void parametrize(Segment &e, Segment &f, double *t1, double *t2, double *det) {
 	// parametrize and represent as matrix equation to be solved: 
 	// t1 * x0 + (1-t1) * x1 = t2 * x2 + (1-t2) * x3
-    // (x0-x1) * t1 + (x3-x2) * t2 = x3 - x1
+	// (x0-x1) * t1 + (x3-x2) * t2 = x3 - x1
+
+	// note this originally was passed in to create a matrix
+	// but dynamic matrix memory allocation costs time;
+	// instead, use in this array form
 	double arr[4];
 	// first column (matches t1)
 	arr[0] = e.endpoint1->getX() - e.endpoint2->getX();
@@ -29,18 +33,16 @@ __device__ void parametrize(Segment &e, Segment &f, double *t1, double *t2, doub
 	// second column (matches t2)
 	arr[1] = f.endpoint2->getX() - f.endpoint1->getX();
 	arr[3] = f.endpoint2->getY() - f.endpoint1->getY();
-	// create 2x2 matrix
-	Matrix mat(arr, 2, 2);
 	
-	double determinant = mat.determinant();
-	Matrix adj = mat.adjugate();
+	double determinant = arr[0] * arr[3] - arr[1] * arr[2];
 	// target vector
-	Matrix target(f.endpoint2->getX() - e.endpoint2->getX(), f.endpoint2->getY() - e.endpoint2->getY());
-	// compute scaled solution 
-	Matrix result = adj.multiply(target);
+	double targX = f.endpoint2->getX() - e.endpoint2->getX();
+	double targY = f.endpoint2->getY() - e.endpoint2->getY();
+	// scaled solution is adjugate of arr multiplied by target
+	// adjugate is arr[3], -arr[1], -arr[2], arr[0]
+	*t1 = arr[3] * targX - arr[1] * targY;
+	*t2 = -arr[2] * targX + arr[0] * targY;
 	*det = determinant;
-	*t1 = result.get(0,0);
-	*t2 = result.get(1,0);
 }
 
 __device__ bool Segment::intersects(Segment &other) {
@@ -48,6 +50,7 @@ __device__ bool Segment::intersects(Segment &other) {
 	double t2 = 0;
 	double det = 0;
 	parametrize(*this, other, &t1, &t2, &det);
+	//return false;
 	if(det == 0) return false;
 	// otherwise need to check t1, t2 are both between 0 and determinant
 	return isBetween(t1, 0, det) && isBetween(t2, 0, det);
