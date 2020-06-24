@@ -1,0 +1,3 @@
+Averages per call
+
+6/23: pixDoubleInt 556ms; pixEnergyInt 550ms; pixLineInt 276ms; Pixel::intersectionArea 1.8ms which is the bulk of integration process

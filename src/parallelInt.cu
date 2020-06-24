@@ -146,10 +146,6 @@ double lineIntEval(ApproxType approx, Pixel *pixArr, int &maxX, int &maxY, Trian
 	switch (approx) {
 		case constant: {
 			pixConstantLineInt<<<numBlocks, threadsPerBlock>>>(pixArr, maxX, maxY, workingTri+((pt+2)%3), workingTri+pt, workingTri+((pt+1)%3), isX, results);
-			/*
-			cudaError_t cudaerr = cudaDeviceSynchronize();
-			if(cudaerr != cudaSuccess) printf("kernel line integral failed with error \"%s\".\n", cudaGetErrorString(cudaerr));
-			*/
 			break;
 		}
 		case linear: // TODO
