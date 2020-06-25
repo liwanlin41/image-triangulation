@@ -94,6 +94,7 @@ __global__ void pixConstantEnergyInt(Pixel *pixArr, int maxX, int maxY, Triangle
 	int ind = x * maxY + y; // index in pixArr;
 	if(x < maxX && y < maxY) {
 		double area = pixArr[ind].intersectionArea(triArr[t]);
+		//printf("area is %f\n", area);
 		double diff = colors[t] - pixArr[ind].getColor();
 		results[ind] = diff * diff * area;
 	}

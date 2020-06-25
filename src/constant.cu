@@ -31,6 +31,7 @@ ConstantApprox::ConstantApprox(CImg<unsigned char> *img, vector<Point> *pts, vec
 	// create pixel array representation
 	maxX = img->width();
 	maxY = img->height();
+	cout << "image is " << maxX << "x" << maxY << endl;
 	// allocate shared space for pixel array
 	cudaMallocManaged(&pixArr, maxX * maxY * sizeof(Pixel));
 	// create space for results, one slot per pixel

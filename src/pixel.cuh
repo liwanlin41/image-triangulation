@@ -35,24 +35,11 @@ class Pixel {
 		// return true if this pixel contains point p (inside or on the boundary)
 		CUDA_DEV bool containsPoint(Point &p);
 
-		// return approximate line integral contribution of this pixel when multiplied
-		// with integrand func (exact for func linear); in other words, integrate
-		// color times func over the subsegment of e lying in this pixel
-		// CUDA_DEV double lineIntegral(nvstd::function<double(double, double)> &func, Segment &e);
-
-		// approximate line integral contribution over a triangle
-		// CUDA_DEV double lineIntegral(nvstd::function<double(double, double)> &func, Triangle &t);
-		
 		// compute area of the intersection of this pixel with Triangle t (may be 0);
 		// store the boundary of the intersection in polygon if available along
 		// with the size of the boundary
 		CUDA_DEV double intersectionArea(Triangle t, Point* polygon = NULL, int* size = NULL);
-
-		// return approximate double integral contribution of this pixel when multiplied
-		// with integrand func; in other words, integrate color times func over the part
-		// of this pixel that lies inside triangle t;
-		// approximation by average value of x, y in intersection of pixel and triangle
-		// CUDA_DEV double doubleIntegral(nvstd::function<double(double, double)> &func, Triangle &t);
+		//CUDA_DEV double intersectionArea(Triangle t);
 };
 
 #endif
