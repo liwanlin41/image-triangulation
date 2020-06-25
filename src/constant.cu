@@ -63,6 +63,7 @@ ConstantApprox::ConstantApprox(CImg<unsigned char> *img, vector<Point> *pts, vec
 		// constructor takes point addresses
 		triArr[i] = Triangle(points + t.at(0), points + t.at(1), points + t.at(2));
 	}
+	imageInt = new double[numTri];
 	// create shared space for triangle iterations
 	cudaMallocManaged(&workingTriangle, 3 * sizeof(Triangle));
 
@@ -77,6 +78,7 @@ ConstantApprox::~ConstantApprox() {
 	cudaFree(triArr);
 	cudaFree(colors);
 	cudaFree(workingTriangle);
+	delete[] imageInt;
 }
 
 double ConstantApprox::computeEnergy() {
@@ -90,8 +92,8 @@ void ConstantApprox::computeGrad() {
 		gradY[points + i] = 0;
 	}
 	for(int i = 0; i < numTri; i++) {
-		// integral of fdA
-		double imageIntegral = doubleIntEval(APPROXTYPE, pixArr, maxX, maxY, triArr, i, results);
+		// integral of fdA, retrieved from last updateApprox iteration
+		double imageIntegral = imageInt[i];
 		for(int j = 0; j < 3; j++) {
 			double changeX, changeY;
 			gradient(i, j, imageIntegral, &changeX, &changeY);
@@ -155,8 +157,9 @@ void ConstantApprox::undo() {
 
 void ConstantApprox::updateApprox() {
 	for(int t = 0; t < numTri; t++) {
-		// compute image dA
+		// compute image dA and store it for reference on next iteration
 		double val = doubleIntEval(APPROXTYPE, pixArr, maxX, maxY, triArr, t, results);
+		imageInt[t] = val;
 		// take average value
 		double approxVal = val / triArr[t].getArea();
 		// handle degeneracy
