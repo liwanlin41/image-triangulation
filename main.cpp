@@ -105,7 +105,7 @@ int main(int argc, char* argv[]) {
     cout << "done\n";
 
     cout << "Initializing mesh...\n";
-    ConstantApprox approx(&image, &points, edges, 0.5);
+    ConstantApprox approx(&image, &points, edges, 0.05);
     cout << "ready\n";
 
     // lambda for initializing triangulation

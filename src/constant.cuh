@@ -43,8 +43,9 @@ class ConstantApprox {
 		// compute gradient at this instant, updating gradX and gradY
 		void computeGrad();
 		// store gradient values in gradX, gradY of energy over triangle triArr[t]
-		// of the point in t with index movingPt
-		void gradient(int t, int movingPt, double *gradX, double *gradY);
+		// of the point in t with index movingPt; imInt = integral of image * dA
+		// over triangle to avoid computing multiple times
+		void gradient(int t, int movingPt, double imInt, double *gradX, double *gradY);
 		// move points according to gradient values and return true
 		// if movement was successful, i.e. no triangle inverts under the process
 		bool gradUpdate();
