@@ -99,28 +99,6 @@ __global__ void pixConstantEnergyInt(Pixel *pixArr, int maxX, int maxY, Triangle
 	}
 }
 
-__global__ void pixConstantEnergyInt(Pixel *pixArr, int maxX, int maxY, Triangle *triArr, Point *workingTri, double *colors, int t, double *results) {
-	int x = blockIdx.x * blockDim.x + threadIdx.x;
-	int y = blockIdx.y * blockDim.y + threadIdx.y;
-	int ind = x * maxY + y;
-	if(x < maxX && y < maxY) {
-		double area = pixArr[ind].intersectionArea(workingTri, triArr[t]);
-		double diff = colors[t] - pixArr[ind].getColor();
-		results[ind] = diff * diff * area;
-	}
-}
-
-double constantEnergyEval(Pixel *pixArr, int &maxX, int &maxY, Triangle *triArr, double *colors, int &numTri, double *results, Point *workingTri) {
-	dim3 numBlocks((maxX + numThreadsX - 1) / numThreadsX, (maxY + numThreadsY - 1) / numThreadsY);
-	double totalEnergy = 0;
-	for(int t = 0; t < numTri; t++) {
-		triArr[t].copyVertices(workingTri, workingTri+1, workingTri+2);
-		pixConstantEnergyInt<<<numBlocks, threadsPerBlock>>>(pixArr, maxX, maxY, triArr, workingTri, colors, t, results);
-		totalEnergy += sumArray(results, maxX * maxY, results); // synchronize called in this step
-	}
-	return totalEnergy;
-}
-
 double constantEnergyEval(Pixel *pixArr, int &maxX, int &maxY, Triangle *triArr, double *colors, int &numTri, double *results) {
 	dim3 numBlocks((maxX + numThreadsX - 1) / numThreadsX, (maxY + numThreadsY - 1) / numThreadsY);
 	double totalEnergy = 0;
