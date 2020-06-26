@@ -12,7 +12,6 @@
 #include <math.h>
 #include "point.cuh"
 #include "segment.cuh"
-#include "matrix.cuh"
 
 /**
  * represent a triangle whose vertices are movable

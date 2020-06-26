@@ -59,17 +59,18 @@ __device__ bool Segment::intersection(Segment &other, Point *pt) {
 	return detect;
 }
 
-__device__ Matrix Segment::unitNormal() {
+__device__ void Segment::unitNormal(double *nx, double *ny) {
 	double deltaX = endpoint2->getX() - endpoint1->getX();
 	double deltaY = endpoint2->getY() - endpoint1->getY();
 	double unitX = deltaX / length();
 	double unitY = deltaY / length();
-	// rotate pi/2 clockwise
-	return Matrix(unitY, -unitX);
+	*nx = unitY;
+	*ny = -unitX;
 }
 
-Matrix Segment::scaledNormal() {
+void Segment::scaledNormal(double *nx, double *ny) {
 	double deltaX = endpoint2->getX() - endpoint1->getX();
 	double deltaY = endpoint2->getY() - endpoint1->getY();
-	return Matrix(deltaY/2, -deltaX/2);
+	*nx = deltaY/2;
+	*ny = -deltaX/2;
 }

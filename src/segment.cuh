@@ -11,7 +11,6 @@
 
 #include <math.h>
 #include "point.cuh"
-#include "matrix.cuh"
 
 /**
  * represent a point (point1, point2) in the plane
@@ -31,11 +30,11 @@ class Segment {
 		// intersection does not exist or if segments overlap with positive length)
 		CUDA_DEV bool intersection(Segment &other, Point *pt = NULL);
 		
-		// return the 2x1 unit normal to this segment which lies on the right
-		// going from endpoint 1 to endpoint 2
-		CUDA_DEV Matrix unitNormal();
+		// get the 2x1 unit normal to this segment which lies on the right
+		// going from endpoint 1 to endpoint 2, setting values in nx, ny
+		CUDA_DEV void unitNormal(double *nx, double *ny);
 		// return the 2x1 normal to this segment that has length |segment|/2
-		Matrix scaledNormal();
+		void scaledNormal(double *nx, double *ny);
 
 		// helper function that determines parameters at intersection point of e and f,
 		// storing as t1, t2; intersection is x0 * (t1 / det) + x1 * (1 - t1/det)

@@ -39,11 +39,11 @@ double Triangle::dA(int &p, double vx, double vy) {
 	edgePoints[1] = vertices[(p+2)%3];
 	// change is -velocity dot edge normal of length |e|/2
 	Segment opposite(edgePoints[0], edgePoints[1]);
-	Matrix velocity(vx, vy);
-	Matrix norm = opposite.scaledNormal();
-	// 1 by 1
-	Matrix grad = velocity.transpose().multiply(norm);
-	return -grad.get(0,0);
+	// get normal to segment
+	double nx, ny;
+	opposite.scaledNormal(&nx, &ny);
+	// return negative of dot product
+	return -(vx * nx + vy * ny);
 }
 
 double Triangle::gradX(int &p) {

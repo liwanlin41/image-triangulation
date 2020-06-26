@@ -128,10 +128,13 @@ __global__ void pixConstantLineInt(Pixel *pixArr, int maxX, int maxY, Point *a, 
 				// compute velocity at this point by scaling
 				double distanceToVertex = midpoint.distance(*segEnd);
 				double scale = distanceToVertex / seg.length(); // 1 if at b, 0 at opposite edge
+				// velocity components
 				double velX = (isX) ? scale : 0;
-				Matrix v(velX, scale - velX); // velocity vector
-				Matrix n = seg.unitNormal();
-				double vn = v.transpose().multiply(n).get(0,0); // average value of v * n
+				double velY = scale - velX;
+				// get unit normal values for this segment
+				double nx, ny;
+				seg.unitNormal(&nx, &ny);
+				double vn = velX * nx + velY * ny; // average value of v * n
 				answer += vn * length * pixArr[ind].getColor();
 			}
 		}
