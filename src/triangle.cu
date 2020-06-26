@@ -85,8 +85,7 @@ double Triangle::getSignedArea(Point *a, Point *b, Point *c) {
 	double by = b->getY();
 	double cx = c->getX();
 	double cy = c->getY();
-	Matrix matrix(bx - ax, cx - ax, by - ay, cy - ay);
-	return matrix.determinant()/2;
+	return ((bx - ax) * (cy - ay) - (cx - ax) * (by - ay)) / 2;
 }
 
 ostream& operator<<(ostream& os, const Triangle &t) {
