@@ -128,7 +128,8 @@ __device__ double Pixel::intersectionLength(Segment &e, double *xVal, double *yV
 	return contained.length();
 }
 
-__device__ double Pixel::intersectionArea(Triangle t, Point* polygon, int *size) {
+/*
+__device__ double Pixel::intersectionArea(Point *tri, Point *polygon, int *size) {
 	Point center(x, y); // center of this pixel
 	int numPoints = 0; // track number of points in polygon
 	Point boundary[8]; // there should only be max 8 points on the boundary,
@@ -159,11 +160,110 @@ __device__ double Pixel::intersectionArea(Triangle t, Point* polygon, int *size)
         // interior point -- intersection point is correct (avoid issues of pixel corners inside
         // the triangle being non-adjacent)
         bool safelyOriented = (numPoints != 1) || 
-            (Triangle::getSignedArea(&corners[i], t.vertices[(inInd+1)%3], t.vertices[(inInd+2)%3]) >= 0);
+			(Triangle::getSignedArea(corners + i, t.vertices[(inInd+1)%3], t.vertices[(inInd+2)%3]) >= 0);
         if (safelyOriented && !t.contains(corners[i])) {
 			start = i;
-			break;
-        }
+			break; // including this line gives a 25% speed increase
+		}
+	}
+    for(int i = 0; i < 4; i++) {
+        // first determine if corner of pixel is inside
+        Point corner = corners[(i+start) % 4];
+		Segment side(corners + ((i+start)%4), corners + ((i+start+1)%4));
+		// OPTIMIZATION: BRANCHING HERE; unavoidable?
+        if (t.contains(corner)) {
+			boundary[numPoints] = corner;
+			numPoints++;
+		}
+        // determine intersections with side (i, i+1)
+		Point sideIntersections[2];
+		int intersectNum = 0; // track index in sideIntersections
+		Point intersectionPoint; // track current intersection point
+        for(Segment e : triangleSides) {
+			// true if intersection exists
+			bool collision = side.intersection(e, &intersectionPoint);
+			if (collision) {
+                // check to see if this point is already accounted for by corners
+                // or by triangle vertices; if it isn't exactly equal it won't contribute to area
+                // (and the lack of exact equality is likely due to floating point error)
+                if (!approxEqual(intersectionPoint, corner) && !approxEqual(intersectionPoint, corners[(i+start+1)%4])) {
+                    bool isVertex = false;
+                    for(Point *tVertex : t.vertices) {
+                        if (approxEqual(intersectionPoint, *tVertex)) {
+                            isVertex = true;
+                        }
+                    }
+                    if (!isVertex) {
+						sideIntersections[intersectNum] = intersectionPoint;
+						intersectNum++;
+                    }
+                }
+            }
+		}
+        // note a triangle can intersect a given side at most twice
+        assert(intersectNum <= 2);
+		// handle normal case where there is only one intersection with this side
+        if (intersectNum == 1) {
+			boundary[numPoints] = sideIntersections[0];
+			numPoints++;
+        } else if (intersectNum == 2) {
+            double signedArea = Triangle::getSignedArea(&center, &sideIntersections[0], &sideIntersections[1]);
+            // if signedArea == 0, sideIntersections must contain two of the same point
+            // which means one vertex of the triangle is on the side; this has
+			// already been accounted for and shouldn't happen because of vertex check
+			if(signedArea != 0) {
+				numPoints += 2;
+				int nearestInd = (signedArea < 0) ? 1 : 0; // first point of sideIntersections in ccw order
+				boundary[numPoints-2] = sideIntersections[nearestInd];
+				boundary[numPoints-1] = sideIntersections[1 - nearestInd];
+			}
+		}
+    }
+    // check for null pointer
+    if (polygon && size) {
+        polygon = boundary;
+		*size = numPoints;
+    }
+    return shoelace(boundary, numPoints);
+}
+*/
+
+__device__ double Pixel::intersectionArea(Triangle t, Point* polygon, int *size) {
+	Point center(x, y); // center of this pixel
+	int numPoints = 0; // track number of points in polygon
+	Point boundary[8]; // there should only be max 8 points on the boundary,
+	int inInd; // index of some triangle vertex that lies inside pixel (may not exist)
+	Segment triangleSides[3]; // hold sides of triangle
+
+	// goal: compute boundary of the intersection
+
+	for(int i = 0; i < 3; i++) {
+		triangleSides[i] = Segment(t.vertices[i], t.vertices[(i+1)%3]);
+		// add triangle vertices which may be inside the pixel, but don't add corners
+		bool isCorner = isHalfInteger(t.vertices[i]->getX()) && isHalfInteger(t.vertices[i]->getY());
+        if (!isCorner && containsPoint(*(t.vertices[i]))) {
+            inInd = i;
+			boundary[numPoints] = *(t.vertices[i]);
+			numPoints++;
+		}
+	}
+
+    // determine corner to start so as to preserve ccw property
+    int start = 0;
+    // do this by starting from a corner outside the triangle (if it exists);
+	// if it doesn't exist start will stay at 0
+	// OPTIMIZATION: removal cuts time by 25%
+    for(int i = 0; i < 4; i++) {
+        // additionally, if there is exactly one point inside the triangle, make sure to start
+        // at a corner on the same side of the interior point so that the first edge
+        // interior point -- intersection point is correct (avoid issues of pixel corners inside
+        // the triangle being non-adjacent)
+        bool safelyOriented = (numPoints != 1) || 
+			(Triangle::getSignedArea(corners + i, t.vertices[(inInd+1)%3], t.vertices[(inInd+2)%3]) >= 0);
+        if (safelyOriented && !t.contains(corners[i])) {
+			start = i;
+			break; // including this line gives a 25% speed increase
+		}
 	}
     for(int i = 0; i < 4; i++) {
         // first determine if corner of pixel is inside
