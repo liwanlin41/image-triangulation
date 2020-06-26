@@ -65,7 +65,7 @@ ConstantApprox::ConstantApprox(CImg<unsigned char> *img, vector<Point> *pts, vec
 	}
 	imageInt = new double[numTri];
 	// create shared space for triangle iterations
-	cudaMallocManaged(&workingTriangle, 3 * sizeof(Triangle));
+	cudaMallocManaged(&workingTriangle, 3 * sizeof(Point));
 
 	// create an initial approximation based on this triangulation
 	updateApprox();
