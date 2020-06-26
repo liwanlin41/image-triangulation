@@ -64,6 +64,14 @@ __device__ bool Triangle::contains(Point &p) {
 	return signs[0] == signs[1] && signs[1] == signs[2];
 }
 
+__device__ bool Triangle::strictlyContains(Point &p) {
+	bool signs[3];
+	for(int i = 0; i < 3; i++) {
+		signs[i] = (Triangle::getSignedArea(vertices[i], vertices[(i+1)%3], &p) > 0);
+	}
+	return (signs[0] && signs[1] && signs[2]);
+}
+
 void Triangle::copyVertices(Point *ptrA, Point *ptrB, Point *ptrC) {
 	*ptrA = *vertices[0];
 	*ptrB = *vertices[1];
