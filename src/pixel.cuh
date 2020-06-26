@@ -39,6 +39,10 @@ class Pixel {
 		// store the boundary of the intersection in polygon if available along
 		// with the size of the boundary
 		CUDA_DEV double intersectionArea(Triangle t, Point* polygon = NULL, int* size = NULL);
+
+		// compute approximate area of intersection of this pixel with Triangle t
+		// using a lattice grid of size n x n
+		CUDA_DEV double approxArea(Triangle t, int n = 20);
 };
 
 #endif

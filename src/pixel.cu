@@ -234,3 +234,22 @@ __device__ double Pixel::intersectionArea(Triangle t, Point* polygon, int *size)
     }
     return shoelace(boundary, numPoints);
 }
+
+__device__ double Pixel::approxArea(Triangle t, int n) {
+	// width of a square in the lattice grid;
+	// this ensures n points per side
+	double dx = 1.0/(n-1);
+	int numPoints = 0; // number of lattice points inside the triangle;
+	// each interior point counts twice and each boundary point counts only once
+	// (similar to Pick's formula)
+	for(int i = 0; i < n; i++) {
+		for(int j = 0; j < n; j++) {
+			Point gridPt(x - 0.5 + dx * i, y - 0.5 + dx * j);
+			// count strictly interior points twice
+			numPoints += t.contains(gridPt) + t.strictlyContains(gridPt);
+		}
+	}
+	// approximate area
+	return numPoints / (2.0 * n * n);
+
+}
