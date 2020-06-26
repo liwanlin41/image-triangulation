@@ -128,8 +128,7 @@ __device__ double Pixel::intersectionLength(Segment &e, double *xVal, double *yV
 	return contained.length();
 }
 
-/*
-__device__ double Pixel::intersectionArea(Point *tri, Point *polygon, int *size) {
+__device__ double Pixel::intersectionArea(Point *pts, Triangle tri, Point *polygon, int *size) {
 	Point center(x, y); // center of this pixel
 	int numPoints = 0; // track number of points in polygon
 	Point boundary[8]; // there should only be max 8 points on the boundary,
@@ -139,12 +138,12 @@ __device__ double Pixel::intersectionArea(Point *tri, Point *polygon, int *size)
 	// goal: compute boundary of the intersection
 
 	for(int i = 0; i < 3; i++) {
-		triangleSides[i] = Segment(t.vertices[0], t.vertices[(i+1)%3]);
+		triangleSides[i] = Segment(pts + i, pts + ((i+1)%3));
 		// add triangle vertices which may be inside the pixel, but don't add corners
-		bool isCorner = isHalfInteger(t.vertices[i]->getX()) && isHalfInteger(t.vertices[i]->getY());
-        if (!isCorner && containsPoint(*(t.vertices[i]))) {
+		bool isCorner = isHalfInteger(pts[i].getX()) && isHalfInteger(pts[i].getY());
+        if (!isCorner && containsPoint(pts[i])) {
             inInd = i;
-			boundary[numPoints] = *(t.vertices[i]);
+			boundary[numPoints] = pts[i];
 			numPoints++;
 		}
 	}
@@ -160,8 +159,8 @@ __device__ double Pixel::intersectionArea(Point *tri, Point *polygon, int *size)
         // interior point -- intersection point is correct (avoid issues of pixel corners inside
         // the triangle being non-adjacent)
         bool safelyOriented = (numPoints != 1) || 
-			(Triangle::getSignedArea(corners + i, t.vertices[(inInd+1)%3], t.vertices[(inInd+2)%3]) >= 0);
-        if (safelyOriented && !t.contains(corners[i])) {
+			(Triangle::getSignedArea(corners + i, pts +((inInd+1)%3), pts +((inInd+2)%3)) >= 0);
+        if (safelyOriented && !tri.contains(corners[i])) {
 			start = i;
 			break; // including this line gives a 25% speed increase
 		}
@@ -171,7 +170,7 @@ __device__ double Pixel::intersectionArea(Point *tri, Point *polygon, int *size)
         Point corner = corners[(i+start) % 4];
 		Segment side(corners + ((i+start)%4), corners + ((i+start+1)%4));
 		// OPTIMIZATION: BRANCHING HERE; unavoidable?
-        if (t.contains(corner)) {
+        if (tri.contains(corner)) {
 			boundary[numPoints] = corner;
 			numPoints++;
 		}
@@ -179,7 +178,7 @@ __device__ double Pixel::intersectionArea(Point *tri, Point *polygon, int *size)
 		Point sideIntersections[2];
 		int intersectNum = 0; // track index in sideIntersections
 		Point intersectionPoint; // track current intersection point
-        for(Segment e : triangleSides) {
+        for(Segment &e : triangleSides) {
 			// true if intersection exists
 			bool collision = side.intersection(e, &intersectionPoint);
 			if (collision) {
@@ -187,12 +186,12 @@ __device__ double Pixel::intersectionArea(Point *tri, Point *polygon, int *size)
                 // or by triangle vertices; if it isn't exactly equal it won't contribute to area
                 // (and the lack of exact equality is likely due to floating point error)
                 if (!approxEqual(intersectionPoint, corner) && !approxEqual(intersectionPoint, corners[(i+start+1)%4])) {
-                    bool isVertex = false;
-                    for(Point *tVertex : t.vertices) {
-                        if (approxEqual(intersectionPoint, *tVertex)) {
-                            isVertex = true;
-                        }
-                    }
+					bool isVertex = false;
+					for(int j = 0; j < 3; j++) {
+						if(approxEqual(intersectionPoint, pts[j])) {
+							isVertex = true;
+						}
+					}
                     if (!isVertex) {
 						sideIntersections[intersectNum] = intersectionPoint;
 						intersectNum++;
@@ -223,10 +222,9 @@ __device__ double Pixel::intersectionArea(Point *tri, Point *polygon, int *size)
     if (polygon && size) {
         polygon = boundary;
 		*size = numPoints;
-    }
-    return shoelace(boundary, numPoints);
+	}
+	return shoelace(boundary, numPoints);
 }
-*/
 
 __device__ double Pixel::intersectionArea(Triangle t, Point* polygon, int *size) {
 	Point center(x, y); // center of this pixel

@@ -39,6 +39,7 @@ class Pixel {
 		// store the boundary of the intersection in polygon if available along
 		// with the size of the boundary
 		CUDA_DEV double intersectionArea(Triangle t, Point* polygon = NULL, int* size = NULL);
+		CUDA_DEV double intersectionArea(Point *pts, Triangle t, Point *polygon = NULL, int *size = NULL);
 };
 
 #endif

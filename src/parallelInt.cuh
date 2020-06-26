@@ -23,5 +23,6 @@ double doubleIntEval(ApproxType approx, Pixel *pixArr, int &maxX, int &maxY, Tri
 // given the array of pixels and the array of triangles with color colors[i] on triangle i,
 // return the energy of the approximation
 double constantEnergyEval(Pixel *pixArr, int &maxX, int &maxY, Triangle *triArr, double *colors, int &numTri, double *results);
+double constantEnergyEval(Pixel *pixArr, int &maxX, int &maxY, Triangle *triArr, double *colors, int &numTri, double *results, Point *workingTri);
 
 #endif

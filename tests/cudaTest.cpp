@@ -53,6 +53,36 @@ TEST(LineTest, Triangle) {
     cudaFree(working);
 }
 
+TEST(AreaTest, Simple) {
+    ApproxType testApprox = constant;
+    int maxX = 5;
+    int maxY = 4;
+    Pixel *pixArr;
+    Triangle *triArr;
+    Point *points;
+    int t = 0;
+    cudaMallocManaged(&pixArr, maxX * maxY*sizeof(Pixel));
+    cudaMallocManaged(&triArr, sizeof(Triangle));
+    cudaMallocManaged(&points, 3*sizeof(Point));
+    for(int i = 0; i < maxX; i++) {
+        for(int j = 0; j < maxY; j++) {
+            pixArr[i * maxY + j] = Pixel(i, j, 1);
+        }
+    }
+    points[0] = Point(0,0);
+    points[1] = Point(4,0);
+    points[2] = Point(0,3);
+    triArr[0] = Triangle(points, points+1, points+2);
+    double *results;
+    cudaMallocManaged(&results, maxX * maxY * sizeof(double));
+    double test = doubleIntEval(testApprox, pixArr, maxX, maxY, triArr, t, results);
+    cout << test << endl;
+    cudaFree(pixArr);
+    cudaFree(triArr);
+    cudaFree(points);
+    cudaFree(results);
+}
+
 int main(int argc, char **argv) {
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
