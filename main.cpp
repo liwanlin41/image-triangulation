@@ -26,19 +26,18 @@ double adaptorF_custom_accessVector2Value(const Point& p, unsigned int ind) {
 
 // eventually input will be the path to an image file?
 int main(int argc, char* argv[]) {
-    const char *imgPath = "../images/black_white.png";
-    //const char *imgPath = "../images/clouds.jpg";
+    //const char *imgPath = "../images/patches.png";
+    const char *imgPath = "../images/apple.jpeg";
     double density = 0.01;
     if (argc >= 2) {
         density = atof(argv[1]);
     }
     // set default values
-    int maxIter = 20;
+    int maxIter = 50;
     double eps = 0.001;
     double prevEnergy = 100 * eps; // placeholder values
     double newEnergy = 0;
     int iterCount = 0;
-    // double density = 0.005; // TODO: figure out how to set this        
 
     // create image to read pixels
     CImg<unsigned char> image(imgPath);
@@ -137,7 +136,8 @@ int main(int argc, char* argv[]) {
             approx.updateApprox();
             prevEnergy = newEnergy;
             newEnergy = approx.computeEnergy();
-            if(newEnergy > prevEnergy) { // overshot optimum?
+            // TODO: tune this
+            if(newEnergy > 1.5 * prevEnergy) { // overshot optimum?
                 do {
                     approx.undo();
                 } while (!approx.gradUpdate());

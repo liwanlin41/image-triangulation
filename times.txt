@@ -8,3 +8,5 @@ New averages pixDoubleInt 83ms, pixEnergyInt 82ms, pixLineInt 1.1ms; intersectio
 
 6/26: added gridded area approximation, for some reason this is super slow? (~3s per call for grid size of 10x10)
 ahhhh - Matrix was still used in Triangle::getSignedArea, removing gets double integral down to 800us
+
+6/28: running some more tests: 50 ish triangles on 260x200 image runs in ~1ms per integration call, same number of triangles on 800x464 runs in 4ms per line integral and 7ms per area integral; speed of single integration call is independent of number of triangles, seems to depend on pixel resolution
