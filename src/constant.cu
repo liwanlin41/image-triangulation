@@ -53,7 +53,10 @@ ConstantApprox::ConstantApprox(CImg<unsigned char> *img, vector<Point> *pts, vec
 	numTri = inds.size();
 	// allocate shared space for triangles and colors
 	cudaMallocManaged(&triArr, numTri * sizeof(Triangle));
-	cudaMallocManaged(&colors, numTri * sizeof(double));
+	cudaMallocManaged(&grays, numTri * sizeof(double));
+	cudaMallocManaged(&reds, numTri * sizeof(double));
+	cudaMallocManaged(&greens, numTri * sizeof(double));
+	cudaMallocManaged(&blues, numTri * sizeof(double));
 	for(int i = 0; i < numTri; i++) {
 		array<int, 3> t = inds.at(i); // vertex indices for this triangle
 		// constructor takes point addresses
@@ -72,13 +75,16 @@ ConstantApprox::~ConstantApprox() {
 	cudaFree(results);
 	cudaFree(points);
 	cudaFree(triArr);
-	cudaFree(colors);
+	cudaFree(grays);
+	cudaFree(reds);
+	cudaFree(greens);
+	cudaFree(blues);
 	cudaFree(workingTriangle);
 	delete[] imageInt;
 }
 
 double ConstantApprox::computeEnergy() {
-	return constantEnergyEval(pixArr, maxX, maxY, triArr, colors, numTri, results);
+	return constantEnergyEval(pixArr, maxX, maxY, triArr, grays, numTri, results);
 }
 
 void ConstantApprox::computeGrad() {
@@ -156,14 +162,19 @@ void ConstantApprox::updateApprox() {
 		// compute image dA and store it for reference on next iteration
 		double val = doubleIntEval(APPROXTYPE, pixArr, maxX, maxY, triArr, t, results);
 		imageInt[t] = val;
+		double area = triArr[t].getArea();
 		// take average value
-		double approxVal = val / triArr[t].getArea();
+		double approxVal = val / area;
 		// handle degeneracy
 		if (isnan(approxVal)) {
-			assert(triArr[t].getArea() < TOLERANCE);
+			assert(area < TOLERANCE);
 			approxVal = 255; // TODO: something better than this
 		}
-		colors[t] = approxVal;
+		grays[t] = approxVal;
+		// get rgb values
+		reds[t] = doubleIntEval(APPROXTYPE, pixArr, maxX, maxY, triArr, t, results, red) / area;
+		greens[t] = doubleIntEval(APPROXTYPE, pixArr, maxX, maxY, triArr, t, results, green) / area;
+		blues[t] = doubleIntEval(APPROXTYPE, pixArr, maxX, maxY, triArr, t, results, blue) / area;
 	}
 }
 
@@ -217,8 +228,13 @@ vector<array<double,3>> ConstantApprox::getColors() {
 	vector<array<double, 3>> fullColors;
 	for(int t = 0; t < numTri; t++) {
 		// scale to fit polyscope colors TODO: check that this is correct
-		double approxColor = colors[t]/255;
-		fullColors.push_back({approxColor, approxColor, approxColor});
+		int scale = 255;
+		//double approxColor = grays[t]/255;
+		double r = reds[t]/scale;
+		double g = greens[t]/scale;
+		double b = blues[t]/scale;
+		//fullColors.push_back({approxColor, approxColor, approxColor});
+		fullColors.push_back({r, g, b});
 	}
 	return fullColors;
 }

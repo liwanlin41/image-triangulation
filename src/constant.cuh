@@ -30,7 +30,10 @@ class ConstantApprox {
 		map<Point*, double> gradX; // map points to gradient x values
 		map<Point*, double> gradY; // map points to gradient y values
 		double *imageInt; // hold integrals of image dA over each triangle
-		double *colors; // colors[i] is the color of triangle triArr[i]
+		double *grays; // grays[i] is the luminance of triangle triArr[i]
+		double *reds; // red value of triangle triArr[i]
+		double *greens;
+		double *blues;
 		double *results; // used to hold temporary results on device (minimize costly allocations)
 
 	public:
