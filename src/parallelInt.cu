@@ -59,22 +59,22 @@ double sumArray(double *arr, int size, double *partialRes) {
 // compute double integral of f dA for a single pixel and single triangle triArr[t]
 // pixArr is a 1D representation of image, where pixel (x, y) is at x * maxY + y
 // reults holds the result for each pixel
-__global__ void pixConstantDoubleInt(Pixel *pixArr, int maxX, int maxY, Triangle *triArr, int t, double *results) {
+__global__ void pixConstantDoubleInt(Pixel *pixArr, int maxX, int maxY, Triangle *triArr, int t, double *results, ColorChannel channel) {
 	int x = blockIdx.x * blockDim.x + threadIdx.x;
 	int y = blockIdx.y * blockDim.y + threadIdx.y;
 	int ind = x * maxY + y; // index in pixArr
 	if(x < maxX && y < maxY) { // check bounds
 		double area = pixArr[ind].intersectionArea(triArr[t]);
-		results[ind] = area * pixArr[ind].getColor();
+		results[ind] = area * pixArr[ind].getColor(channel);
 	}
 }
 
-double doubleIntEval(ApproxType approx, Pixel *pixArr, int &maxX, int &maxY, Triangle *triArr, int &t, double *results) {
+double doubleIntEval(ApproxType approx, Pixel *pixArr, int &maxX, int &maxY, Triangle *triArr, int &t, double *results, ColorChannel channel) {
 	dim3 numBlocks((maxX + numThreadsX -1) / numThreadsX, (maxY + numThreadsY -1) / numThreadsY);
 	// compute integral in parallel based on function to integrate
 	switch (approx) {
 		case constant: {
-			pixConstantDoubleInt<<<numBlocks, threadsPerBlock>>>(pixArr, maxX, maxY, triArr, t, results);
+			pixConstantDoubleInt<<<numBlocks, threadsPerBlock>>>(pixArr, maxX, maxY, triArr, t, results, channel);
 			break;
 		}
 		case linear: // TODO: fill out
