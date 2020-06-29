@@ -159,6 +159,8 @@ int main(int argc, char* argv[]) {
         }
     };
 
+    polyscope::options::autocenterStructures = true;
+    polyscope::options::autoscaleStructures = true;
     polyscope::init();
     polyscope::view::style = polyscope::view::NavigateStyle::Planar;
     polyscope::state::userCallback = callback;
