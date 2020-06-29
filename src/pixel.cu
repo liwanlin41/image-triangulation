@@ -29,7 +29,7 @@ __device__ double shoelace(Point *points, int &size) {
 	}
 	// in practice points is supposed to be ccw
 	// up to floating point errors that don't affect area
-	//assert(area >= 0);
+	assert(area >= 0);
 	return area/2;
 }
 
@@ -64,15 +64,29 @@ __device__ void averageXY(double *avgX, double *avgY, Point *points, int &size, 
 	*avgY = totalY / totalArea;
 }
 
-Pixel::Pixel(int x_, int y_, int c) : x(x_), y(y_), color(c) {
+Pixel::Pixel(int x_, int y_, int c) : x(x_), y(y_) {
 	corners[0] = Point(x-0.5, y-0.5);
 	corners[1] = Point(x+0.5, y-0.5);
 	corners[2] = Point(x+0.5, y+0.5);
 	corners[3] = Point(x-0.5, y+0.5);
+	for(int i = 0; i < 4; i++) {
+		colors[i] = c;
+	}
 }
 
-int Pixel::getColor() {
-	return color;
+Pixel::Pixel(int x_, int y_, int r, int g, int b, int c) : x(x_), y(y_) {
+	corners[0] = Point(x-0.5, y-0.5);
+	corners[1] = Point(x+0.5, y-0.5);
+	corners[2] = Point(x+0.5, y+0.5);
+	corners[3] = Point(x-0.5, y+0.5);
+	colors[0] = r;
+	colors[1] = g;
+	colors[2] = b;
+	colors[3] = c;
+}
+
+int Pixel::getColor(ColorChannel channel) {
+	return colors[channel];
 }
 
 __device__ bool Pixel::containsPoint(Point &p) {
