@@ -26,7 +26,7 @@ double adaptorF_custom_accessVector2Value(const Point& p, unsigned int ind) {
 
 // eventually input will be the path to an image file?
 int main(int argc, char* argv[]) {
-    //const char *imgPath = "../images/patches.png";
+    //const char *imgPath = "../images/black_white.png";
     const char *imgPath = "../images/apple.jpeg";
     double density = 0.01;
     if (argc >= 2) {
@@ -129,23 +129,7 @@ int main(int argc, char* argv[]) {
     auto step = [&]() {
         if(iterCount < maxIter && abs(prevEnergy - newEnergy) > eps) {
             cout << "iteration " << iterCount << endl;
-            approx.computeGrad();
-            while(!approx.gradUpdate()) {
-                approx.undo(); // keep halving stepSize until it works
-            }
-            approx.updateApprox();
-            prevEnergy = newEnergy;
-            newEnergy = approx.computeEnergy();
-            // TODO: tune this
-            if(newEnergy > 1.5 * prevEnergy) { // overshot optimum?
-                do {
-                    approx.undo();
-                } while (!approx.gradUpdate());
-                approx.updateApprox();
-                newEnergy = approx.computeEnergy();
-            }
-            cout << "new energy: " << newEnergy << endl;
-            cout << "Step size: " << approx.getStep() << endl;
+            approx.step(prevEnergy, newEnergy);
             iterCount++;
             auto triangulation = polyscope::getSurfaceMesh("Triangulation");
             triangulation->updateVertexPositions2D(approx.getVertices());

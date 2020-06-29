@@ -152,7 +152,6 @@ __device__ double Pixel::intersectionArea(Triangle t, Point* polygon, int *size)
     int start = 0;
     // do this by starting from a corner outside the triangle (if it exists);
 	// if it doesn't exist start will stay at 0
-	// OPTIMIZATION: removal cuts time by 25%
     for(int i = 0; i < 4; i++) {
         // additionally, if there is exactly one point inside the triangle, make sure to start
         // at a corner on the same side of the interior point so that the first edge
