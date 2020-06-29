@@ -17,6 +17,10 @@ GPU activities:   44.67%  56.2863s     78720  715.02us  583.04us  12.779ms  pixC
                   10.56%  13.3052s     13440  989.97us  911.78us  1.6589ms  pixConstantEnergyInt(Pixel*, int, int, Triangle*, double*, int, double*)
 flower.jpg 31 iterations, colorized
 GPU activities:   45.02%  29.7278s     39804  746.86us  586.24us  10.350ms  pixConstantLineInt(Pixel*, int, int, Point*, Point*, Point*, bool, double*)
-                   42.70%  28.1935s     27392  1.0293ms  868.25us  6.8069ms  pixConstantDoubleInt(Pixel*, int, int, Triangle*, int, double*, ColorChannel)
-                   10.48%  6.92015s      6848  1.0105ms  915.04us  1.5629ms  pixConstantEnergyInt(Pixel*, int, int, Triangle*, double*, int, double*)
+                  42.70%  28.1935s     27392  1.0293ms  868.25us  6.8069ms  pixConstantDoubleInt(Pixel*, int, int, Triangle*, int, double*, ColorChannel)
+                  10.48%  6.92015s      6848  1.0105ms  915.04us  1.5629ms  pixConstantEnergyInt(Pixel*, int, int, Triangle*, double*, int, double*)
+rose.jpg 12 iterations, 347 triangles
+GPU activities:   44.36%  22.6960s     18044  1.2578ms  1.1159ms  3.3495ms  pixConstantDoubleInt(Pixel*, int, int, Triangle*, int, double*, ColorChannel)
+                  43.21%  22.1060s     24984  884.81us  747.16us  2.1420ms  pixConstantLineInt(Pixel*, int, int, Point*, Point*, Point*, bool, double*)
+                  10.90%  5.57581s      4511  1.2360ms  1.1241ms  1.7361ms  pixConstantEnergyInt(Pixel*, int, int, Triangle*, double*, int, double*)
 
