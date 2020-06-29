@@ -19,7 +19,7 @@ double lineIntEval(ApproxType approx, Pixel *pixArr, int &maxX, int &maxY, Trian
 
 // compute the double integral f phi dA over triangle triArr[t] where FEM basis phi is dependent on approx
 // image pixel color channel determined by channel
-double doubleIntEval(ApproxType approx, Pixel *pixArr, int &maxX, int &maxY, Triangle *triArr, int &t, double *results, ColorChannel channel = gray);
+double doubleIntEval(ApproxType approx, Pixel *pixArr, int &maxX, int &maxY, Triangle *triArr, int &t, double *results, ColorChannel channel = GRAY);
 
 // given the array of pixels and the array of triangles with color colors[i] on triangle i,
 // return the energy of the approximation

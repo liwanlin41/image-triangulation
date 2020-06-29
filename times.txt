@@ -11,7 +11,7 @@ ahhhh - Matrix was still used in Triangle::getSignedArea, removing gets double i
 
 6/28: running some more tests: 50 ish triangles on 260x200 image runs in ~1ms per integration call, same number of triangles on 800x464 runs in 4ms per line integral and 7ms per area integral; speed of single integration call is independent of number of triangles, seems to depend on pixel resolution
 
-6/29: apple.jpeg 41 iterations, colorized
+6/29: apple.jpeg 41 iterations, colorized, 320 triangles
 GPU activities:   44.67%  56.2863s     78720  715.02us  583.04us  12.779ms  pixConstantLineInt(Pixel*, int, int, Point*, Point*, Point*, bool, double*)
                   42.92%  54.0837s     53760  1.0060ms  902.91us  2.7252ms  pixConstantDoubleInt(Pixel*, int, int, Triangle*, int, double*, ColorChannel)
                   10.56%  13.3052s     13440  989.97us  911.78us  1.6589ms  pixConstantEnergyInt(Pixel*, int, int, Triangle*, double*, int, double*)

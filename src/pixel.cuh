@@ -15,7 +15,7 @@
 #include "triangle.cuh"
 
 // enumeration for colors where gray represents luminance (grayscale value)
-enum ColorChannel{red, green, blue, gray};
+enum ColorChannel{RED, GREEN, BLUE, GRAY};
 
 /**
  * class representing an image pixel as a square, with pixel
@@ -33,7 +33,7 @@ class Pixel {
 		// create a color pixel centered at (x, y) with given rgb values 
 		Pixel(int x, int y, int r, int g, int b);
 		// get color of a given channel, defaulting to grayscale
-		CUDA_HOSTDEV int getColor(ColorChannel channel = gray);
+		CUDA_HOSTDEV int getColor(ColorChannel channel = GRAY);
 		// compute the length of the intersection of Segment e
 		// with this pixel (may be 0); if x, y are given, store the coordinates
 		// of the midpoint of the segment in x, y; DOES NOT SET x, y if length is 0

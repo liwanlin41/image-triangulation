@@ -236,9 +236,9 @@ vector<array<double,3>> ConstantApprox::getColors() {
 		// scale to fit polyscope colors TODO: check that this is correct
 		int scale = 255;
 		int area = triArr[t].getArea();
-		double r = doubleIntEval(APPROXTYPE, pixArr, maxX, maxY, triArr, t, results, red)/(scale * area);
-		double g = doubleIntEval(APPROXTYPE, pixArr, maxX, maxY, triArr, t, results, green)/(scale * area);
-		double b = doubleIntEval(APPROXTYPE, pixArr, maxX, maxY, triArr, t, results, blue)/(scale * area);
+		double r = doubleIntEval(APPROXTYPE, pixArr, maxX, maxY, triArr, t, results, RED)/(scale * area);
+		double g = doubleIntEval(APPROXTYPE, pixArr, maxX, maxY, triArr, t, results, GREEN)/(scale * area);
+		double b = doubleIntEval(APPROXTYPE, pixArr, maxX, maxY, triArr, t, results, BLUE)/(scale * area);
 		fullColors.push_back({r, g, b});
 	}
 	return fullColors;
