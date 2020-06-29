@@ -26,11 +26,17 @@ double adaptorF_custom_accessVector2Value(const Point& p, unsigned int ind) {
 
 // eventually input will be the path to an image file?
 int main(int argc, char* argv[]) {
-    //const char *imgPath = "../images/black_white.png";
-    const char *imgPath = "../images/apple.jpeg";
+    // default image path and density
+    const char *imgPath = "../images/flower.jpg";
     double density = 0.01;
+
+    string input;
     if (argc >= 2) {
-        density = atof(argv[1]);
+        input = argv[1];
+        imgPath = input.c_str();
+    }
+    if (argc >= 3) {
+        density = atof(argv[2]);
     }
     // set default values
     int maxIter = 50;
