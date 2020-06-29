@@ -30,8 +30,8 @@ class Pixel {
 	public:
 		// create a grayscale pixel centered at (x, y) with luminance c
 		Pixel(int x, int y, int c);
-		// create a color pixel centered at (x, y) with given rgb values and luminance c
-		Pixel(int x, int y, int r, int g, int b, int c);
+		// create a color pixel centered at (x, y) with given rgb values 
+		Pixel(int x, int y, int r, int g, int b);
 		// get color of a given channel, defaulting to grayscale
 		CUDA_HOSTDEV int getColor(ColorChannel channel = gray);
 		// compute the length of the intersection of Segment e

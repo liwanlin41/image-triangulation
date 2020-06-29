@@ -1,19 +1,6 @@
 #include "constant.cuh"
 
-// constants for converting color image to grayscale
-const double RED_LUMINANCE = 0.2126;
-const double GREEN_LUMINANCE = 0.7152;
-const double BLUE_LUMINANCE = 0.0722;
-
 const double TOLERANCE = 1e-10;
-
-// get the luminance at pixel (x, y) by standard luminance transformation
-int getLuminance(CImg<unsigned char> *img, int x, int y) {
-	int red_val = (int) (*img)(x, y, 0, 0);
-	int green_val = (int) (*img)(x, y, 0, 1);
-	int blue_val = (int) (*img)(x, y, 0, 2);
-	return round(red_val * RED_LUMINANCE + green_val * GREEN_LUMINANCE + blue_val * BLUE_LUMINANCE);
-}
 
 // custom rounding function to support needed pixel rounding
 int customRound(double x) {
@@ -37,10 +24,19 @@ ConstantApprox::ConstantApprox(CImg<unsigned char> *img, vector<Point> *pts, vec
 	// create space for results, one slot per pixel
 	cudaMallocManaged(&results, maxX * maxY * sizeof(double));
 	bool isGrayscale = (img->spectrum() == 1);
-	for(int x = 0; x < maxX; x++){
+	for(int x = 0; x < maxX; x++) {
 		for(int y = 0; y < maxY; y++) {
-			int color = (isGrayscale) ? (*img)(x, y) : getLuminance(img, x, y);
-			pixArr[x * maxY + y] = Pixel(x, y, color);
+			int ind = x * maxY + y; // 1D pixel index
+			if(isGrayscale) {
+				pixArr[ind] = Pixel(x, y, (*img)(x, y));
+			} else {
+				int rgb[3];
+				for(int i = 0; i < 3; i++) {
+					rgb[i] = (*img)(x, y, 0, i);
+				}
+				int r = (*img)(x, y, 0, 0);
+				pixArr[ind] = Pixel(x, y, rgb[0], rgb[1], rgb[2]);
+			}
 		}
 	}
 

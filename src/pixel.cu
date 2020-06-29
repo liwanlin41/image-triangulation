@@ -1,5 +1,15 @@
 #include "pixel.cuh"
 
+// constants for converting rgb to grayscale
+const double RED_LUMINANCE = 0.2126;
+const double GREEN_LUMINANCE = 0.7152;
+const double BLUE_LUMINANCE = 0.0722;
+
+// get luminance of an rgb value by standard transformation
+int getLuminance(int r, int g, int b) {
+	return round(r * RED_LUMINANCE + g * GREEN_LUMINANCE + b * BLUE_LUMINANCE);
+}
+
 // helper functions
 
 // determine whether a value has fractional part 1/2
@@ -74,7 +84,7 @@ Pixel::Pixel(int x_, int y_, int c) : x(x_), y(y_) {
 	}
 }
 
-Pixel::Pixel(int x_, int y_, int r, int g, int b, int c) : x(x_), y(y_) {
+Pixel::Pixel(int x_, int y_, int r, int g, int b) : x(x_), y(y_) {
 	corners[0] = Point(x-0.5, y-0.5);
 	corners[1] = Point(x+0.5, y-0.5);
 	corners[2] = Point(x+0.5, y+0.5);
@@ -82,7 +92,7 @@ Pixel::Pixel(int x_, int y_, int r, int g, int b, int c) : x(x_), y(y_) {
 	colors[0] = r;
 	colors[1] = g;
 	colors[2] = b;
-	colors[3] = c;
+	colors[3] = getLuminance(r, g, b);
 }
 
 int Pixel::getColor(ColorChannel channel) {

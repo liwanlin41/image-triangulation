@@ -26,8 +26,8 @@ double adaptorF_custom_accessVector2Value(const Point& p, unsigned int ind) {
 
 // eventually input will be the path to an image file?
 int main(int argc, char* argv[]) {
-    //const char *imgPath = "../images/black_white.png";
-    const char *imgPath = "../images/apple.jpeg";
+    const char *imgPath = "../images/black_white.png";
+    //const char *imgPath = "../images/apple.jpeg";
     double density = 0.01;
     if (argc >= 2) {
         density = atof(argv[1]);
