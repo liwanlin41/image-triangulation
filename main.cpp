@@ -81,14 +81,24 @@ int main(int argc, char* argv[]) {
     // initialize points of mesh
     cout << "Getting " << n << " points...\n";
     vector<Point> points;
+    // appears to affect only large images:
+    // adjust image boundaries to TRIM result (may crop a line of pixels)
+    int maxX = 0;
+    int maxY = 0;
+    for(int i = 0; i < n; i++) {
+        int x = vertices[i][0];
+        int y = vertices[i][1];
+        maxX = max(x, maxX);
+        maxY = max(y, maxY);
+    }
     for(int i = 0; i < n; i++) {
         // note these are 1-indexed pixel values; will need
         // to convert to usable points 
         int x = vertices[i][0];
         int y = vertices[i][1];
         // determine whether this point lies on edge of image
-        bool isBorderX = (x == 1 || x == image.width());
-        bool isBorderY = (y == 1 || y == image.height());
+        bool isBorderX = (x == 1 || x == maxX);
+        bool isBorderY = (y == 1 || y == maxY);
         Point p(x-1.5, y-1.5, isBorderX, isBorderY); // translate to coordinate system in this code
         points.push_back(p);
     }
@@ -195,9 +205,9 @@ int main(int argc, char* argv[]) {
     matlabPtr->setVariable(u"E", energy);
     // create and save matlab plots
     matlabPtr->eval(u"f=figure('visible', 'off'); plot(x, t); title('Elapsed Time')");
-    matlabPtr->eval(u"exportgraphics(f, '../outputs/time.png')");
+    matlabPtr->eval(u"exportgraphics(f, '../outputs/data_time.png')");
     matlabPtr->eval(u"g=figure('visible', 'off'); plot(x, E); title('Approximation Error')");
-    matlabPtr->eval(u"exportgraphics(g, '../outputs/energy.png')");
+    matlabPtr->eval(u"exportgraphics(g, '../outputs/data_energy.png')");
 
     // convert screenshot sequences to video
     system("ffmpeg -framerate 2 -i screenshot_%06d.tga -vcodec mpeg4 ../outputs/output.mp4");

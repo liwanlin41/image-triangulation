@@ -24,3 +24,12 @@ GPU activities:   44.36%  22.6960s     18044  1.2578ms  1.1159ms  3.3495ms  pixC
                   43.21%  22.1060s     24984  884.81us  747.16us  2.1420ms  pixConstantLineInt(Pixel*, int, int, Point*, Point*, Point*, bool, double*)
                   10.90%  5.57581s      4511  1.2360ms  1.1241ms  1.7361ms  pixConstantEnergyInt(Pixel*, int, int, Triangle*, double*, int, double*)
 
+sunset.jpg (600x337) 286 triangles, 10 iterations
+GPU activities:   50.25%  168.765s     12584  13.411ms  4.0802ms  40.586ms  pixConstantDoubleInt(Pixel*, int, int, Triangle*, int, double*, ColorChannel)
+                  34.32%  115.272s     17160  6.7175ms  2.6373ms  30.798ms  pixConstantLineInt(Pixel*, int, int, Point*, Point*, Point*, bool, double*)
+                  12.34%  41.4382s      3146  13.172ms  4.5688ms  40.016ms  pixConstantEnergyInt(Pixel*, int, int, Triangle*, double*, int, double*)
+panda.jpeg (2000x1125) 202 triangles, 2 iterations
+GPU activities:   53.03%  107.515s      2424  44.354ms  43.651ms  112.96ms  pixConstantDoubleInt(Pixel*, int, int, Triangle*, int, double*, ColorChannel)
+                  32.94%  66.7960s      2424  27.556ms  27.356ms  38.183ms  pixConstantLineInt(Pixel*, int, int, Point*, Point*, Point*, bool, double*)
+                  13.20%  26.7707s       606  44.176ms  43.657ms  50.041ms  pixConstantEnergyInt(Pixel*, int, int, Triangle*, double*, int, double*)
+

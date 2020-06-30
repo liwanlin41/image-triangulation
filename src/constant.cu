@@ -188,12 +188,12 @@ void ConstantApprox::step(double &prevEnergy, double &newEnergy) {
 	computeGrad();
     while(!gradUpdate()) {
         undo(); // keep halving stepSize until no triangle is inverted
-    }
-    updateApprox();
+	}
+	updateApprox();
     prevEnergy = newEnergy;
-    newEnergy = computeEnergy();
+	newEnergy = computeEnergy();
     // TODO: tune this
-    if(newEnergy > 1.5 * prevEnergy) { // overshot optimum?
+	if(newEnergy > 1.5 * prevEnergy) { // overshot optimum?
         do {
             undo();
         } while (!gradUpdate());
