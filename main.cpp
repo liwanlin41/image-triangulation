@@ -30,10 +30,10 @@ int main(int argc, char* argv[]) {
     const char *imgPath = "../images/flower.jpg";
     double density = 0.01;
 
-    string input;
+    string inputPath = "../images/"; // to ensure non-null pointer later; find image directory
     if (argc >= 2) {
-        input = argv[1];
-        imgPath = input.c_str();
+        inputPath += argv[1];
+        imgPath = inputPath.c_str();
     }
     if (argc >= 3) {
         density = atof(argv[2]);
@@ -129,6 +129,8 @@ int main(int argc, char* argv[]) {
         // initialize to something higher than newEnergy
         prevEnergy = newEnergy + 100 * eps;
         iterCount = 0;
+        polyscope::screenshot(false);
+        polyscope::screenshot("../outputs/initial.tga", false);
     };
 
     // lambda for running a step
@@ -140,6 +142,7 @@ int main(int argc, char* argv[]) {
             auto triangulation = polyscope::getSurfaceMesh("Triangulation");
             triangulation->updateVertexPositions2D(approx.getVertices());
             triangulation->addFaceColorQuantity("approximate colors", approx.getColors());
+            polyscope::screenshot(false);
         } else {
             polyscope::warning("done");
         }
@@ -165,5 +168,10 @@ int main(int argc, char* argv[]) {
     polyscope::view::style = polyscope::view::NavigateStyle::Planar;
     polyscope::state::userCallback = callback;
     polyscope::show();
+    polyscope::screenshot("../outputs/triangulation.tga", false);
+
+    // convert screenshot sequences to video
+    system("ffmpeg -framerate 2 -i screenshot_%06d.tga -vcodec mpeg4 ../outputs/output.mp4");
+    system("rm screenshot_*");
 	return 0;
 }
