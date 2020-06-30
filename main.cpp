@@ -193,10 +193,11 @@ int main(int argc, char* argv[]) {
     matlabPtr->setVariable(u"x", iters);
     matlabPtr->setVariable(u"t", elapsedTime);
     matlabPtr->setVariable(u"E", energy);
-    matlabPtr->eval(u"figure; plot(x, t); title('Elapsed Time')");
-    matlabPtr->eval(u"exportgraphics(gcf, '../outputs/time.png')");
-    matlabPtr->eval(u"figure; plot(x, E); title('Approximation Error')");
-    matlabPtr->eval(u"exportgraphics(gcf, '../outputs/energy.png')");
+    // create and save matlab plots
+    matlabPtr->eval(u"f=figure('visible', 'off'); plot(x, t); title('Elapsed Time')");
+    matlabPtr->eval(u"exportgraphics(f, '../outputs/time.png')");
+    matlabPtr->eval(u"g=figure('visible', 'off'); plot(x, E); title('Approximation Error')");
+    matlabPtr->eval(u"exportgraphics(g, '../outputs/energy.png')");
 
     // convert screenshot sequences to video
     system("ffmpeg -framerate 2 -i screenshot_%06d.tga -vcodec mpeg4 ../outputs/output.mp4");
