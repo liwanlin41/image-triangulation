@@ -2,6 +2,7 @@
 #include <fstream>
 #include "polyscope/polyscope.h"
 #include "polyscope/surface_mesh.h"
+#include "polyscope/point_cloud.h"
 #define cimg_use_png 1
 #define cimg_use_jpg 1
 #include "CImg.h"
@@ -114,6 +115,10 @@ int main(int argc, char* argv[]) {
     ConstantApprox approx(&image, &points, edges, 0.05);
     cout << "ready\n";
 
+    vector<double> elapsedTimeVec; // hold cumulative step size
+    vector<double> energyVec; // hold energy per iteration
+    double totalStep = 0; // running total step
+
     // lambda for initializing triangulation
     auto initialize = [&approx, &edges, &newEnergy, &prevEnergy, &eps, &iterCount]() {
         cout << "creating mesh\n";
@@ -138,6 +143,10 @@ int main(int argc, char* argv[]) {
         if(iterCount < maxIter && abs(prevEnergy - newEnergy) > eps) {
             cout << "iteration " << iterCount << endl;
             approx.step(prevEnergy, newEnergy);
+            // data collection
+            totalStep += approx.getStep();
+            elapsedTimeVec.push_back(totalStep);
+            energyVec.push_back(newEnergy);
             iterCount++;
             auto triangulation = polyscope::getSurfaceMesh("Triangulation");
             triangulation->updateVertexPositions2D(approx.getVertices());
@@ -169,6 +178,21 @@ int main(int argc, char* argv[]) {
     polyscope::state::userCallback = callback;
     polyscope::show();
     polyscope::screenshot("../outputs/triangulation.tga", false);
+
+    // create suitable matlab arrays
+    matlab::data::TypedArray<int> iters = factory.createArray<int>({1, (unsigned long) iterCount});
+    matlab::data::TypedArray<double> elapsedTime = factory.createArray<double>({1, (unsigned long) iterCount});
+    matlab::data::TypedArray<double> energy = factory.createArray<double>({1, (unsigned long) iterCount});
+    for(int i = 0; i < iterCount; i++) {
+        iters[i] = i;
+        elapsedTime[i] = elapsedTimeVec.at(i);
+        energy[i] = energyVec.at(i);
+    }
+    matlabPtr->setVariable(u"x", iters);
+    matlabPtr->setVariable(u"t", elapsedTime);
+    matlabPtr->setVariable(u"E", energy);
+    matlabPtr->eval(u"figure; plot(x, t); title('Elapsed Time')");
+    matlabPtr->eval(u"figure; plot(x, E); title('Approximation Error')");
 
     // convert screenshot sequences to video
     system("ffmpeg -framerate 2 -i screenshot_%06d.tga -vcodec mpeg4 ../outputs/output.mp4");
