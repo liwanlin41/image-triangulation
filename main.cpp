@@ -120,7 +120,7 @@ int main(int argc, char* argv[]) {
     double totalStep = 0; // running total step
 
     // lambda for initializing triangulation
-    auto initialize = [&approx, &edges, &newEnergy, &prevEnergy, &eps, &iterCount]() {
+    auto initialize = [&]() {
         cout << "creating mesh\n";
         auto triangulation = polyscope::registerSurfaceMesh2D("Triangulation", approx.getVertices(), edges);
         cout << "getting colors\n";
@@ -134,6 +134,8 @@ int main(int argc, char* argv[]) {
         // initialize to something higher than newEnergy
         prevEnergy = newEnergy + 100 * eps;
         iterCount = 0;
+        elapsedTimeVec.push_back(totalStep); // initial values
+        energyVec.push_back(newEnergy);
         polyscope::screenshot(false);
         polyscope::screenshot("../outputs/initial.tga", false);
     };
@@ -180,10 +182,10 @@ int main(int argc, char* argv[]) {
     polyscope::screenshot("../outputs/triangulation.tga", false);
 
     // create suitable matlab arrays
-    matlab::data::TypedArray<int> iters = factory.createArray<int>({1, (unsigned long) iterCount});
-    matlab::data::TypedArray<double> elapsedTime = factory.createArray<double>({1, (unsigned long) iterCount});
-    matlab::data::TypedArray<double> energy = factory.createArray<double>({1, (unsigned long) iterCount});
-    for(int i = 0; i < iterCount; i++) {
+    matlab::data::TypedArray<int> iters = factory.createArray<int>({1, (unsigned long) iterCount + 1});
+    matlab::data::TypedArray<double> elapsedTime = factory.createArray<double>({1, (unsigned long) iterCount + 1});
+    matlab::data::TypedArray<double> energy = factory.createArray<double>({1, (unsigned long) iterCount + 1});
+    for(int i = 0; i <= iterCount; i++) {
         iters[i] = i;
         elapsedTime[i] = elapsedTimeVec.at(i);
         energy[i] = energyVec.at(i);
@@ -192,7 +194,9 @@ int main(int argc, char* argv[]) {
     matlabPtr->setVariable(u"t", elapsedTime);
     matlabPtr->setVariable(u"E", energy);
     matlabPtr->eval(u"figure; plot(x, t); title('Elapsed Time')");
+    matlabPtr->eval(u"exportgraphics(gcf, '../outputs/time.png')");
     matlabPtr->eval(u"figure; plot(x, E); title('Approximation Error')");
+    matlabPtr->eval(u"exportgraphics(gcf, '../outputs/energy.png')");
 
     // convert screenshot sequences to video
     system("ffmpeg -framerate 2 -i screenshot_%06d.tga -vcodec mpeg4 ../outputs/output.mp4");
