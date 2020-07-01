@@ -67,7 +67,7 @@ __device__ bool Triangle::contains(Point &p) {
 __device__ bool Triangle::strictlyContains(Point &p) {
 	bool allCCW = true;
 	for(int i = 0; i < 3; i++) {
-		allCCW = allCCW && = (Triangle::getSignedArea(vertices[i], vertices[(i+1)%3], &p) > 0);
+		allCCW = allCCW && (Triangle::getSignedArea(vertices[i], vertices[(i+1)%3], &p) > 0);
 	}
 	return allCCW;
 }
