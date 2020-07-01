@@ -36,12 +36,13 @@ class ConstantApprox {
 		double *greens;
 		double *blues;
 		*/
+		double ds; // step size for integration approximation
 		double *results; // used to hold temporary results on device (minimize costly allocations)
 
 	public:
 		// initialize a constant approximation triangulation on img
 		// with input triangulation points, faces
-		ConstantApprox(CImg<unsigned char> *img, vector<Point> *points, vector<array<int, 3>> &triangleInd, double step);
+		ConstantApprox(CImg<unsigned char> *img, vector<Point> *points, vector<array<int, 3>> &triangleInd, double step, double ds = 0.5);
 		// deallocate all the shared space
 		~ConstantApprox();
 		// compute energy of triangulation at this point in time

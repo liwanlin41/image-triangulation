@@ -13,16 +13,18 @@ int customRound(double x) {
 	return floor - 1;
 }
 
-ConstantApprox::ConstantApprox(CImg<unsigned char> *img, vector<Point> *pts, vector<array<int, 3>> &inds, double step) 
-: stepSize(step) {
+ConstantApprox::ConstantApprox(CImg<unsigned char> *img, vector<Point> *pts, vector<array<int, 3>> &inds, double step, double ds_) 
+: stepSize(step), ds(ds_) {
 	// create pixel array representation
 	maxX = img->width();
 	maxY = img->height();
 	cout << "image is " << maxX << "x" << maxY << endl;
 	// allocate shared space for pixel array
 	cudaMallocManaged(&pixArr, maxX * maxY * sizeof(Pixel));
-	// create space for results, one slot per pixel
-	cudaMallocManaged(&results, maxX * maxY * sizeof(double));
+	// create space for results, one slot per gpu worker
+	int maxDivisions = (int) (max(maxX, maxY)/ds + 1); // max num samples per image side, rounded up
+	// maximum possible number of samples per triangle is loosely upper bounded by 2 * maxDivisions^2
+	cudaMallocManaged(&results, 2 * maxDivisions * maxDivisions * sizeof(double));
 	bool isGrayscale = (img->spectrum() == 1);
 	for(int x = 0; x < maxX; x++) {
 		for(int y = 0; y < maxY; y++) {
