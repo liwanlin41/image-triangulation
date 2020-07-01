@@ -41,7 +41,7 @@ int main(int argc, char* argv[]) {
     }
     // set default values
     int maxIter = 50;
-    double eps = 0.0001;
+    double eps = 0.001;
     double prevEnergy = 100 * eps; // placeholder values
     double newEnergy = 0;
     int iterCount = 0;
@@ -219,7 +219,7 @@ int main(int argc, char* argv[]) {
     matlabPtr->eval(u"exportgraphics(g, '../outputs/data_energy.png')");
 
     // convert screenshot sequences to video
-    system("ffmpeg -framerate 2 -i screenshot_%06d.tga -vcodec mpeg4 ../outputs/output.mp4");
+    system("ffmpeg -hide_banner -loglevel warning -framerate 2 -i screenshot_%06d.tga -vcodec mpeg4 ../outputs/output.mp4");
     system("rm screenshot_*");
 	return 0;
 }
