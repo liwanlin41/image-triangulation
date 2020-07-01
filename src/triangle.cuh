@@ -36,7 +36,6 @@ class Triangle {
 
 		// determine if triangle contains point p, including boundary points
 		CUDA_DEV bool contains(Point &p);
-		CUDA_DEV bool strictlyContains(Point &p);
 
 		// get vertices of triangle, store in a, b, c
 		void copyVertices(Point *a, Point *b, Point *c);

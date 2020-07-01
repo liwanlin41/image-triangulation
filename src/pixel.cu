@@ -257,32 +257,3 @@ __device__ double Pixel::intersectionArea(Triangle t, Point* polygon, int *size)
     }
     return shoelace(boundary, numPoints);
 }
-
-__device__ double Pixel::approxArea(Triangle t, int n) {
-	// width of a square in the lattice grid;
-	// this ensures n points per side
-	double dx = 1.0/(n-1);
-	int numPoints = 0; // number of lattice points inside the triangle
-	// disregard boundary points, floating point error makes them iffy anyway
-	for(int i = 0; i < n; i++) {
-		for(int j = 0; j < n; j++) {
-			double xval = x - 0.5 + dx * i;
-			double yval = y - 0.5 + dx * j;
-			bool contains = true;
-			for(int i = 0; i < 3; i++) {
-				int j = (i+1)%3;
-				double bx = t.vertices[i]->getX() - xval;
-				double by = t.vertices[i]->getY() - yval;
-				double cx = t.vertices[j]->getX() - xval;
-				double cy = t.vertices[j]->getY() - yval;
-				if (bx * cy - cx * by < 0) {
-					contains = false;
-					break;
-				}
-			}
-			numPoints += contains;
-		}
-	}
-	// approximate area
-	return numPoints / (n * n);
-}

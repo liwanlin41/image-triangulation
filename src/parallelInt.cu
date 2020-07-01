@@ -93,8 +93,7 @@ __global__ void pixConstantEnergyInt(Pixel *pixArr, int maxX, int maxY, Triangle
 	int y = blockIdx.y * blockDim.y + threadIdx.y;
 	int ind = x * maxY + y; // index in pixArr;
 	if(x < maxX && y < maxY) {
-		//double area = pixArr[ind].intersectionArea(triArr[t]);
-		double area = pixArr[ind].approxArea(triArr[t],10);
+		double area = pixArr[ind].intersectionArea(triArr[t]);
 		double diff = colors[t] - pixArr[ind].getColor();
 		results[ind] = diff * diff * area;
 	}
