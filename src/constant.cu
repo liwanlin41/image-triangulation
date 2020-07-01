@@ -184,7 +184,8 @@ void ConstantApprox::updateApprox() {
 	}
 }
 
-void ConstantApprox::step(double &prevEnergy, double &newEnergy) {
+double ConstantApprox::step(double &prevEnergy, double &newEnergy) {
+	double usedStep;
 	computeGrad();
     while(!gradUpdate()) {
         undo(); // keep halving stepSize until no triangle is inverted
@@ -193,15 +194,20 @@ void ConstantApprox::step(double &prevEnergy, double &newEnergy) {
     prevEnergy = newEnergy;
 	newEnergy = computeEnergy();
     // TODO: tune this
-	if(newEnergy > 1.5 * prevEnergy) { // overshot optimum?
+	if(newEnergy > prevEnergy) { // overshot optimum?
         do {
             undo();
         } while (!gradUpdate());
         updateApprox();
-        newEnergy = computeEnergy();
-    }
+		newEnergy = computeEnergy();
+		usedStep = stepSize;
+    } else {
+		usedStep = stepSize;
+		stepSize *= 2; // prevent complete vanishing to zero
+	}
     cout << "new energy: " << newEnergy << endl;
-    cout << "Step size: " << getStep() << endl;
+	cout << "Step size: " << usedStep << endl;
+	return usedStep;
 }
 
 void ConstantApprox::run(int maxIter, double eps) {

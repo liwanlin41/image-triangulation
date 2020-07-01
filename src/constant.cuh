@@ -61,7 +61,8 @@ class ConstantApprox {
 		// update approximation value for each triangle
 		void updateApprox();
 		// run one full step of the procedure while tracking energy values
-		void step(double &prevEnergy, double &newEnergy);
+		// return stepsize used in this step
+		double step(double &prevEnergy, double &newEnergy);
 		// run the entire procedure for either maxIter iterations or
 		// until change in energy is at most eps
 		void run(int maxIter = 1000, double eps = 0.001);

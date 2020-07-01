@@ -41,7 +41,7 @@ int main(int argc, char* argv[]) {
     }
     // set default values
     int maxIter = 50;
-    double eps = 0.001;
+    double eps = 0.0001;
     double prevEnergy = 100 * eps; // placeholder values
     double newEnergy = 0;
     int iterCount = 0;
@@ -142,7 +142,7 @@ int main(int argc, char* argv[]) {
         newEnergy = approx.computeEnergy();
         cout << "done, energy is " << newEnergy << endl;
         // initialize to something higher than newEnergy
-        prevEnergy = newEnergy + 100 * eps;
+        prevEnergy = newEnergy * 2;
         iterCount = 0;
         elapsedTimeVec.push_back(totalStep); // initial values
         energyVec.push_back(newEnergy);
@@ -151,15 +151,24 @@ int main(int argc, char* argv[]) {
     };
 
     // lambda for running a step
+    // track number of times for which change in energy has been "small"
+    int numSmallChanges = 0;
+    const int maxSmallChanges = 3; // maximum number of consecutive "small" changes allowed
     auto step = [&]() {
-        if(iterCount < maxIter && abs(prevEnergy - newEnergy) > eps) {
+        if(iterCount < maxIter && numSmallChanges < maxSmallChanges) {
+        //if(iterCount < maxIter && abs(prevEnergy - newEnergy) > eps * prevEnergy) {
             cout << "iteration " << iterCount << endl;
-            approx.step(prevEnergy, newEnergy);
+            totalStep += approx.step(prevEnergy, newEnergy);
             // data collection
-            totalStep += approx.getStep();
             elapsedTimeVec.push_back(totalStep);
             energyVec.push_back(newEnergy);
             iterCount++;
+            if(abs(prevEnergy - newEnergy) > eps * prevEnergy) {
+                numSmallChanges = 0;
+            } else {
+                numSmallChanges++;
+            }
+            // handle display
             auto triangulation = polyscope::getSurfaceMesh("Triangulation");
             triangulation->updateVertexPositions2D(approx.getVertices());
             triangulation->addFaceColorQuantity("approximate colors", approx.getColors());
