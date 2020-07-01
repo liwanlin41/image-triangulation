@@ -56,20 +56,20 @@ double Triangle::gradY(int &p) {
 
 __device__ bool Triangle::contains(Point &p) {
 	// p is inside the triangle iff the orientations of the triangles
-	// with vertices (vertices[i], vertices[i+1], p) are all the same
-	bool signs[3]; // hold signs of triangles (true if ccw)
+	// with vertices (vertices[i], vertices[i+1], p) are all ccw
+	bool allCCW = true;
 	for(int i = 0; i < 3; i++) {
-		signs[i] = (Triangle::getSignedArea(vertices[i], vertices[(i+1)%3], &p) >= 0);
+		allCCW = allCCW && (Triangle::getSignedArea(vertices[i], vertices[(i+1)%3], &p) >= 0);
 	}
-	return signs[0] == signs[1] && signs[1] == signs[2];
+	return allCCW;
 }
 
 __device__ bool Triangle::strictlyContains(Point &p) {
-	bool signs[3];
+	bool allCCW = true;
 	for(int i = 0; i < 3; i++) {
-		signs[i] = (Triangle::getSignedArea(vertices[i], vertices[(i+1)%3], &p) > 0);
+		allCCW = allCCW && = (Triangle::getSignedArea(vertices[i], vertices[(i+1)%3], &p) > 0);
 	}
-	return (signs[0] && signs[1] && signs[2]);
+	return allCCW;
 }
 
 void Triangle::copyVertices(Point *ptrA, Point *ptrB, Point *ptrC) {
