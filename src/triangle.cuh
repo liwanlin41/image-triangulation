@@ -37,6 +37,9 @@ class Triangle {
 		// determine if triangle contains point p, including boundary points
 		CUDA_DEV bool contains(Point &p);
 
+		// return index of vertex opposite the medium length side
+		int medAngle();
+
 		// get vertices of triangle, store in a, b, c
 		void copyVertices(Point *a, Point *b, Point *c);
 
