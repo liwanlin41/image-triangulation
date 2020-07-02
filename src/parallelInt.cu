@@ -97,35 +97,9 @@ __global__ void approxDoubleIntSample(Pixel *pixArr, int maxY, Point *a, Point *
 }
 */
 
-__global__ void approxConstantEnergySample(Pixel *pixArr, int maxY, Point *a, Point *b, Point *c, double color, double *results, double dA, int samples) {
-	int ind = blockIdx.x * blockDim.x + threadIdx.x; // 1D index
-	if(ind < (samples+1) * samples / 2) { // check bounds
-		// u is the component from a to b, v is the component from a to c; extract these from 1D index
-		// where samples are grouped by column (v increases most quickly)
-		int coeffB = 2 * samples + 1;
-		int u = (coeffB - sqrt(coeffB * coeffB - 8.0 * ind))/2;
-		//int u = 0;
-		int v = ind - (2*samples - u + 1) * u / 2;
-		if(u + v == samples) { // handle rounding error when ind is a triangular number
-			u++;
-			v = 0;
-		}
-		assert(u + v < samples);
-		double x = (a->getX() * (samples - u - v) + b->getX() * u + c->getX() * v) / samples;
-		double y = (a->getY() * (samples - u - v) + b->getY() * u + c->getY() * v) / samples;
-		// find containing pixel
-		int pixX = pixelRound(x);
-		int pixY = pixelRound(y);
-		double diff = color - pixArr[pixX * maxY + pixY].getColor();
-		double areaContrib = (u + v == samples - 1) ? dA/2 : dA;
-		results[ind] = diff * diff * areaContrib;
-	}
-}
-
 // using Point a as vertex point, sample ~samples^2/2 points inside the triangle with an area element of dA
 // NOTE: samples does not count endpoints along edge bc as the parallelograms rooted there lie outside the triangle
 // maxY is for converting 2D pixel index to 1D index
-/*
 __global__ void approxConstantEnergySample(Pixel *pixArr, int maxY, Point *a, Point *b, Point *c, double color, double *results, double dA, int samples) {
 	int u = blockIdx.x * blockDim.x + threadIdx.x; // component towards b
 	int v = blockIdx.y * blockDim.y + threadIdx.y; // component towards c
@@ -145,7 +119,6 @@ __global__ void approxConstantEnergySample(Pixel *pixArr, int maxY, Point *a, Po
 		results[ind] = diff * diff * areaContrib;
 	}
 }
-*/
 
 double constantEnergyApprox(Pixel *pixArr, int &maxY, Triangle *triArr, double *colors, int &numTri, double *results, double ds, Point *workingTri) {
 	double totalEnergy = 0;
@@ -155,12 +128,17 @@ double constantEnergyApprox(Pixel *pixArr, int &maxY, Triangle *triArr, double *
 		triArr[t].copyVertices(workingTri+((3-i)%3), workingTri+((4-i)%3), workingTri+((5-i)%3));
 		// compute number of samples needed, using median number per side as reference
 		int samples = ceil(workingTri[1].distance(workingTri[2])/ds);
-		// unfortunately half of these threads will not be doing useful work; fix this somehow?
-		//dim3 numBlocks((samples + numThreadsX - 1) / numThreadsX, (samples + numThreadsY - 1) / numThreadsY);
-		int numBlocks = ceil(samples * (samples + 1) / (2.0 * numThreadsX * numThreadsY));
+		// unfortunately half of these threads will not be doing useful work; no good way to fix this, sqrt is too slow
+		dim3 numBlocks((samples + numThreadsX - 1) / numThreadsX, (samples + numThreadsY - 1) / numThreadsY);
 		double dA = triArr[t].getArea() * 2 / (samples * samples);
-		//approxConstantEnergySample<<<numBlocks, threadsPerBlock>>>(pixArr, maxY, workingTri, workingTri + 1, workingTri + 2, colors[t], results, dA, samples);
-		approxConstantEnergySample<<<numBlocks, numThreadsX * numThreadsY>>>(pixArr, maxY, workingTri, workingTri + 1, workingTri + 2, colors[t], results, dA, samples);
+		//int needed = samples * (samples+1) / 2;
+		/*
+		if (needed > 1400000) {
+			cout << "space needed is " << needed << endl;
+			cout << "distance is " << workingTri[1].distance(workingTri[2]) << endl;
+		}
+		*/
+		approxConstantEnergySample<<<numBlocks, threadsPerBlock>>>(pixArr, maxY, workingTri, workingTri + 1, workingTri + 2, colors[t], results, dA, samples);
 		totalEnergy += sumArray(results, samples * (samples + 1) / 2, results);
 	}
 	return totalEnergy;

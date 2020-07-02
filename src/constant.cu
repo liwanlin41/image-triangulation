@@ -10,10 +10,6 @@ ConstantApprox::ConstantApprox(CImg<unsigned char> *img, vector<Point> *pts, vec
 	cout << "image is " << maxX << "x" << maxY << endl;
 	// allocate shared space for pixel array
 	cudaMallocManaged(&pixArr, maxX * maxY * sizeof(Pixel));
-	// create space for results, one slot per gpu worker
-	int maxDivisions = (int) (max(maxX, maxY)/ds + 1); // max num samples per image side, rounded up
-	// maximum possible number of samples per triangle is loosely upper bounded by 4 * maxDivisions^2
-	cudaMallocManaged(&results, 4 * maxDivisions * maxDivisions * sizeof(double));
 	bool isGrayscale = (img->spectrum() == 1);
 	for(int x = 0; x < maxX; x++) {
 		for(int y = 0; y < maxY; y++) {
@@ -50,14 +46,33 @@ ConstantApprox::ConstantApprox(CImg<unsigned char> *img, vector<Point> *pts, vec
 	cudaMallocManaged(&greens, numTri * sizeof(double));
 	cudaMallocManaged(&blues, numTri * sizeof(double));
 	*/
+
+	double maxLength = 0; // get maximum side length of a triangle for space allocation
 	for(int i = 0; i < numTri; i++) {
 		array<int, 3> t = inds.at(i); // vertex indices for this triangle
 		// constructor takes point addresses
 		triArr[i] = Triangle(points + t.at(0), points + t.at(1), points + t.at(2));
+		maxLength = max(maxLength, triArr[i].maxLength());
 	}
 	imageInt = new double[numTri];
 	// create shared space for triangle iterations
 	cudaMallocManaged(&workingTriangle, 3 * sizeof(Point));
+
+	// create space for results, one slot per gpu worker
+	long long maxDivisions = (int) (maxLength/ds + 1); // max num samples per side, rounded up
+	// maximum possible number of samples per triangle is loosely upper bounded by 2 * maxDivisions^2
+	// assumming edge lengths are bounded above by maxDivisions * 2
+	long long resultSlots = max(2 * maxDivisions * maxDivisions, (long long) maxX * maxY); // at least num pixels
+	cudaMallocManaged(&results, resultSlots * sizeof(double));
+	// the above may cause errors because so much memory is required
+	cudaError_t error = cudaGetLastError();
+  	if(error != cudaSuccess)
+  	{
+    	// print the CUDA error message and exit
+		printf("CUDA error: %s\n", cudaGetErrorString(error));
+		cout << "An approximation of this quality is not possible due to memory limitations." << endl;
+    	exit(-1);
+  	}
 
 	// create an initial approximation based on this triangulation
 	updateApprox();

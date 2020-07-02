@@ -64,3 +64,5 @@ seems 5x5 is decent
 7/2:
 on the other hand barycentric sampling is consistently under but it is FAST (sampling every 0.5 gives 30us per call on apple with 320 triangles, compared to 1ms for exact)
 sampling every 0.05 gives 1% error rate and 160us per call; sampling every 0.02 gives 0.5% error and 900us per call (basically same as exact)
+apple.jpeg, 320 triangles, sample every 0.01 is 700us per call and within 1% approximation; sample every 0.05 is 50us per call and 10% approximation; 0.02 is 150us and 2%
+panda.jpeg, 1239 triangles: 0.05 is 130us per call and very accurate approximation
