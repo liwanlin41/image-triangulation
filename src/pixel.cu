@@ -258,7 +258,7 @@ __device__ double Pixel::intersectionArea(Triangle t, Point* polygon, int *size)
     return shoelace(boundary, numPoints);
 }
 
-__device__ double Pixel::approxArea(Triangle t, int n) {
+__device__ double Pixel::approxArea(Triangle &t, int n) {
 	// width of a square in the lattice grid;
 	// this ensures n points per side
 	double ds = 1.0/(n-1);
@@ -272,14 +272,22 @@ __device__ double Pixel::approxArea(Triangle t, int n) {
 			bool strictly = true;
 			// iterate over vertices
 			for(int v = 0; v < 3; v++) {
+				int w = (v+1)%3; // avoid doing slow computation twice
+				// these accesses seem slow but there doesn't seem to be a better way
 				double bx = t.vertices[v]->getX() - xval;
 				double by = t.vertices[v]->getY() - yval;
-				double cx = t.vertices[(v+1)%3]->getX() - xval;
-				double cy = t.vertices[(v+1)%3]->getY() - yval;
+				double cx = t.vertices[w]->getX() - xval;
+				double cy = t.vertices[w]->getY() - yval;
 				double sign = bx * cy - cx * by;
-				if(sign < 0) contains = false;
-				if(sign <= 0) strictly = false;
+				// branch divergence here :( nothing seems to speed it up?
+				if(sign < 0) {
+					contains = false;
+					strictly = false;
+					break;
+				}
+				if(sign == 0) strictly = false;
 			}
+			// count boundary points once and interior points twice
 			numPoints += contains + strictly;
 		}
 	}

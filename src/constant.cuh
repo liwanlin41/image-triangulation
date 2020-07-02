@@ -42,7 +42,7 @@ class ConstantApprox {
 	public:
 		// initialize a constant approximation triangulation on img
 		// with input triangulation points, faces
-		ConstantApprox(CImg<unsigned char> *img, vector<Point> *points, vector<array<int, 3>> &triangleInd, double step, double ds = 0.5);
+		ConstantApprox(CImg<unsigned char> *img, vector<Point> *points, vector<array<int, 3>> &triangleInd, double step, double ds = 0.05);
 		// deallocate all the shared space
 		~ConstantApprox();
 		// compute energy of triangulation at this point in time

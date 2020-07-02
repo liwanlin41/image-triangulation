@@ -60,3 +60,7 @@ GPU activities:   81.89%  380.238s      7434  51.149ms  19.405ms  106.21ms  pixC
                    2.74%  12.7082s      2478  5.1284ms  4.6496ms  7.4348ms  pixConstantEnergyInt(Pixel*, int, int, Triangle*, double*, int, double*)
 2x2 is terrible approximation on apple.jpeg though, causes energy computation to blow up and step size to vanish as colors keep increasing on tiny triangle? what's happening - double integral stays same because approximation is so coarse, but area goes to 0 because area computation is exact
 seems 5x5 is decent
+
+7/2:
+on the other hand barycentric sampling is consistently under but it is FAST (sampling every 0.5 gives 30us per call on apple with 320 triangles, compared to 1ms for exact)
+sampling every 0.05 gives 1% error rate and 160us per call; sampling every 0.02 gives 0.5% error and 900us per call (basically same as exact)

@@ -2,17 +2,6 @@
 
 const double TOLERANCE = 1e-10;
 
-// custom rounding function to support needed pixel rounding
-int customRound(double x) {
-	int floor = (int) x;
-	if (abs(x - floor) <= 0.5) {
-		return floor;
-	} else if (x > 0) {
-		return floor + 1;
-	}
-	return floor - 1;
-}
-
 ConstantApprox::ConstantApprox(CImg<unsigned char> *img, vector<Point> *pts, vector<array<int, 3>> &inds, double step, double ds_) 
 : stepSize(step), ds(ds_) {
 	// create pixel array representation
@@ -90,8 +79,8 @@ ConstantApprox::~ConstantApprox() {
 }
 
 double ConstantApprox::computeEnergy() {
-	return constantEnergyEval(pixArr, maxX, maxY, triArr, grays, numTri, results);
-	//return constantEnergyApprox(pixArr, maxY, triArr, grays, numTri, results, ds, workingTriangle);
+	//return constantEnergyEval(pixArr, maxX, maxY, triArr, grays, numTri, results);
+	return constantEnergyApprox(pixArr, maxY, triArr, grays, numTri, results, ds, workingTriangle);
 }
 
 void ConstantApprox::computeGrad() {
@@ -177,7 +166,7 @@ void ConstantApprox::updateApprox() {
 			assert(area < TOLERANCE);
 			approxVal = 255; // TODO: something better than this
 		}
-		grays[t] = min(255.0, approxVal); // prevent blowup
+		grays[t] = min(255.0, approxVal); // prevent blowup in case of poor approximation
 		// get rgb values
 		/*
 		reds[t] = doubleIntEval(APPROXTYPE, pixArr, maxX, maxY, triArr, t, results, red) / area;

@@ -64,8 +64,8 @@ __global__ void pixConstantDoubleInt(Pixel *pixArr, int maxX, int maxY, Triangle
 	int y = blockIdx.y * blockDim.y + threadIdx.y;
 	int ind = x * maxY + y; // index in pixArr
 	if(x < maxX && y < maxY) { // check bounds
-		//double area = pixArr[ind].intersectionArea(triArr[t]);
-		double area = pixArr[ind].approxArea(triArr[t]);
+		double area = pixArr[ind].intersectionArea(triArr[t]);
+		//double area = pixArr[ind].approxArea(triArr[t]);
 		results[ind] = area * pixArr[ind].getColor(channel);
 	}
 }
@@ -88,22 +88,44 @@ double doubleIntEval(ApproxType approx, Pixel *pixArr, int &maxX, int &maxY, Tri
 	return answer;
 }
 
-// compute the energy of a single pixel on triangle triArr[t]
-__global__ void pixConstantEnergyInt(Pixel *pixArr, int maxX, int maxY, Triangle *triArr, double *colors, int t, double *results) {
-	int x = blockIdx.x * blockDim.x + threadIdx.x;
-	int y = blockIdx.y * blockDim.y + threadIdx.y;
-	int ind = x * maxY + y; // index in pixArr;
-	if(x < maxX && y < maxY) {
-		//double area = pixArr[ind].intersectionArea(triArr[t]);
-		double area = pixArr[ind].approxArea(triArr[t]);
-		double diff = colors[t] - pixArr[ind].getColor();
-		results[ind] = diff * diff * area;
+// using Point a as vertex point, sample ~samples^2/2 points inside triangle with area element of dA
+/*
+__global__ void approxDoubleIntSample(Pixel *pixArr, int maxY, Point *a, Point *b, Point *c, double *results, double dA, int samples) {
+	int u = blockIdx.x * blockDim.x + threadIdx.x; // component towards b
+	int v = blockIdx.y * blockDim.y + threadIdx.y; // component towards c
+	int ind = (2 * samples - u + 1) * u / 2 + v; // 1D index in results
+}
+*/
+
+__global__ void approxConstantEnergySample(Pixel *pixArr, int maxY, Point *a, Point *b, Point *c, double color, double *results, double dA, int samples) {
+	int ind = blockIdx.x * blockDim.x + threadIdx.x; // 1D index
+	if(ind < (samples+1) * samples / 2) { // check bounds
+		// u is the component from a to b, v is the component from a to c; extract these from 1D index
+		// where samples are grouped by column (v increases most quickly)
+		int coeffB = 2 * samples + 1;
+		int u = (coeffB - sqrt(coeffB * coeffB - 8.0 * ind))/2;
+		//int u = 0;
+		int v = ind - (2*samples - u + 1) * u / 2;
+		if(u + v == samples) { // handle rounding error when ind is a triangular number
+			u++;
+			v = 0;
+		}
+		assert(u + v < samples);
+		double x = (a->getX() * (samples - u - v) + b->getX() * u + c->getX() * v) / samples;
+		double y = (a->getY() * (samples - u - v) + b->getY() * u + c->getY() * v) / samples;
+		// find containing pixel
+		int pixX = pixelRound(x);
+		int pixY = pixelRound(y);
+		double diff = color - pixArr[pixX * maxY + pixY].getColor();
+		double areaContrib = (u + v == samples - 1) ? dA/2 : dA;
+		results[ind] = diff * diff * areaContrib;
 	}
 }
 
 // using Point a as vertex point, sample ~samples^2/2 points inside the triangle with an area element of dA
 // NOTE: samples does not count endpoints along edge bc as the parallelograms rooted there lie outside the triangle
 // maxY is for converting 2D pixel index to 1D index
+/*
 __global__ void approxConstantEnergySample(Pixel *pixArr, int maxY, Point *a, Point *b, Point *c, double color, double *results, double dA, int samples) {
 	int u = blockIdx.x * blockDim.x + threadIdx.x; // component towards b
 	int v = blockIdx.y * blockDim.y + threadIdx.y; // component towards c
@@ -117,30 +139,44 @@ __global__ void approxConstantEnergySample(Pixel *pixArr, int maxY, Point *a, Po
 		int pixX = pixelRound(x);
 		int pixY = pixelRound(y);
 		double diff = color - pixArr[pixX * maxY + pixY].getColor();
-		if(u + v == samples - 1) { // along the opposite edge, dA element is a triangle instead of a parallelogram
-			results[ind] = diff * diff * dA / 2;
-		} else {
-			results[ind] = diff * diff * dA;
-		}
+		// account for points near edge bc having triangle contributions rather than parallelograms,
+		// written for fast access and minimal branching
+		double areaContrib = (u + v == samples - 1) ? dA/2 : dA;
+		results[ind] = diff * diff * areaContrib;
 	}
 }
+*/
 
 double constantEnergyApprox(Pixel *pixArr, int &maxY, Triangle *triArr, double *colors, int &numTri, double *results, double ds, Point *workingTri) {
 	double totalEnergy = 0;
 	for(int t = 0; t < numTri; t++) {
-		// compute number of samples needed
-		double maxLength = triArr[t].maxLength();
-		int samples = ceil(maxLength/ds);
 		int i = triArr[t].minVertex(); // vertex opposite shortest side
 		// ensure minVertex is copied into location workingTri
 		triArr[t].copyVertices(workingTri+((3-i)%3), workingTri+((4-i)%3), workingTri+((5-i)%3));
+		// compute number of samples needed, using median number per side as reference
+		int samples = ceil(workingTri[1].distance(workingTri[2])/ds);
 		// unfortunately half of these threads will not be doing useful work; fix this somehow?
-		dim3 numBlocks((samples + numThreadsX - 1) / numThreadsX, (samples + numThreadsY - 1) / numThreadsY);
+		//dim3 numBlocks((samples + numThreadsX - 1) / numThreadsX, (samples + numThreadsY - 1) / numThreadsY);
+		int numBlocks = ceil(samples * (samples + 1) / (2.0 * numThreadsX * numThreadsY));
 		double dA = triArr[t].getArea() * 2 / (samples * samples);
-		approxConstantEnergySample<<<numBlocks, threadsPerBlock>>>(pixArr, maxY, workingTri, workingTri + 1, workingTri + 2, colors[t], results, dA, samples);
+		//approxConstantEnergySample<<<numBlocks, threadsPerBlock>>>(pixArr, maxY, workingTri, workingTri + 1, workingTri + 2, colors[t], results, dA, samples);
+		approxConstantEnergySample<<<numBlocks, numThreadsX * numThreadsY>>>(pixArr, maxY, workingTri, workingTri + 1, workingTri + 2, colors[t], results, dA, samples);
 		totalEnergy += sumArray(results, samples * (samples + 1) / 2, results);
 	}
 	return totalEnergy;
+}
+
+// compute the energy of a single pixel on triangle triArr[t]
+__global__ void pixConstantEnergyInt(Pixel *pixArr, int maxX, int maxY, Triangle *triArr, double *colors, int t, double *results) {
+	int x = blockIdx.x * blockDim.x + threadIdx.x;
+	int y = blockIdx.y * blockDim.y + threadIdx.y;
+	int ind = x * maxY + y; // index in pixArr;
+	if(x < maxX && y < maxY) {
+		double area = pixArr[ind].intersectionArea(triArr[t]);
+		//double area = pixArr[ind].approxArea(triArr[t]);
+		double diff = colors[t] - pixArr[ind].getColor();
+		results[ind] = diff * diff * area;
+	}
 }
 
 double constantEnergyEval(Pixel *pixArr, int &maxX, int &maxY, Triangle *triArr, double *colors, int &numTri, double *results) {
