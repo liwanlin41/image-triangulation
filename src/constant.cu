@@ -23,8 +23,8 @@ ConstantApprox::ConstantApprox(CImg<unsigned char> *img, vector<Point> *pts, vec
 	cudaMallocManaged(&pixArr, maxX * maxY * sizeof(Pixel));
 	// create space for results, one slot per gpu worker
 	int maxDivisions = (int) (max(maxX, maxY)/ds + 1); // max num samples per image side, rounded up
-	// maximum possible number of samples per triangle is loosely upper bounded by 2 * maxDivisions^2
-	cudaMallocManaged(&results, 2 * maxDivisions * maxDivisions * sizeof(double));
+	// maximum possible number of samples per triangle is loosely upper bounded by 4 * maxDivisions^2
+	cudaMallocManaged(&results, 4 * maxDivisions * maxDivisions * sizeof(double));
 	bool isGrayscale = (img->spectrum() == 1);
 	for(int x = 0; x < maxX; x++) {
 		for(int y = 0; y < maxY; y++) {

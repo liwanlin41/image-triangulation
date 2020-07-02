@@ -46,4 +46,5 @@ GPU activities:   47.14%  1.5e+03s     54516  27.622ms  27.016ms  65.186ms  pixC
                   40.21%  1.3e+03s     74340  17.280ms  16.942ms  31.565ms  pixConstantLineInt(Pixel*, int, int, Point*, Point*, Point*, bool, double*)
                   11.76%  375.583s     13629  27.558ms  27.003ms  36.439ms  pixConstantEnergyInt(Pixel*, int, int, Triangle*, double*, int, double*)
 
-
+7/1:
+using apple.jpeg, gridded pixel approximation with a 4x4 grid takes 500us per call but it overestimates the actual value rather significantly (~5%); scales very poorly, 10x10 grid is slower than the exact computation; this is impractical and inaccurate
