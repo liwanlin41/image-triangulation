@@ -89,11 +89,25 @@ double doubleIntEval(ApproxType approx, Pixel *pixArr, int &maxX, int &maxY, Tri
 }
 
 // using Point a as vertex point, sample ~samples^2/2 points inside triangle with area element of dA
-/*
-__global__ void approxDoubleIntSample(Pixel *pixArr, int maxY, Point *a, Point *b, Point *c, double *results, double dA, int samples) {
+// for details see approxConstantEnergySample below
+__global__ void constDoubleIntSample(Pixel *pixArr, int maxY, Point *a, Point *b, Point *c, double *results, double dA, int samples, ColorChannel channel) {
 	int u = blockIdx.x * blockDim.x + threadIdx.x; // component towards b
 	int v = blockIdx.y * blockDim.y + threadIdx.y; // component towards c
 	int ind = (2 * samples - u + 1) * u / 2 + v; // 1D index in results
+	if(u + v < samples) {
+		double x = (a->getX() * (samples - u - v) + b->getX() * u + c->getX() * v) / samples;
+		double y = (a->getY() * (samples - u - v) + b->getY() * u + c->getY() * v) / samples;
+		// find containing pixel
+		int pixX = pixelRound(x);
+		int pixY = pixelRound(y);
+		double areaContrib = (u+v == samples - 1) ? dA/2 : dA;
+		results[ind] = pixArr[pixX * maxY + pixY].getColor(channel) * areaContrib;
+	}
+}
+
+/*
+double doubleIntApprox(ApproxType approx, Pixel *pixArr, int &maxX, int &maxY, Triangle *triArr, int &t, double *results, double ds, Point *workingTri, ColorChannel channel) {
+
 }
 */
 
@@ -123,7 +137,7 @@ __global__ void approxConstantEnergySample(Pixel *pixArr, int maxY, Point *a, Po
 double constantEnergyApprox(Pixel *pixArr, int &maxY, Triangle *triArr, double *colors, int &numTri, double *results, double ds, Point *workingTri) {
 	double totalEnergy = 0;
 	for(int t = 0; t < numTri; t++) {
-		int i = triArr[t].minVertex(); // vertex opposite shortest side
+		int i = triArr[t].midVertex(); // vertex opposite shortest side
 		// ensure minVertex is copied into location workingTri
 		triArr[t].copyVertices(workingTri+((3-i)%3), workingTri+((4-i)%3), workingTri+((5-i)%3));
 		// compute number of samples needed, using median number per side as reference
@@ -131,13 +145,6 @@ double constantEnergyApprox(Pixel *pixArr, int &maxY, Triangle *triArr, double *
 		// unfortunately half of these threads will not be doing useful work; no good way to fix this, sqrt is too slow
 		dim3 numBlocks((samples + numThreadsX - 1) / numThreadsX, (samples + numThreadsY - 1) / numThreadsY);
 		double dA = triArr[t].getArea() * 2 / (samples * samples);
-		//int needed = samples * (samples+1) / 2;
-		/*
-		if (needed > 1400000) {
-			cout << "space needed is " << needed << endl;
-			cout << "distance is " << workingTri[1].distance(workingTri[2]) << endl;
-		}
-		*/
 		approxConstantEnergySample<<<numBlocks, threadsPerBlock>>>(pixArr, maxY, workingTri, workingTri + 1, workingTri + 2, colors[t], results, dA, samples);
 		totalEnergy += sumArray(results, samples * (samples + 1) / 2, results);
 	}

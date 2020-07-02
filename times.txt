@@ -66,3 +66,4 @@ on the other hand barycentric sampling is consistently under but it is FAST (sam
 sampling every 0.05 gives 1% error rate and 160us per call; sampling every 0.02 gives 0.5% error and 900us per call (basically same as exact)
 apple.jpeg, 320 triangles, sample every 0.01 is 700us per call and within 1% approximation; sample every 0.05 is 50us per call and 10% approximation; 0.02 is 150us and 2%
 panda.jpeg, 1239 triangles: 0.05 is 130us per call and very accurate approximation
+^ dumb mistake, actually using the middle length side to get num samples gives 1% approximation with 0.1 sample step on apple.jpeg, runtime 50us

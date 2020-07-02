@@ -37,8 +37,8 @@ class Triangle {
 		// determine if triangle contains point p, including boundary points
 		CUDA_DEV bool contains(Point &p);
 
-		// return index of vertex opposite the shortest side
-		int minVertex();
+		// return index of vertex opposite the middle length side
+		int midVertex();
 		// return length of longest side
 		double maxLength();
 

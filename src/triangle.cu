@@ -65,14 +65,15 @@ __device__ bool Triangle::contains(Point &p) {
 	return true;
 }
 
-int Triangle::minVertex() {
+int Triangle::midVertex() {
 	double distances[3];
 	for(int i = 0; i < 3; i++) {
 		// get length of opposite side
 		distances[i] = vertices[(i+1)%3]->distance(*vertices[(i+2)%3]);
 	}
 	for(int i = 0; i < 3; i++) {
-		if(distances[i] <= min(distances[(i+1)%3], distances[(i+2)%3])) return i;
+		if(distances[i] >= min(distances[(i+1)%3], distances[(i+2)%3]) && 
+			distances[i] <= max(distances[(i+1)%3], distances[(i+2)%3])) return i;
 	}
 	throw runtime_error("should not get here");
 	return -1; // to make compiler happy
