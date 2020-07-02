@@ -91,6 +91,7 @@ ConstantApprox::~ConstantApprox() {
 
 double ConstantApprox::computeEnergy() {
 	return constantEnergyEval(pixArr, maxX, maxY, triArr, grays, numTri, results);
+	//return constantEnergyApprox(pixArr, maxY, triArr, grays, numTri, results, ds, workingTriangle);
 }
 
 void ConstantApprox::computeGrad() {
@@ -176,7 +177,7 @@ void ConstantApprox::updateApprox() {
 			assert(area < TOLERANCE);
 			approxVal = 255; // TODO: something better than this
 		}
-		grays[t] = approxVal;
+		grays[t] = min(255.0, approxVal); // prevent blowup
 		// get rgb values
 		/*
 		reds[t] = doubleIntEval(APPROXTYPE, pixArr, maxX, maxY, triArr, t, results, red) / area;

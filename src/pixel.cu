@@ -258,36 +258,34 @@ __device__ double Pixel::intersectionArea(Triangle t, Point* polygon, int *size)
     return shoelace(boundary, numPoints);
 }
 
-/*
 __device__ double Pixel::approxArea(Triangle t, int n) {
 	// width of a square in the lattice grid;
 	// this ensures n points per side
 	double ds = 1.0/(n-1);
 	int numPoints = 0; // number of lattice points inside the triangle
-	// disregard boundary points, floating point error makes them iffy anyway
+	// weight boundary points by 1/2, as in Pick's
 	for(int i = 0; i < n; i++) {
 		for(int j = 0; j < n; j++) {
 			double xval = x - 0.5 + ds * i;
 			double yval = y - 0.5 + ds * j;
 			bool contains = true; // whether this point is contained
+			bool strictly = true;
 			// iterate over vertices
 			for(int v = 0; v < 3; v++) {
 				double bx = t.vertices[v]->getX() - xval;
 				double by = t.vertices[v]->getY() - yval;
 				double cx = t.vertices[(v+1)%3]->getX() - xval;
 				double cy = t.vertices[(v+1)%3]->getY() - yval;
-				if(bx * cy < cx * by) { // not ccw orientation
-					contains = false;
-					break;
-				}
+				double sign = bx * cy - cx * by;
+				if(sign < 0) contains = false;
+				if(sign <= 0) strictly = false;
 			}
-			numPoints += contains;
+			numPoints += contains + strictly;
 		}
 	}
 	// approximate area
-	return ((double) numPoints) / (n * n);
+	return numPoints / (2.0 * n * n);
 } 
-*/
 
 int pixelRound(double x) {
 	int floor = (int) x;
