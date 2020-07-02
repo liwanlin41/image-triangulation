@@ -100,18 +100,32 @@ __global__ void constDoubleIntSample(Pixel *pixArr, int maxY, Point *a, Point *b
 		// find containing pixel
 		int pixX = pixelRound(x);
 		int pixY = pixelRound(y);
-		double areaContrib = (u+v == samples - 1) ? dA/2 : dA;
+		double areaContrib = (u+v == samples - 1) ? dA : 2 * dA;
 		results[ind] = pixArr[pixX * maxY + pixY].getColor(channel) * areaContrib;
 	}
 }
 
-/*
-double doubleIntApprox(ApproxType approx, Pixel *pixArr, int &maxX, int &maxY, Triangle *triArr, int &t, double *results, double ds, Point *workingTri, ColorChannel channel) {
-
+double doubleIntApprox(ApproxType approx, Pixel *pixArr, int &maxY, Triangle *tri, double *results, double &ds, Point *workingTri, ColorChannel channel) {
+	int i = tri->midVertex();
+	tri->copyVertices(workingTri+((3-i)%3), workingTri+((4-i)%3), workingTri+((5-i)%3));
+	// compute number of samples
+	int samples = ceil(workingTri[1].distance(workingTri[2])/ds);
+	dim3 numBlocks((samples + numThreadsX - 1) / numThreadsX, (samples + numThreadsY - 1) / numThreadsY);
+	double dA = tri->getArea() / (samples * samples);
+	switch(approx) {
+		case constant:
+			constDoubleIntSample<<<numBlocks, threadsPerBlock>>>(pixArr, maxY, workingTri, workingTri+1, workingTri+2, results, dA, samples, channel);
+			break;
+		case linear:
+			break;
+		case quadratic:
+			break;
+	}
+	double answer = sumArray(results, samples * (samples + 1) / 2, results);
+	return answer;
 }
-*/
 
-// using Point a as vertex point, sample ~samples^2/2 points inside the triangle with an area element of dA
+// using Point a as vertex point, sample ~samples^2/2 points inside the triangle with a triangular area element of dA
 // NOTE: samples does not count endpoints along edge bc as the parallelograms rooted there lie outside the triangle
 // maxY is for converting 2D pixel index to 1D index
 __global__ void approxConstantEnergySample(Pixel *pixArr, int maxY, Point *a, Point *b, Point *c, double color, double *results, double dA, int samples) {
@@ -129,7 +143,7 @@ __global__ void approxConstantEnergySample(Pixel *pixArr, int maxY, Point *a, Po
 		double diff = color - pixArr[pixX * maxY + pixY].getColor();
 		// account for points near edge bc having triangle contributions rather than parallelograms,
 		// written for fast access and minimal branching
-		double areaContrib = (u + v == samples - 1) ? dA/2 : dA;
+		double areaContrib = (u + v == samples - 1) ? dA : 2 * dA;
 		results[ind] = diff * diff * areaContrib;
 	}
 }
@@ -137,14 +151,14 @@ __global__ void approxConstantEnergySample(Pixel *pixArr, int maxY, Point *a, Po
 double constantEnergyApprox(Pixel *pixArr, int &maxY, Triangle *triArr, double *colors, int &numTri, double *results, double ds, Point *workingTri) {
 	double totalEnergy = 0;
 	for(int t = 0; t < numTri; t++) {
-		int i = triArr[t].midVertex(); // vertex opposite shortest side
+		int i = triArr[t].midVertex(); // vertex opposite middle side
 		// ensure minVertex is copied into location workingTri
 		triArr[t].copyVertices(workingTri+((3-i)%3), workingTri+((4-i)%3), workingTri+((5-i)%3));
 		// compute number of samples needed, using median number per side as reference
 		int samples = ceil(workingTri[1].distance(workingTri[2])/ds);
 		// unfortunately half of these threads will not be doing useful work; no good way to fix this, sqrt is too slow
 		dim3 numBlocks((samples + numThreadsX - 1) / numThreadsX, (samples + numThreadsY - 1) / numThreadsY);
-		double dA = triArr[t].getArea() * 2 / (samples * samples);
+		double dA = triArr[t].getArea() / (samples * samples);
 		approxConstantEnergySample<<<numBlocks, threadsPerBlock>>>(pixArr, maxY, workingTri, workingTri + 1, workingTri + 2, colors[t], results, dA, samples);
 		totalEnergy += sumArray(results, samples * (samples + 1) / 2, results);
 	}

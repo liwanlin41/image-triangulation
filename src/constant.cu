@@ -171,7 +171,8 @@ void ConstantApprox::undo() {
 void ConstantApprox::updateApprox() {
 	for(int t = 0; t < numTri; t++) {
 		// compute image dA and store it for reference on next iteration
-		double val = doubleIntEval(APPROXTYPE, pixArr, maxX, maxY, triArr, t, results);
+		//double val = doubleIntEval(APPROXTYPE, pixArr, maxX, maxY, triArr, t, results);
+		double val = doubleIntApprox(APPROXTYPE, pixArr, maxY, triArr + t, results, ds, workingTriangle);
 		imageInt[t] = val;
 		double area = triArr[t].getArea();
 		// take average value
@@ -249,9 +250,14 @@ vector<array<double,3>> ConstantApprox::getColors() {
 		// scale to fit polyscope colors TODO: check that this is correct
 		int scale = 255;
 		int area = triArr[t].getArea();
+		/*
 		double r = doubleIntEval(APPROXTYPE, pixArr, maxX, maxY, triArr, t, results, RED)/(scale * area);
 		double g = doubleIntEval(APPROXTYPE, pixArr, maxX, maxY, triArr, t, results, GREEN)/(scale * area);
 		double b = doubleIntEval(APPROXTYPE, pixArr, maxX, maxY, triArr, t, results, BLUE)/(scale * area);
+		*/
+		double r = doubleIntApprox(APPROXTYPE, pixArr, maxY, triArr + t, results, ds, workingTriangle, RED) / (scale * area);
+		double g = doubleIntApprox(APPROXTYPE, pixArr, maxY, triArr + t, results, ds, workingTriangle, GREEN) / (scale * area);
+		double b = doubleIntApprox(APPROXTYPE, pixArr, maxY, triArr + t, results, ds, workingTriangle, BLUE) / (scale * area);
 		fullColors.push_back({r, g, b});
 	}
 	return fullColors;
