@@ -37,7 +37,8 @@ class ConstantApprox {
 		double *blues;
 		*/
 		double ds; // step size for integration approximation
-		double *results; // used to hold temporary results on device (minimize costly allocations)
+		double *results0; // used to hold temporary results on device (minimize costly allocations)
+		double *results1;
 
 	public:
 		// initialize a constant approximation triangulation on img

@@ -63,7 +63,8 @@ ConstantApprox::ConstantApprox(CImg<unsigned char> *img, vector<Point> *pts, vec
 	// maximum possible number of samples per triangle is loosely upper bounded by 2 * maxDivisions^2
 	// assumming edge lengths are bounded above by maxDivisions * 2
 	long long resultSlots = max(2 * maxDivisions * maxDivisions, (long long) maxX * maxY); // at least num pixels
-	cudaMallocManaged(&results, resultSlots * sizeof(double));
+	cudaMallocManaged(&results0, resultSlots * sizeof(double));
+	cudaMallocManaged(&results1, resultSlots * sizeof(double));
 	// the above may cause errors because so much memory is required
 	cudaError_t error = cudaGetLastError();
   	if(error != cudaSuccess)
@@ -80,7 +81,8 @@ ConstantApprox::ConstantApprox(CImg<unsigned char> *img, vector<Point> *pts, vec
 
 ConstantApprox::~ConstantApprox() {
 	cudaFree(pixArr);
-	cudaFree(results);
+	cudaFree(results0);
+	cudaFree(results1);
 	cudaFree(points);
 	cudaFree(triArr);
 	cudaFree(grays);
@@ -95,7 +97,7 @@ ConstantApprox::~ConstantApprox() {
 
 double ConstantApprox::computeEnergy() {
 	//return constantEnergyEval(pixArr, maxX, maxY, triArr, grays, numTri, results);
-	return constantEnergyApprox(pixArr, maxY, triArr, grays, numTri, results, ds, workingTriangle);
+	return constantEnergyApprox(pixArr, maxY, triArr, grays, numTri, results0, results1, ds, workingTriangle);
 }
 
 void ConstantApprox::computeGrad() {
@@ -134,7 +136,7 @@ void ConstantApprox::gradient(int t, int movingPt, double imageIntegral, double 
 		// compute gradient in x and y direction
 		for(int i = 0; i < 2; i++) {
 			//boundaryChange[i] = lineIntEval(APPROXTYPE, pixArr, maxX, maxY, triArr, t, movingPt, (i == 0), results, workingTriangle);
-			boundaryChange[i] = lineIntApprox(APPROXTYPE, pixArr, maxY, triArr, t, movingPt, (i == 0), results, ds, workingTriangle);
+			boundaryChange[i] = lineIntApprox(APPROXTYPE, pixArr, maxY, triArr, t, movingPt, (i == 0), results0, ds, workingTriangle);
 		}
 		for(int j = 0; j < 2; j++) {
 			gradient[j] = (2 * area * imageIntegral * boundaryChange[j]
@@ -173,7 +175,7 @@ void ConstantApprox::updateApprox() {
 	for(int t = 0; t < numTri; t++) {
 		// compute image dA and store it for reference on next iteration
 		//double val = doubleIntEval(APPROXTYPE, pixArr, maxX, maxY, triArr, t, results);
-		double val = doubleIntApprox(APPROXTYPE, pixArr, maxY, triArr + t, results, ds, workingTriangle);
+		double val = doubleIntApprox(APPROXTYPE, pixArr, maxY, triArr + t, results0, results1, ds, workingTriangle);
 		imageInt[t] = val;
 		double area = triArr[t].getArea();
 		// take average value
@@ -250,16 +252,27 @@ vector<array<double,3>> ConstantApprox::getColors() {
 	for(int t = 0; t < numTri; t++) {
 		// scale to fit polyscope colors TODO: check that this is correct
 		int scale = 255;
-		int area = triArr[t].getArea();
+		double area = triArr[t].getArea();
 		/*
 		double r = doubleIntEval(APPROXTYPE, pixArr, maxX, maxY, triArr, t, results, RED)/(scale * area);
 		double g = doubleIntEval(APPROXTYPE, pixArr, maxX, maxY, triArr, t, results, GREEN)/(scale * area);
 		double b = doubleIntEval(APPROXTYPE, pixArr, maxX, maxY, triArr, t, results, BLUE)/(scale * area);
 		*/
-		double r = doubleIntApprox(APPROXTYPE, pixArr, maxY, triArr + t, results, ds, workingTriangle, RED) / (scale * area);
-		double g = doubleIntApprox(APPROXTYPE, pixArr, maxY, triArr + t, results, ds, workingTriangle, GREEN) / (scale * area);
-		double b = doubleIntApprox(APPROXTYPE, pixArr, maxY, triArr + t, results, ds, workingTriangle, BLUE) / (scale * area);
+		double r = doubleIntApprox(APPROXTYPE, pixArr, maxY, triArr + t, results0, results1, ds, workingTriangle, RED) / (scale * area);
+		double g = doubleIntApprox(APPROXTYPE, pixArr, maxY, triArr + t, results0, results1, ds, workingTriangle, GREEN) / (scale * area);
+		double b = doubleIntApprox(APPROXTYPE, pixArr, maxY, triArr + t, results0, results1, ds, workingTriangle, BLUE) / (scale * area);
 		fullColors.push_back({r, g, b});
+		/*
+		if(max(r, max(g, b)) > 1.05) {
+			cout << triArr[t];
+			double rp = doubleIntApprox(APPROXTYPE, pixArr, maxY, triArr + t, results, ds, workingTriangle, RED);
+			double gp = doubleIntApprox(APPROXTYPE, pixArr, maxY, triArr + t, results, ds, workingTriangle, GREEN);
+			double bp = doubleIntApprox(APPROXTYPE, pixArr, maxY, triArr + t, results, ds, workingTriangle, BLUE);
+			printf("values %f, %f, %f\n", rp, gp, bp); 
+			printf("values obtained were %f, %f, %f\n", r * scale * area, g * scale * area, b * scale * area);
+			printf("area is %f\n", area);
+		}
+		*/
 	}
 	return fullColors;
 }

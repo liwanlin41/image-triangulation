@@ -52,8 +52,7 @@ double sumArray(double *arr, int size, double *partialRes) {
 	}
 	// at this point the array has been summed and the result is in partialRes[0]
 	cudaDeviceSynchronize();
-	double output = partialRes[0];
-	return output;
+	return partialRes[0];
 }
 
 // compute double integral of f dA for a single pixel and single triangle triArr[t]
@@ -105,24 +104,38 @@ __global__ void constDoubleIntSample(Pixel *pixArr, int maxY, Point *a, Point *b
 	}
 }
 
-double doubleIntApprox(ApproxType approx, Pixel *pixArr, int &maxY, Triangle *tri, double *results, double &ds, Point *workingTri, ColorChannel channel) {
+double doubleIntApprox(ApproxType approx, Pixel *pixArr, int &maxY, Triangle *tri, double *results0, double *results1, double &ds, Point *workingTri, ColorChannel channel) {
 	int i = tri->midVertex();
 	tri->copyVertices(workingTri+((3-i)%3), workingTri+((4-i)%3), workingTri+((5-i)%3));
 	// compute number of samples
-	int samples = ceil(workingTri[1].distance(workingTri[2])/ds);
+	long long samples = ceil(workingTri[1].distance(workingTri[2])/ds);
 	dim3 numBlocks((samples + numThreadsX - 1) / numThreadsX, (samples + numThreadsY - 1) / numThreadsY);
 	double dA = tri->getArea() / (samples * samples);
 	switch(approx) {
 		case constant:
-			constDoubleIntSample<<<numBlocks, threadsPerBlock>>>(pixArr, maxY, workingTri, workingTri+1, workingTri+2, results, dA, samples, channel);
+			constDoubleIntSample<<<numBlocks, threadsPerBlock>>>(pixArr, maxY, workingTri, workingTri+1, workingTri+2, results0, dA, samples, channel);
 			break;
 		case linear:
 			break;
 		case quadratic:
 			break;
 	}
-	double answer = sumArray(results, samples * (samples + 1) / 2, results);
+	cudaError_t err = cudaDeviceSynchronize();
+	if(err != cudaSuccess) {
+		printf("CUDA error: %s\n", cudaGetErrorString(err));
+	}
+	double answer = sumArray(results0, samples * (samples + 1) / 2, results1);
 	return answer;
+}
+
+__global__ void manual(double *results, double dA, int samples) {
+	int u = blockIdx.x * blockDim.x + threadIdx.x;
+	int v = blockIdx.y * blockDim.y + threadIdx.y;
+	int ind = (2 * samples - u + 1) * u / 2 + v;
+	if(u + v < samples) {
+		double areaContrib = (u+v == samples - 1) ? dA : 2 * dA;
+		results[ind] = areaContrib;
+	}
 }
 
 // using Point a as vertex point, sample ~samples^2/2 points inside the triangle with a triangular area element of dA
@@ -148,7 +161,18 @@ __global__ void approxConstantEnergySample(Pixel *pixArr, int maxY, Point *a, Po
 	}
 }
 
-double constantEnergyApprox(Pixel *pixArr, int &maxY, Triangle *triArr, double *colors, int &numTri, double *results, double ds, Point *workingTri) {
+double constantEnergyApprox(Pixel *pixArr, int &maxY, Triangle *triArr, double *colors, int &numTri, double *results0, double *results1, double ds, Point *workingTri) {
+	for(int i = 0; i < 1000; i++) {
+		int samples = 1000;
+		dim3 numBlocks((samples + numThreadsX - 1) / numThreadsX, (samples + numThreadsY - 1) / numThreadsY);
+		double dA = 6.0 / (samples * samples);
+		manual<<<numBlocks, threadsPerBlock>>>(results0, dA, samples);
+		double res = sumArray(results0, samples * (samples + 1) / 2, results1);
+		if(abs(res - 6) > 0.01) {
+			cout << setprecision(50) << i << " gives " << res << endl;
+		}
+		assert(abs(res - 6) < 0.01);
+	}
 	double totalEnergy = 0;
 	for(int t = 0; t < numTri; t++) {
 		int i = triArr[t].midVertex(); // vertex opposite middle side
@@ -159,8 +183,8 @@ double constantEnergyApprox(Pixel *pixArr, int &maxY, Triangle *triArr, double *
 		// unfortunately half of these threads will not be doing useful work; no good way to fix this, sqrt is too slow
 		dim3 numBlocks((samples + numThreadsX - 1) / numThreadsX, (samples + numThreadsY - 1) / numThreadsY);
 		double dA = triArr[t].getArea() / (samples * samples);
-		approxConstantEnergySample<<<numBlocks, threadsPerBlock>>>(pixArr, maxY, workingTri, workingTri + 1, workingTri + 2, colors[t], results, dA, samples);
-		totalEnergy += sumArray(results, samples * (samples + 1) / 2, results);
+		approxConstantEnergySample<<<numBlocks, threadsPerBlock>>>(pixArr, maxY, workingTri, workingTri + 1, workingTri + 2, colors[t], results0, dA, samples);
+		totalEnergy += sumArray(results0, samples * (samples + 1) / 2, results1);
 	}
 	return totalEnergy;
 }
