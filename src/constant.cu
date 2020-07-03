@@ -131,10 +131,11 @@ void ConstantApprox::gradient(int t, int movingPt, double imageIntegral, double 
 	if (area > TOLERANCE) {
 		double dA[2] = {triArr[t].gradX(movingPt), triArr[t].gradY(movingPt)};
 		double boundaryChange[2];
-		// compute gradient in x direction
-		boundaryChange[0] = lineIntEval(APPROXTYPE, pixArr, maxX, maxY, triArr, t, movingPt, true, results, workingTriangle);
-		// and in y direction
-		boundaryChange[1] = lineIntEval(APPROXTYPE, pixArr, maxX, maxY, triArr, t, movingPt, false, results, workingTriangle);
+		// compute gradient in x and y direction
+		for(int i = 0; i < 2; i++) {
+			//boundaryChange[i] = lineIntEval(APPROXTYPE, pixArr, maxX, maxY, triArr, t, movingPt, (i == 0), results, workingTriangle);
+			boundaryChange[i] = lineIntApprox(APPROXTYPE, pixArr, maxY, triArr, t, movingPt, (i == 0), results, ds, workingTriangle);
+		}
 		for(int j = 0; j < 2; j++) {
 			gradient[j] = (2 * area * imageIntegral * boundaryChange[j]
 				- imageIntegral * imageIntegral * dA[j]) / (-area * area);

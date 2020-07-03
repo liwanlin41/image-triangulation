@@ -188,6 +188,63 @@ double constantEnergyEval(Pixel *pixArr, int &maxX, int &maxY, Triangle *triArr,
 	return totalEnergy;
 }
 
+// compute line integral of v dot n f ds where point a is moving; 
+// reverse determines if integral should be computed from a to b (false) or opposite
+__global__ void constLineIntSample(Pixel *pixArr, int maxY, Point *a, Point *b, bool reverse, bool isX, double *results, double ds, int samples) {
+	int k = blockIdx.x * blockDim.x + threadIdx.x; // index along a to b
+	if(k < samples) {
+		// extract current point and containing pixel
+		double x = (a->getX() * (samples - k) + b->getX() * k) / samples;
+		double y = (a->getY() * (samples - k) + b->getY() * k) / samples;
+		int pixX = pixelRound(x);
+		int pixY = pixelRound(y);
+		// velocity components
+		double scale = ((double) samples - k) / samples; // 1 when k = 0 (evaluate at a) and 0 at b
+		double velX = (isX) ? scale : 0;
+		double velY = scale - velX;
+		// extract unit normal, manually for the sake of speed
+		double length = a->distance(*b); // length of whole segment
+		// assume going from a to b first, want normal pointing right
+		double nx = (b->getY() - a->getY()) / length;
+		double ny = (a->getX() - b->getX()) / length;
+		double vn = velX * nx + velY * ny; // value of v * n at this point
+		// flip vn if normal is actually pointing the other way (integrate from b to a)
+		if(reverse) vn *= -1;
+		results[k] = vn * ds * pixArr[pixX * maxY + pixY].getColor();
+	}
+}
+
+double lineIntApprox(ApproxType approx, Pixel *pixArr, int &maxY, Triangle *triArr, int &t, int &pt, bool isX, double *results, double ds, Point *workingTri) {
+	// ensure pt is copied into workingTri
+	triArr[t].copyVertices(workingTri+((3-pt)%3), workingTri+((4-pt)%3), workingTri+((5-pt)%3));
+	int numThreads = numThreadsX * numThreadsY; // this will be a 1D kernel call
+	// get number of samples for side pt, pt+1 and side pt, pt+2
+	int samples[2];
+	int numBlocks[2];
+	for(int i = 0; i < 2; i++) {
+		// increase the number of samples because space and time both allow
+		samples[i] = ceil(10*workingTri->distance(workingTri[i+1])/ds);
+		numBlocks[i] = ceil(1.0 * samples[i] / numThreads);
+	};
+	double answer = 0; // integrate over both moving sides
+	switch(approx) {
+		case constant: {
+			for(int i = 0; i < 2; i++) {
+				double totalLength = workingTri->distance(workingTri[i+1]);
+				// actual dx being used
+				double dx = totalLength / samples[i];
+				constLineIntSample<<<numBlocks[i], numThreads>>>(pixArr, maxY, workingTri, workingTri+i+1, (i==1), isX, results, dx, samples[i]);
+				answer += sumArray(results, samples[i], results);
+			}
+		}
+		case linear:
+			break;
+		case quadratic:
+			break;
+	}
+	return answer;
+}
+
 // compute line integral of v dot n f ds for a single pixel and single triangle a, b, c when point b is moving
 __global__ void pixConstantLineInt(Pixel *pixArr, int maxX, int maxY, Point *a, Point *b, Point *c, bool isX, double *results) {
 	int x = blockIdx.x * blockDim.x + threadIdx.x;

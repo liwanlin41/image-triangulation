@@ -16,6 +16,7 @@ enum ApproxType{constant, linear, quadratic};
 // consider when point with index pt in triArr[t] is moving at velocity (1,0) if isX and (0,1) if !isX
 // workingTriangle is shared memory to save space when getting vertices of triArr[t]
 double lineIntEval(ApproxType approx, Pixel *pixArr, int &maxX, int &maxY, Triangle *triArr, int &t, int &pt, bool isX, double *results, Point *workingTriangle);
+double lineIntApprox(ApproxType approx, Pixel *pixArr, int &maxY, Triangle *triArr, int &t, int &pt, bool isX, double *results, double ds, Point *workingTri);
 
 // compute the double integral f phi dA over triangle triArr[t] where FEM basis phi is dependent on approx
 // image pixel color channel determined by channel
