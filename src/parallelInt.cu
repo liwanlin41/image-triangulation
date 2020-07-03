@@ -44,14 +44,26 @@ double sumArray(double *arr, int size, double *partialRes) {
 	// number of elements to sum is now numBlocks
 	// number of blocks for next iteration
 	int newNumBlocks = (numBlocks + numThreads - 1) / numThreads;
+	// to ensure proper behavior of sumBlock, arr (to be summed) and result must be different
+	// to this end alternate between using partialRes and arr as the array to be summed
+	// and the one holding the result
 	// repeat until all elements have been summed
+	bool ansArr = false; // whether results are currently held in arr
 	while(numBlocks > 1) {
-		sumBlock<<<newNumBlocks,numThreads, memSize>>>(partialRes, numBlocks, partialRes); 
+		if(ansArr) {
+			sumBlock<<<newNumBlocks, numThreads, memSize>>>(arr, numBlocks, partialRes);
+		} else {
+			sumBlock<<<newNumBlocks, numThreads, memSize>>>(partialRes, numBlocks, arr);
+		}
 		numBlocks = newNumBlocks;
 		newNumBlocks = (newNumBlocks + numThreads - 1) / numThreads;
+		ansArr = !ansArr;
 	}
 	// at this point the array has been summed and the result is in partialRes[0]
 	cudaDeviceSynchronize();
+	if(ansArr) { // arr should hold the results
+		return arr[0];
+	}
 	return partialRes[0];
 }
 
@@ -69,12 +81,12 @@ __global__ void pixConstantDoubleInt(Pixel *pixArr, int maxX, int maxY, Triangle
 	}
 }
 
-double doubleIntEval(ApproxType approx, Pixel *pixArr, int &maxX, int &maxY, Triangle *triArr, int &t, double *results, ColorChannel channel) {
+double doubleIntEval(ApproxType approx, Pixel *pixArr, int &maxX, int &maxY, Triangle *triArr, int &t, double *res0, double *res1, ColorChannel channel) {
 	dim3 numBlocks((maxX + numThreadsX -1) / numThreadsX, (maxY + numThreadsY -1) / numThreadsY);
 	// compute integral in parallel based on function to integrate
 	switch (approx) {
 		case constant: {
-			pixConstantDoubleInt<<<numBlocks, threadsPerBlock>>>(pixArr, maxX, maxY, triArr, t, results, channel);
+			pixConstantDoubleInt<<<numBlocks, threadsPerBlock>>>(pixArr, maxX, maxY, triArr, t, res0, channel);
 			break;
 		}
 		case linear: // TODO: fill out
@@ -82,7 +94,7 @@ double doubleIntEval(ApproxType approx, Pixel *pixArr, int &maxX, int &maxY, Tri
 		case quadratic: // TODO: fill out
 			break;
 	}
-	double answer = sumArray(results, maxX * maxY, results);
+	double answer = sumArray(res0, maxX * maxY, res1);
 	cudaDeviceSynchronize(); // wait for everything to finish
 	return answer;
 }
@@ -104,7 +116,7 @@ __global__ void constDoubleIntSample(Pixel *pixArr, int maxY, Point *a, Point *b
 	}
 }
 
-double doubleIntApprox(ApproxType approx, Pixel *pixArr, int &maxY, Triangle *tri, double *results0, double *results1, double &ds, Point *workingTri, ColorChannel channel) {
+double doubleIntApprox(ApproxType approx, Pixel *pixArr, int &maxY, Triangle *tri, double *res0, double *res1, double &ds, Point *workingTri, ColorChannel channel) {
 	int i = tri->midVertex();
 	tri->copyVertices(workingTri+((3-i)%3), workingTri+((4-i)%3), workingTri+((5-i)%3));
 	// compute number of samples
@@ -113,29 +125,15 @@ double doubleIntApprox(ApproxType approx, Pixel *pixArr, int &maxY, Triangle *tr
 	double dA = tri->getArea() / (samples * samples);
 	switch(approx) {
 		case constant:
-			constDoubleIntSample<<<numBlocks, threadsPerBlock>>>(pixArr, maxY, workingTri, workingTri+1, workingTri+2, results0, dA, samples, channel);
+			constDoubleIntSample<<<numBlocks, threadsPerBlock>>>(pixArr, maxY, workingTri, workingTri+1, workingTri+2, res0, dA, samples, channel);
 			break;
 		case linear:
 			break;
 		case quadratic:
 			break;
 	}
-	cudaError_t err = cudaDeviceSynchronize();
-	if(err != cudaSuccess) {
-		printf("CUDA error: %s\n", cudaGetErrorString(err));
-	}
-	double answer = sumArray(results0, samples * (samples + 1) / 2, results1);
+	double answer = sumArray(res0, samples * (samples + 1) / 2, res1);
 	return answer;
-}
-
-__global__ void manual(double *results, double dA, int samples) {
-	int u = blockIdx.x * blockDim.x + threadIdx.x;
-	int v = blockIdx.y * blockDim.y + threadIdx.y;
-	int ind = (2 * samples - u + 1) * u / 2 + v;
-	if(u + v < samples) {
-		double areaContrib = (u+v == samples - 1) ? dA : 2 * dA;
-		results[ind] = areaContrib;
-	}
 }
 
 // using Point a as vertex point, sample ~samples^2/2 points inside the triangle with a triangular area element of dA
@@ -162,17 +160,6 @@ __global__ void approxConstantEnergySample(Pixel *pixArr, int maxY, Point *a, Po
 }
 
 double constantEnergyApprox(Pixel *pixArr, int &maxY, Triangle *triArr, double *colors, int &numTri, double *results0, double *results1, double ds, Point *workingTri) {
-	for(int i = 0; i < 1000; i++) {
-		int samples = 1000;
-		dim3 numBlocks((samples + numThreadsX - 1) / numThreadsX, (samples + numThreadsY - 1) / numThreadsY);
-		double dA = 6.0 / (samples * samples);
-		manual<<<numBlocks, threadsPerBlock>>>(results0, dA, samples);
-		double res = sumArray(results0, samples * (samples + 1) / 2, results1);
-		if(abs(res - 6) > 0.01) {
-			cout << setprecision(50) << i << " gives " << res << endl;
-		}
-		assert(abs(res - 6) < 0.01);
-	}
 	double totalEnergy = 0;
 	for(int t = 0; t < numTri; t++) {
 		int i = triArr[t].midVertex(); // vertex opposite middle side
@@ -202,12 +189,12 @@ __global__ void pixConstantEnergyInt(Pixel *pixArr, int maxX, int maxY, Triangle
 	}
 }
 
-double constantEnergyEval(Pixel *pixArr, int &maxX, int &maxY, Triangle *triArr, double *colors, int &numTri, double *results) {
+double constantEnergyEval(Pixel *pixArr, int &maxX, int &maxY, Triangle *triArr, double *colors, int &numTri, double *res0, double *res1) {
 	dim3 numBlocks((maxX + numThreadsX - 1) / numThreadsX, (maxY + numThreadsY - 1) / numThreadsY);
 	double totalEnergy = 0;
 	for(int t = 0; t < numTri; t++) {
-		pixConstantEnergyInt<<<numBlocks, threadsPerBlock>>>(pixArr, maxX, maxY, triArr, colors, t, results);
-		totalEnergy += sumArray(results, maxX * maxY, results); // add energy for this triangle
+		pixConstantEnergyInt<<<numBlocks, threadsPerBlock>>>(pixArr, maxX, maxY, triArr, colors, t, res0);
+		totalEnergy += sumArray(res0, maxX * maxY, res1); // add energy for this triangle
 	}
 	return totalEnergy;
 }
@@ -238,7 +225,7 @@ __global__ void constLineIntSample(Pixel *pixArr, int maxY, Point *a, Point *b, 
 	}
 }
 
-double lineIntApprox(ApproxType approx, Pixel *pixArr, int &maxY, Triangle *triArr, int &t, int &pt, bool isX, double *results, double ds, Point *workingTri) {
+double lineIntApprox(ApproxType approx, Pixel *pixArr, int &maxY, Triangle *triArr, int &t, int &pt, bool isX, double *results0, double *results1, double ds, Point *workingTri) {
 	// ensure pt is copied into workingTri
 	triArr[t].copyVertices(workingTri+((3-pt)%3), workingTri+((4-pt)%3), workingTri+((5-pt)%3));
 	int numThreads = numThreadsX * numThreadsY; // this will be a 1D kernel call
@@ -257,8 +244,8 @@ double lineIntApprox(ApproxType approx, Pixel *pixArr, int &maxY, Triangle *triA
 				double totalLength = workingTri->distance(workingTri[i+1]);
 				// actual dx being used
 				double dx = totalLength / samples[i];
-				constLineIntSample<<<numBlocks[i], numThreads>>>(pixArr, maxY, workingTri, workingTri+i+1, (i==1), isX, results, dx, samples[i]);
-				answer += sumArray(results, samples[i], results);
+				constLineIntSample<<<numBlocks[i], numThreads>>>(pixArr, maxY, workingTri, workingTri+i+1, (i==1), isX, results0, dx, samples[i]);
+				answer += sumArray(results0, samples[i], results1);
 			}
 		}
 		case linear:
@@ -301,13 +288,13 @@ __global__ void pixConstantLineInt(Pixel *pixArr, int maxX, int maxY, Point *a, 
 	}
 }
 
-double lineIntEval(ApproxType approx, Pixel *pixArr, int &maxX, int &maxY, Triangle *triArr, int &t, int &pt, bool isX, double *results, Point *workingTri) {
+double lineIntEval(ApproxType approx, Pixel *pixArr, int &maxX, int &maxY, Triangle *triArr, int &t, int &pt, bool isX, double *res0, double *res1, Point *workingTri) {
 	dim3 numBlocks((maxX + numThreadsX - 1) / numThreadsX, (maxY + numThreadsY - 1) / numThreadsY);
 	triArr[t].copyVertices(workingTri, workingTri+1, workingTri+2);
 	// compute integral in parallel based on function to integrate
 	switch (approx) {
 		case constant: {
-			pixConstantLineInt<<<numBlocks, threadsPerBlock>>>(pixArr, maxX, maxY, workingTri+((pt+2)%3), workingTri+pt, workingTri+((pt+1)%3), isX, results);
+			pixConstantLineInt<<<numBlocks, threadsPerBlock>>>(pixArr, maxX, maxY, workingTri+((pt+2)%3), workingTri+pt, workingTri+((pt+1)%3), isX, res0);
 			break;
 		}
 		case linear: // TODO
@@ -315,6 +302,6 @@ double lineIntEval(ApproxType approx, Pixel *pixArr, int &maxX, int &maxY, Trian
 		case quadratic: // TODO
 			break;
 	}
-	double answer = sumArray(results, maxX * maxY, results);
+	double answer = sumArray(res0, maxX * maxY, res1);
 	return answer;
 }

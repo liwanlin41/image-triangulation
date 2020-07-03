@@ -209,7 +209,6 @@ int main(int argc, char* argv[]) {
         elapsedTime[i] = elapsedTimeVec.at(i);
         energy[i] = energyVec.at(i);
     }
-    /*
     matlabPtr->setVariable(u"x", iters);
     matlabPtr->setVariable(u"t", elapsedTime);
     matlabPtr->setVariable(u"E", energy);
@@ -222,6 +221,5 @@ int main(int argc, char* argv[]) {
     // convert screenshot sequences to video
     system("ffmpeg -hide_banner -loglevel warning -framerate 2 -i screenshot_%06d.tga -vcodec mpeg4 ../outputs/output.mp4");
     system("rm screenshot_*");
-    */
 	return 0;
 }

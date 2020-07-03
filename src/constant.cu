@@ -96,7 +96,7 @@ ConstantApprox::~ConstantApprox() {
 }
 
 double ConstantApprox::computeEnergy() {
-	//return constantEnergyEval(pixArr, maxX, maxY, triArr, grays, numTri, results);
+	//return constantEnergyEval(pixArr, maxX, maxY, triArr, grays, numTri, results0, results1);
 	return constantEnergyApprox(pixArr, maxY, triArr, grays, numTri, results0, results1, ds, workingTriangle);
 }
 
@@ -135,8 +135,8 @@ void ConstantApprox::gradient(int t, int movingPt, double imageIntegral, double 
 		double boundaryChange[2];
 		// compute gradient in x and y direction
 		for(int i = 0; i < 2; i++) {
-			//boundaryChange[i] = lineIntEval(APPROXTYPE, pixArr, maxX, maxY, triArr, t, movingPt, (i == 0), results, workingTriangle);
-			boundaryChange[i] = lineIntApprox(APPROXTYPE, pixArr, maxY, triArr, t, movingPt, (i == 0), results0, ds, workingTriangle);
+			//boundaryChange[i] = lineIntEval(APPROXTYPE, pixArr, maxX, maxY, triArr, t, movingPt, (i == 0), results0, results1, workingTriangle);
+			boundaryChange[i] = lineIntApprox(APPROXTYPE, pixArr, maxY, triArr, t, movingPt, (i == 0), results0, results1, ds, workingTriangle);
 		}
 		for(int j = 0; j < 2; j++) {
 			gradient[j] = (2 * area * imageIntegral * boundaryChange[j]
@@ -174,7 +174,7 @@ void ConstantApprox::undo() {
 void ConstantApprox::updateApprox() {
 	for(int t = 0; t < numTri; t++) {
 		// compute image dA and store it for reference on next iteration
-		//double val = doubleIntEval(APPROXTYPE, pixArr, maxX, maxY, triArr, t, results);
+		//double val = doubleIntEval(APPROXTYPE, pixArr, maxX, maxY, triArr, t, results0);
 		double val = doubleIntApprox(APPROXTYPE, pixArr, maxY, triArr + t, results0, results1, ds, workingTriangle);
 		imageInt[t] = val;
 		double area = triArr[t].getArea();
@@ -254,9 +254,9 @@ vector<array<double,3>> ConstantApprox::getColors() {
 		int scale = 255;
 		double area = triArr[t].getArea();
 		/*
-		double r = doubleIntEval(APPROXTYPE, pixArr, maxX, maxY, triArr, t, results, RED)/(scale * area);
-		double g = doubleIntEval(APPROXTYPE, pixArr, maxX, maxY, triArr, t, results, GREEN)/(scale * area);
-		double b = doubleIntEval(APPROXTYPE, pixArr, maxX, maxY, triArr, t, results, BLUE)/(scale * area);
+		double r = doubleIntEval(APPROXTYPE, pixArr, maxX, maxY, triArr, t, results0, RED)/(scale * area);
+		double g = doubleIntEval(APPROXTYPE, pixArr, maxX, maxY, triArr, t, results0, GREEN)/(scale * area);
+		double b = doubleIntEval(APPROXTYPE, pixArr, maxX, maxY, triArr, t, results0, BLUE)/(scale * area);
 		*/
 		double r = doubleIntApprox(APPROXTYPE, pixArr, maxY, triArr + t, results0, results1, ds, workingTriangle, RED) / (scale * area);
 		double g = doubleIntApprox(APPROXTYPE, pixArr, maxY, triArr + t, results0, results1, ds, workingTriangle, GREEN) / (scale * area);
