@@ -215,7 +215,7 @@ int main(int argc, char* argv[]) {
     // create and save matlab plots
     matlabPtr->eval(u"f=figure('visible', 'off'); plot(x, t); title('Elapsed Time')");
     matlabPtr->eval(u"exportgraphics(f, '../outputs/data_time.png')");
-    matlabPtr->eval(u"g=figure('visible', 'off'); plot(x, E); title('Approximation Error')");
+    matlabPtr->eval(u"g=figure('visible', 'off'); plot(x, E); axis([0 inf 0 inf]); title('Approximation Error')");
     matlabPtr->eval(u"exportgraphics(g, '../outputs/data_energy.png')");
 
     // convert screenshot sequences to video
