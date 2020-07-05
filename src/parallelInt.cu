@@ -137,54 +137,6 @@ double doubleIntApprox(ApproxType approx, Pixel *pixArr, int &maxY, Triangle *tr
 	return answer;
 }
 
-// using Point a as vertex point, sample ~samples^2/2 points inside the triangle with a triangular area element of dA
-// NOTE: samples does not count endpoints along edge bc as the parallelograms rooted there lie outside the triangle
-// maxY is for converting 2D pixel index to 1D index
-__global__ void approxConstantEnergySample(Pixel *pixArr, int maxY, Point *a, Point *b, Point *c, double color, double *results, double dA, int samples) {
-	int u = blockIdx.x * blockDim.x + threadIdx.x; // component towards b
-	int v = blockIdx.y * blockDim.y + threadIdx.y; // component towards c
-	int ind = (2 * samples - u + 1) * u / 2 + v; // 1D index in results
-	// this is because there are s points in the first column, s-1 in the next, etc. up to s - u + 1
-	if(u + v < samples) {
-		// get coordinates of this point using appropriate weights
-		double x = (a->getX() * (samples - u - v) + b->getX() * u + c->getX() * v) / samples;
-		double y = (a->getY() * (samples - u - v) + b->getY() * u + c->getY() * v) / samples;
-		// find containing pixel
-		int pixX = pixelRound(x);
-		int pixY = pixelRound(y);
-		double diff = color - pixArr[pixX * maxY + pixY].getColor();
-		// account for points near edge bc having triangle contributions rather than parallelograms,
-		// written for fast access and minimal branching
-		double areaContrib = (u + v == samples - 1) ? dA : 2 * dA;
-		results[ind] = diff * diff * areaContrib;
-	}
-}
-
-double constantEnergyApprox(Pixel *pixArr, int &maxY, Triangle *triArr, double *colors, int &numTri, double *results0, double *results1, double ds, Point *workingTri) {
-	double totalEnergy = 0;
-	for(int t = 0; t < numTri; t++) {
-		int i = triArr[t].midVertex(); // vertex opposite middle side
-		// ensure minVertex is copied into location workingTri
-		triArr[t].copyVertices(workingTri+((3-i)%3), workingTri+((4-i)%3), workingTri+((5-i)%3));
-		// compute number of samples needed, using median number per side as reference
-		int samples = ceil(workingTri[1].distance(workingTri[2])/ds);
-		// unfortunately half of these threads will not be doing useful work; no good way to fix this, sqrt is too slow
-		dim3 numBlocks((samples + numThreadsX - 1) / numThreadsX, (samples + numThreadsY - 1) / numThreadsY);
-		double dA = triArr[t].getArea() / (samples * samples);
-		approxConstantEnergySample<<<numBlocks, threadsPerBlock>>>(pixArr, maxY, workingTri, workingTri + 1, workingTri + 2, colors[t], results0, dA, samples);
-		cudaError_t error = cudaGetLastError();
-  		if(error != cudaSuccess)
-  		{
-    		// print the CUDA error message and exit
-			printf("CUDA error in energy: %s\n", cudaGetErrorString(error));
-			printf("num samples is %d\n", samples);
-			exit(-1);
-  		}
-		totalEnergy += sumArray(results0, samples * (samples + 1) / 2, results1);
-	}
-	return totalEnergy;
-}
-
 // compute line integral of v dot n f ds where point a is moving; 
 // reverse determines if integral should be computed from a to b (false) or opposite
 __global__ void constLineIntSample(Pixel *pixArr, int maxY, Point *a, Point *b, bool reverse, bool isX, double *results, double ds, int samples) {
@@ -352,7 +304,8 @@ double ParallelIntegrator::sumArray(int size) {
 	return helper[0];
 }
 
-// compute the energy of a single pixel on triangle triArr[t]; kernel function for constantEnergyEval
+// kernel for constantEnergyEval
+// compute the energy of a single pixel on triangle triArr[t]
 __global__ void pixConstantEnergyInt(Pixel *pixArr, int maxX, int maxY, Triangle *triArr, double *colors, int t, double *results) {
 	int x = blockIdx.x * blockDim.x + threadIdx.x;
 	int y = blockIdx.y * blockDim.y + threadIdx.y;
@@ -365,7 +318,7 @@ __global__ void pixConstantEnergyInt(Pixel *pixArr, int maxX, int maxY, Triangle
 	}
 }
 
-double ParallelIntegrator::constantEnergyEval(double *colors, int numTri) {
+double ParallelIntegrator::constantEnergyExact(double *colors, int numTri) {
 	dim3 numBlocks((maxX + threadsX - 1) / threadsX, (maxY + threadsY - 1) / threadsY);
 	double totalEnergy = 0;
 	for(int t = 0; t < numTri; t++) {
@@ -373,6 +326,30 @@ double ParallelIntegrator::constantEnergyEval(double *colors, int numTri) {
 		totalEnergy += sumArray(maxX * maxY);
 	}
 	return totalEnergy;
+}
+
+// kernel for constant energy approx
+// using Point a as vertex point, sample ~samples^2/2 points inside the triangle with a triangular area element of dA
+// NOTE: samples does not count endpoints along edge bc as the parallelograms rooted there lie outside the triangle
+// maxY is for converting 2D pixel index to 1D index
+__global__ void approxConstantEnergySample(Pixel *pixArr, int maxY, Point *a, Point *b, Point *c, double color, double *results, double dA, int samples) {
+	int u = blockIdx.x * blockDim.x + threadIdx.x; // component towards b
+	int v = blockIdx.y * blockDim.y + threadIdx.y; // component towards c
+	int ind = (2 * samples - u + 1) * u / 2 + v; // 1D index in results
+	// this is because there are s points in the first column, s-1 in the next, etc. up to s - u + 1
+	if(u + v < samples) {
+		// get coordinates of this point using appropriate weights
+		double x = (a->getX() * (samples - u - v) + b->getX() * u + c->getX() * v) / samples;
+		double y = (a->getY() * (samples - u - v) + b->getY() * u + c->getY() * v) / samples;
+		// find containing pixel
+		int pixX = pixelRound(x);
+		int pixY = pixelRound(y);
+		double diff = color - pixArr[pixX * maxY + pixY].getColor();
+		// account for points near edge bc having triangle contributions rather than parallelograms,
+		// written for fast access and minimal branching
+		double areaContrib = (u + v == samples - 1) ? dA : 2 * dA;
+		results[ind] = diff * diff * areaContrib;
+	}
 }
 
 double ParallelIntegrator::constantEnergyApprox(double *colors, int numTri, double ds) {
@@ -400,4 +377,12 @@ double ParallelIntegrator::constantEnergyApprox(double *colors, int numTri, doub
 		totalEnergy += sumArray(samples * (samples + 1) / 2);
 	}
 	return totalEnergy;
+}
+
+double ParallelIntegrator::constantEnergyEval(double *colors, int numTri, double ds) {
+	// switch integration method based on exactness required
+	if(computeExact) {
+		return constantEnergyExact(colors, numTri);
+	}
+	return constantEnergyApprox(colors, numTri, ds);
 }

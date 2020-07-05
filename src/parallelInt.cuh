@@ -53,9 +53,9 @@ class ParallelIntegrator {
         //double lineIntApprox(int t, int pt, bool isX, double ds);
 
         // compute energy integral over the numTri existing triangles
-        double constantEnergy(double *colors, int numTri, double ds);
+        double constantEnergyEval(double *colors, int numTri, double ds);
         // compute energy by exact integral
-        double constantEnergyEval(double *colors, int numTri);
+        double constantEnergyExact(double *colors, int numTri);
         // approximate energy using barycentric sampling
         double constantEnergyApprox(double *colors, int numTri, double ds);
 };
