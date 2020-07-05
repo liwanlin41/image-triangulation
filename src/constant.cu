@@ -76,6 +76,7 @@ ConstantApprox::ConstantApprox(CImg<unsigned char> *img, vector<Point> *pts, vec
   	}
 
 	// create an initial approximation based on this triangulation
+	integrator.initialize(pixArr, triArr, maxX, maxY, APPROXTYPE, resultSlots);
 	updateApprox();
 }
 

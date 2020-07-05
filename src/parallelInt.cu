@@ -131,8 +131,6 @@ double doubleIntApprox(ApproxType approx, Pixel *pixArr, int &maxY, Triangle *tr
   			{
     			// print the CUDA error message and exit
 				printf("CUDA error in double int: %s\n", cudaGetErrorString(error));
-				cout << "num samples is " << samples << endl;
-				cout << "area is " << tri->getArea() << " " << *tri;
 				exit(-1);
 			}
 			break;
@@ -324,16 +322,34 @@ double lineIntEval(ApproxType approx, Pixel *pixArr, int &maxX, int &maxY, Trian
 	return answer;
 }
 
-/*
-ParallelIntegrator& ParallelIntegrator::operator=(const ParallelIntegrator &other) {
-	if (this != &other) {
-		double* newArray = new double[numRows * numCols];
-		for(int i = 0; i < numRows * numCols; i++) {
-			newArray[i] = m.matrix[i];
-		}
-		delete[] matrix;
-		matrix = newArray;
+bool ParallelIntegrator::initialize(Pixel *pix, Triangle *tri, int xMax, int yMax, ApproxType a, long long space, bool exact) {
+	// allocate working computation space
+	cudaMallocManaged(&arr, space * sizeof(double));
+	cudaMallocManaged(&helper, space * sizeof(double));
+	// the above may cause errors because so much memory is required
+	cudaError_t error = cudaGetLastError();
+  	if(error != cudaSuccess) {
+		printf("CUDA error: %s\n", cudaGetErrorString(error));
+		cout << "An approximation of this quality is not possible due to memory limitations." << endl;
+		return false;
 	}
-	return *this;
+	cudaMallocManaged(&curTri, 3 * sizeof(Point));
+	if(cudaGetLastError() != cudaSuccess) {
+		printf("CUDA error: %s\n", cudaGetErrorString(error));
+		return false;
+	}
+	// steal references for easy access later
+	pixArr = pix;
+	triArr = tri;
+	approx = a;
+	maxX = xMax;
+	maxY = yMax;
+	computeExact = exact;
+	return true;
 }
-*/
+
+ParallelIntegrator::~ParallelIntegrator() {
+	cudaFree(arr);
+	cudaFree(helper);
+	cudaFree(curTri);
+}

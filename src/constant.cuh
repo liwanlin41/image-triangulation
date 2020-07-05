@@ -39,6 +39,7 @@ class ConstantApprox {
 		double ds; // step size for integration approximation
 		double *results0; // used to hold temporary results on device (minimize costly allocations)
 		double *results1;
+		ParallelIntegrator integrator;
 
 	public:
 		// initialize a constant approximation triangulation on img
