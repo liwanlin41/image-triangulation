@@ -374,3 +374,30 @@ double ParallelIntegrator::constantEnergyEval(double *colors, int numTri) {
 	}
 	return totalEnergy;
 }
+
+double ParallelIntegrator::constantEnergyApprox(double *colors, int numTri, double ds) {
+	double totalEnergy = 0;
+	for(int t = 0; t < numTri; t++) {
+		int i = triArr[t].midVertex(); // vertex opposite middle side
+		// ensure minVertex is copied into location workingTri
+		triArr[t].copyVertices(curTri+((3-i)%3), curTri+((4-i)%3), curTri+((5-i)%3));
+		// compute number of samples needed, using median number per side as reference
+		int samples = ceil(curTri[1].distance(curTri[2])/ds);
+		// unfortunately half of these threads will not be doing useful work; no good way to fix this, sqrt is too slow
+		dim3 numBlocks((samples + threadsX - 1) / threadsX, (samples + threadsY - 1) / threadsY);
+		double dA = triArr[t].getArea() / (samples * samples);
+		approxConstantEnergySample<<<numBlocks, threads2D>>>(pixArr, maxY, curTri, curTri + 1, curTri + 2, colors[t], arr, dA, samples);
+		/*
+		cudaError_t error = cudaGetLastError();
+  		if(error != cudaSuccess)
+  		{
+    		// print the CUDA error message and exit
+			printf("CUDA error in energy: %s\n", cudaGetErrorString(error));
+			printf("num samples is %d\n", samples);
+			exit(-1);
+		  }
+		*/
+		totalEnergy += sumArray(samples * (samples + 1) / 2);
+	}
+	return totalEnergy;
+}

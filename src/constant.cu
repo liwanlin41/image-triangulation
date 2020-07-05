@@ -97,8 +97,8 @@ ConstantApprox::~ConstantApprox() {
 }
 
 double ConstantApprox::computeEnergy() {
-	return integrator.constantEnergyEval(grays, numTri);
-	//return constantEnergyApprox(pixArr, maxY, triArr, grays, numTri, results0, results1, ds, workingTriangle);
+	//return integrator.constantEnergyEval(grays, numTri);
+	return integrator.constantEnergyApprox(grays, numTri, ds);
 }
 
 void ConstantApprox::computeGrad() {
