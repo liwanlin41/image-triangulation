@@ -14,6 +14,10 @@ enum ApproxType{constant, linear, quadratic};
 
 class ParallelIntegrator {
     private:
+        // thread setup
+        static const int threadsX = 32;
+        static const int threadsY = 16;
+        static const int threads1D = 1024;
         // two large arrays to do computations
         double *arr;
         double *helper;
@@ -24,6 +28,10 @@ class ParallelIntegrator {
         int maxX, maxY; // size of image
         // true if computations are exact rather than approximate
         bool computeExact;
+
+        // sum the first size values of arr
+        double sumArray(int size);
+
     public:
         // initialize parallel integrator
         // space indicates the amount of computation space needed
@@ -32,8 +40,6 @@ class ParallelIntegrator {
         bool initialize(Pixel *pix, Triangle *tri, int xMax, int yMax, ApproxType a, long long space, bool exact = false);
         // free allocated space
         ~ParallelIntegrator();
-        // copy assignment operator
-        //ParallelIntegrator& ParallelIntegrator::operator=(const ParallelIntegrator &other);
 
         // actual integrals
 
@@ -43,6 +49,13 @@ class ParallelIntegrator {
         //double lineIntEval(int t, int pt, bool isX);
         // approximate line integral using one sample every ds length
         //double lineIntApprox(int t, int pt, bool isX, double ds);
+
+        // compute energy integral over the numTri existing triangles
+        double computeEnergy(double *colors, int numTri, double ds);
+        // compute energy by exact integral
+        double computeEnergyExact(double *colors, int numTri);
+        // approximate energy using barycentric sampling
+        double computeEnergyApprox(double *colors, int numTri, double ds);
 };
 
 // compute the line integral (v dot n) * f phi ds over triangle triArr[t] where FEM basis phi is dependent on ApproxType

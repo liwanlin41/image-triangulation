@@ -33,8 +33,34 @@ __global__ void sumBlock(double *arr, int size, double *result) {
 	}
 }
 
+double sumArray(double *arr, int size, double *partialRes) {
+	int numThreads = 1024; // threads per block
+	// shared memory size for device
+	int memSize = numThreads * sizeof(double);
+	int curSize = size; // current length of array to sum
+	int numBlocks = (size + numThreads - 1) / numThreads;
+	bool ansArr = true; // whether results are currently held in arr
+	while(curSize > 1) {
+		if(ansArr) {
+			sumBlock<<<numBlocks, numThreads, memSize>>>(arr, curSize, partialRes);
+		} else {
+			sumBlock<<<numBlocks, numThreads, memSize>>>(partialRes, curSize, arr);
+		}
+		curSize = numBlocks;
+		numBlocks = (numBlocks + numThreads - 1) / numThreads;
+		ansArr = !ansArr;
+	}
+	// at this point the array has been summed
+	cudaDeviceSynchronize();
+	if(ansArr) { // arr should hold the results
+		return arr[0];
+	}
+	return partialRes[0];
+}
+
 // quickly sum an array with given size in parallel and return the result;
 // NOTE: arr, partialRes must already be shared between host and device 
+/*
 double sumArray(double *arr, int size, double *partialRes) {
 	int numThreads = 1024; // threads per block
 	// shared memory size for device
@@ -66,6 +92,7 @@ double sumArray(double *arr, int size, double *partialRes) {
 	}
 	return partialRes[0];
 }
+*/
 
 // compute double integral of f dA for a single pixel and single triangle triArr[t]
 // pixArr is a 1D representation of image, where pixel (x, y) is at x * maxY + y
@@ -353,3 +380,49 @@ ParallelIntegrator::~ParallelIntegrator() {
 	cudaFree(helper);
 	cudaFree(curTri);
 }
+
+/*
+double ParallelIntegrator::sumArray(int size) {
+	// shared memory size for device
+	int memSize = threads1D * sizeof(double);
+	int curSize = size;
+	int numBlocks = (size + numThreads - 1) / numThreads;
+	sumBlock<<<numBlocks, threads1D, memSize>>>(arr, size, helper);
+	// number of elements to sum is now numBlocks
+	// number of blocks for next iteration
+	int newNumBlocks = (numBlocks + numThreads - 1) / numThreads;
+	// to ensure proper behavior of sumBlock, arr (to be summed) and result must be different
+	// to this end alternate between using partialRes and arr as the array to be summed
+	// and the one holding the result
+	// repeat until all elements have been summed
+	bool ansArr = false; // whether results are currently held in arr
+	while(numBlocks > 1) {
+		if(ansArr) {
+			sumBlock<<<newNumBlocks, numThreads, memSize>>>(arr, numBlocks, partialRes);
+		} else {
+			sumBlock<<<newNumBlocks, numThreads, memSize>>>(partialRes, numBlocks, arr);
+		}
+		numBlocks = newNumBlocks;
+		newNumBlocks = (newNumBlocks + numThreads - 1) / numThreads;
+		ansArr = !ansArr;
+	}
+	// at this point the array has been summed and the result is in partialRes[0]
+	cudaDeviceSynchronize();
+	if(ansArr) { // arr should hold the results
+		return arr[0];
+	}
+	return partialRes[0];	
+}
+*/
+
+/*
+double ParallelIntegrator::computeEnergyExact(double *colors, int numTri) {
+	dim3 numBlocks((maxX + numThreadsX - 1) / numThreadsX, (maxY + numThreadsY - 1) / numThreadsY);
+	double totalEnergy = 0;
+	for(int t = 0; t < numTri; t++) {
+		pixConstantEnergyInt<<<numBlocks, threadsPerBlock>>>(pixArr, maxX, maxY, triArr, colors, t, res0);
+		totalEnergy += sumArray(res0, maxX * maxY, res1); // add energy for this triangle
+	}
+	return totalEnergy;
+}
+*/
