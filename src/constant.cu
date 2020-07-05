@@ -135,8 +135,8 @@ void ConstantApprox::gradient(int t, int movingPt, double imageIntegral, double 
 		double boundaryChange[2];
 		// compute gradient in x and y direction
 		for(int i = 0; i < 2; i++) {
-			//boundaryChange[i] = lineIntEval(APPROXTYPE, pixArr, maxX, maxY, triArr, t, movingPt, (i == 0), results0, results1, workingTriangle);
-			boundaryChange[i] = lineIntApprox(APPROXTYPE, pixArr, maxY, triArr, t, movingPt, (i == 0), results0, results1, ds, workingTriangle);
+			// sample more frequently because both time and space allow
+			boundaryChange[i] = integrator.lineIntEval(t, movingPt, (i == 0), ds/10);
 		}
 		for(int j = 0; j < 2; j++) {
 			gradient[j] = (2 * area * imageIntegral * boundaryChange[j]

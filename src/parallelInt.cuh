@@ -45,12 +45,8 @@ class ParallelIntegrator {
 
         // actual integrals
 
-        // compute exact line integral (v dot n) * f phi ds over triangle triArr[t]
-        // where FEM basis phi is dependent on approx
-        // consider when point with index pt in triArr[t] is moving at velocity (1,0) if isX and (0,1) if !isX
-        //double lineIntEval(int t, int pt, bool isX);
-        // approximate line integral using one sample every ds length
-        //double lineIntApprox(int t, int pt, bool isX, double ds);
+        // for energy, it makes sense to separate approximation types into different functions
+        // because the inputs will be greatly different (one array for each coefficient)
 
         // compute energy integral over the numTri existing triangles
         double constantEnergyEval(double *colors, int numTri, double ds);
@@ -58,6 +54,15 @@ class ParallelIntegrator {
         double constantEnergyExact(double *colors, int numTri);
         // approximate energy using barycentric sampling
         double constantEnergyApprox(double *colors, int numTri, double ds);
+
+        // compute exact line integral (v dot n) * f phi ds over triangle triArr[t]
+        // where FEM basis phi is dependent on approx
+        // consider when point with index pt in triArr[t] is moving at velocity (1,0) if isX and (0,1) if !isX
+        double lineIntEval(int t, int pt, bool isX, double ds);
+        // compute by exact integral
+        double lineIntExact(int t, int pt, bool isX);
+        // approximate line integral using one sample every ds length
+        double lineIntApprox(int t, int pt, bool isX, double ds);
 };
 
 // compute the line integral (v dot n) * f phi ds over triangle triArr[t] where FEM basis phi is dependent on ApproxType
