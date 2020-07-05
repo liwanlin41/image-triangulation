@@ -120,13 +120,23 @@ double doubleIntApprox(ApproxType approx, Pixel *pixArr, int &maxY, Triangle *tr
 	int i = tri->midVertex();
 	tri->copyVertices(workingTri+((3-i)%3), workingTri+((4-i)%3), workingTri+((5-i)%3));
 	// compute number of samples
-	long long samples = ceil(workingTri[1].distance(workingTri[2])/ds);
+	int samples = ceil(workingTri[1].distance(workingTri[2])/ds);
 	dim3 numBlocks((samples + numThreadsX - 1) / numThreadsX, (samples + numThreadsY - 1) / numThreadsY);
 	double dA = tri->getArea() / (samples * samples);
 	switch(approx) {
-		case constant:
+		case constant: {
 			constDoubleIntSample<<<numBlocks, threadsPerBlock>>>(pixArr, maxY, workingTri, workingTri+1, workingTri+2, res0, dA, samples, channel);
+			cudaError_t error = cudaGetLastError();
+  			if(error != cudaSuccess)
+  			{
+    			// print the CUDA error message and exit
+				printf("CUDA error in double int: %s\n", cudaGetErrorString(error));
+				cout << "num samples is " << samples << endl;
+				cout << "area is " << tri->getArea() << " " << *tri;
+				exit(-1);
+			}
 			break;
+		}
 		case linear:
 			break;
 		case quadratic:
@@ -171,6 +181,14 @@ double constantEnergyApprox(Pixel *pixArr, int &maxY, Triangle *triArr, double *
 		dim3 numBlocks((samples + numThreadsX - 1) / numThreadsX, (samples + numThreadsY - 1) / numThreadsY);
 		double dA = triArr[t].getArea() / (samples * samples);
 		approxConstantEnergySample<<<numBlocks, threadsPerBlock>>>(pixArr, maxY, workingTri, workingTri + 1, workingTri + 2, colors[t], results0, dA, samples);
+		cudaError_t error = cudaGetLastError();
+  		if(error != cudaSuccess)
+  		{
+    		// print the CUDA error message and exit
+			printf("CUDA error in energy: %s\n", cudaGetErrorString(error));
+			printf("num samples is %d\n", samples);
+			exit(-1);
+  		}
 		totalEnergy += sumArray(results0, samples * (samples + 1) / 2, results1);
 	}
 	return totalEnergy;
@@ -305,3 +323,17 @@ double lineIntEval(ApproxType approx, Pixel *pixArr, int &maxX, int &maxY, Trian
 	double answer = sumArray(res0, maxX * maxY, res1);
 	return answer;
 }
+
+/*
+ParallelIntegrator& ParallelIntegrator::operator=(const ParallelIntegrator &other) {
+	if (this != &other) {
+		double* newArray = new double[numRows * numCols];
+		for(int i = 0; i < numRows * numCols; i++) {
+			newArray[i] = m.matrix[i];
+		}
+		delete[] matrix;
+		matrix = newArray;
+	}
+	return *this;
+}
+*/

@@ -83,6 +83,8 @@ int main(int argc, char* argv[]) {
     vector<Point> points;
     // appears to affect only large images:
     // adjust image boundaries to TRIM result (may crop a line of pixels)
+    int minX = 1000;
+    int minY = 1000;
     int maxX = 0;
     int maxY = 0;
     for(int i = 0; i < n; i++) {
@@ -90,6 +92,8 @@ int main(int argc, char* argv[]) {
         int y = vertices[i][1];
         maxX = max(x, maxX);
         maxY = max(y, maxY);
+        minX = min(x, minX);
+        minY = min(y, minY);
     }
     for(int i = 0; i < n; i++) {
         // note these are 1-indexed pixel values; will need
@@ -97,8 +101,8 @@ int main(int argc, char* argv[]) {
         int x = vertices[i][0];
         int y = vertices[i][1];
         // determine whether this point lies on edge of image
-        bool isBorderX = (x == 1 || x == maxX);
-        bool isBorderY = (y == 1 || y == maxY);
+        bool isBorderX = (x == minX || x == maxX);
+        bool isBorderY = (y == minY || y == maxY);
         Point p(x-1.5, y-1.5, isBorderX, isBorderY); // translate to coordinate system in this code
         points.push_back(p);
     }
