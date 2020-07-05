@@ -103,7 +103,7 @@ int main(int argc, char* argv[]) {
         // determine whether this point lies on edge of image
         bool isBorderX = (x == minX || x == maxX);
         bool isBorderY = (y == minY || y == maxY);
-        Point p(x-1.5, y-1.5, isBorderX, isBorderY); // translate to coordinate system in this code
+        Point p(x-0.5 - minX, y-0.5 - minY, isBorderX, isBorderY); // translate to coordinate system in this code
         points.push_back(p);
     }
     cout << "done\n";

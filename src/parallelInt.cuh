@@ -18,6 +18,7 @@ class ParallelIntegrator {
         static const int threadsX = 32;
         static const int threadsY = 16;
         static const int threads1D = 1024;
+        dim3 threads2D;
         // two large arrays to do computations
         double *arr;
         double *helper;
@@ -33,6 +34,7 @@ class ParallelIntegrator {
         double sumArray(int size);
 
     public:
+        ParallelIntegrator();
         // initialize parallel integrator
         // space indicates the amount of computation space needed
         // default to using approximate integrals
@@ -51,11 +53,11 @@ class ParallelIntegrator {
         //double lineIntApprox(int t, int pt, bool isX, double ds);
 
         // compute energy integral over the numTri existing triangles
-        double computeEnergy(double *colors, int numTri, double ds);
+        double constantEnergy(double *colors, int numTri, double ds);
         // compute energy by exact integral
-        double computeEnergyExact(double *colors, int numTri);
+        double constantEnergyEval(double *colors, int numTri);
         // approximate energy using barycentric sampling
-        double computeEnergyApprox(double *colors, int numTri, double ds);
+        double constantEnergyApprox(double *colors, int numTri, double ds);
 };
 
 // compute the line integral (v dot n) * f phi ds over triangle triArr[t] where FEM basis phi is dependent on ApproxType

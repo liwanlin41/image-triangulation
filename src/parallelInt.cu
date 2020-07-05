@@ -33,6 +33,8 @@ __global__ void sumBlock(double *arr, int size, double *result) {
 	}
 }
 
+// quickly sum an array with given size in parallel and return the result;
+// NOTE: arr, partialRes must already be shared between host and device 
 double sumArray(double *arr, int size, double *partialRes) {
 	int numThreads = 1024; // threads per block
 	// shared memory size for device
@@ -57,42 +59,6 @@ double sumArray(double *arr, int size, double *partialRes) {
 	}
 	return partialRes[0];
 }
-
-// quickly sum an array with given size in parallel and return the result;
-// NOTE: arr, partialRes must already be shared between host and device 
-/*
-double sumArray(double *arr, int size, double *partialRes) {
-	int numThreads = 1024; // threads per block
-	// shared memory size for device
-	int memSize = numThreads * sizeof(double);
-	int numBlocks = (size + numThreads - 1) / numThreads;
-	sumBlock<<<numBlocks, numThreads, memSize>>>(arr, size, partialRes);
-	// number of elements to sum is now numBlocks
-	// number of blocks for next iteration
-	int newNumBlocks = (numBlocks + numThreads - 1) / numThreads;
-	// to ensure proper behavior of sumBlock, arr (to be summed) and result must be different
-	// to this end alternate between using partialRes and arr as the array to be summed
-	// and the one holding the result
-	// repeat until all elements have been summed
-	bool ansArr = false; // whether results are currently held in arr
-	while(numBlocks > 1) {
-		if(ansArr) {
-			sumBlock<<<newNumBlocks, numThreads, memSize>>>(arr, numBlocks, partialRes);
-		} else {
-			sumBlock<<<newNumBlocks, numThreads, memSize>>>(partialRes, numBlocks, arr);
-		}
-		numBlocks = newNumBlocks;
-		newNumBlocks = (newNumBlocks + numThreads - 1) / numThreads;
-		ansArr = !ansArr;
-	}
-	// at this point the array has been summed and the result is in partialRes[0]
-	cudaDeviceSynchronize();
-	if(ansArr) { // arr should hold the results
-		return arr[0];
-	}
-	return partialRes[0];
-}
-*/
 
 // compute double integral of f dA for a single pixel and single triangle triArr[t]
 // pixArr is a 1D representation of image, where pixel (x, y) is at x * maxY + y
@@ -219,29 +185,6 @@ double constantEnergyApprox(Pixel *pixArr, int &maxY, Triangle *triArr, double *
 	return totalEnergy;
 }
 
-// compute the energy of a single pixel on triangle triArr[t]
-__global__ void pixConstantEnergyInt(Pixel *pixArr, int maxX, int maxY, Triangle *triArr, double *colors, int t, double *results) {
-	int x = blockIdx.x * blockDim.x + threadIdx.x;
-	int y = blockIdx.y * blockDim.y + threadIdx.y;
-	int ind = x * maxY + y; // index in pixArr;
-	if(x < maxX && y < maxY) {
-		double area = pixArr[ind].intersectionArea(triArr[t]);
-		//double area = pixArr[ind].approxArea(triArr[t]);
-		double diff = colors[t] - pixArr[ind].getColor();
-		results[ind] = diff * diff * area;
-	}
-}
-
-double constantEnergyEval(Pixel *pixArr, int &maxX, int &maxY, Triangle *triArr, double *colors, int &numTri, double *res0, double *res1) {
-	dim3 numBlocks((maxX + numThreadsX - 1) / numThreadsX, (maxY + numThreadsY - 1) / numThreadsY);
-	double totalEnergy = 0;
-	for(int t = 0; t < numTri; t++) {
-		pixConstantEnergyInt<<<numBlocks, threadsPerBlock>>>(pixArr, maxX, maxY, triArr, colors, t, res0);
-		totalEnergy += sumArray(res0, maxX * maxY, res1); // add energy for this triangle
-	}
-	return totalEnergy;
-}
-
 // compute line integral of v dot n f ds where point a is moving; 
 // reverse determines if integral should be computed from a to b (false) or opposite
 __global__ void constLineIntSample(Pixel *pixArr, int maxY, Point *a, Point *b, bool reverse, bool isX, double *results, double ds, int samples) {
@@ -349,6 +292,10 @@ double lineIntEval(ApproxType approx, Pixel *pixArr, int &maxX, int &maxY, Trian
 	return answer;
 }
 
+ParallelIntegrator::ParallelIntegrator() {
+	threads2D = dim3(threadsX, threadsY);
+}
+
 bool ParallelIntegrator::initialize(Pixel *pix, Triangle *tri, int xMax, int yMax, ApproxType a, long long space, bool exact) {
 	// allocate working computation space
 	cudaMallocManaged(&arr, space * sizeof(double));
@@ -381,48 +328,49 @@ ParallelIntegrator::~ParallelIntegrator() {
 	cudaFree(curTri);
 }
 
-/*
 double ParallelIntegrator::sumArray(int size) {
 	// shared memory size for device
 	int memSize = threads1D * sizeof(double);
-	int curSize = size;
-	int numBlocks = (size + numThreads - 1) / numThreads;
-	sumBlock<<<numBlocks, threads1D, memSize>>>(arr, size, helper);
-	// number of elements to sum is now numBlocks
-	// number of blocks for next iteration
-	int newNumBlocks = (numBlocks + numThreads - 1) / numThreads;
-	// to ensure proper behavior of sumBlock, arr (to be summed) and result must be different
-	// to this end alternate between using partialRes and arr as the array to be summed
-	// and the one holding the result
-	// repeat until all elements have been summed
-	bool ansArr = false; // whether results are currently held in arr
-	while(numBlocks > 1) {
+	int curSize = size; // current length of array to sum
+	int numBlocks = (size + threads1D - 1) / threads1D;
+	bool ansArr = true; // whether results are currently held in arr
+	while(curSize > 1) {
 		if(ansArr) {
-			sumBlock<<<newNumBlocks, numThreads, memSize>>>(arr, numBlocks, partialRes);
+			sumBlock<<<numBlocks, threads1D, memSize>>>(arr, curSize, helper);
 		} else {
-			sumBlock<<<newNumBlocks, numThreads, memSize>>>(partialRes, numBlocks, arr);
+			sumBlock<<<numBlocks, threads1D, memSize>>>(helper, curSize, arr);
 		}
-		numBlocks = newNumBlocks;
-		newNumBlocks = (newNumBlocks + numThreads - 1) / numThreads;
+		curSize = numBlocks;
+		numBlocks = (numBlocks + threads1D - 1) / threads1D;
 		ansArr = !ansArr;
 	}
-	// at this point the array has been summed and the result is in partialRes[0]
+	// at this point the array has been summed
 	cudaDeviceSynchronize();
 	if(ansArr) { // arr should hold the results
 		return arr[0];
 	}
-	return partialRes[0];	
+	return helper[0];
 }
-*/
 
-/*
-double ParallelIntegrator::computeEnergyExact(double *colors, int numTri) {
-	dim3 numBlocks((maxX + numThreadsX - 1) / numThreadsX, (maxY + numThreadsY - 1) / numThreadsY);
+// compute the energy of a single pixel on triangle triArr[t]; kernel function for constantEnergyEval
+__global__ void pixConstantEnergyInt(Pixel *pixArr, int maxX, int maxY, Triangle *triArr, double *colors, int t, double *results) {
+	int x = blockIdx.x * blockDim.x + threadIdx.x;
+	int y = blockIdx.y * blockDim.y + threadIdx.y;
+	int ind = x * maxY + y; // index in pixArr;
+	if(x < maxX && y < maxY) {
+		double area = pixArr[ind].intersectionArea(triArr[t]);
+		//double area = pixArr[ind].approxArea(triArr[t]);
+		double diff = colors[t] - pixArr[ind].getColor();
+		results[ind] = diff * diff * area;
+	}
+}
+
+double ParallelIntegrator::constantEnergyEval(double *colors, int numTri) {
+	dim3 numBlocks((maxX + threadsX - 1) / threadsX, (maxY + threadsY - 1) / threadsY);
 	double totalEnergy = 0;
 	for(int t = 0; t < numTri; t++) {
-		pixConstantEnergyInt<<<numBlocks, threadsPerBlock>>>(pixArr, maxX, maxY, triArr, colors, t, res0);
-		totalEnergy += sumArray(res0, maxX * maxY, res1); // add energy for this triangle
+		pixConstantEnergyInt<<<numBlocks, threads2D>>>(pixArr, maxX, maxY, triArr, colors, t, arr);
+		totalEnergy += sumArray(maxX * maxY);
 	}
 	return totalEnergy;
 }
-*/
