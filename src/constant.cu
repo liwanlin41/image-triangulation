@@ -55,35 +55,22 @@ ConstantApprox::ConstantApprox(CImg<unsigned char> *img, vector<Point> *pts, vec
 		maxLength = max(maxLength, triArr[i].maxLength());
 	}
 	imageInt = new double[numTri];
-	// create shared space for triangle iterations
-	cudaMallocManaged(&workingTriangle, 3 * sizeof(Point));
 
-	// create space for results, one slot per gpu worker
+	// initialize integrator
+
+	// find space needed for results, one slot per gpu worker
 	long long maxDivisions = (int) (maxLength/ds + 1); // max num samples per side, rounded up
 	// maximum possible number of samples per triangle is loosely upper bounded by 2 * maxDivisions^2
 	// assumming edge lengths are bounded above by maxDivisions * 2
 	long long resultSlots = max(2 * maxDivisions * maxDivisions, (long long) maxX * maxY); // at least num pixels
-	cudaMallocManaged(&results0, resultSlots * sizeof(double));
-	cudaMallocManaged(&results1, resultSlots * sizeof(double));
-	// the above may cause errors because so much memory is required
-	cudaError_t error = cudaGetLastError();
-  	if(error != cudaSuccess)
-  	{
-    	// print the CUDA error message and exit
-		printf("CUDA error: %s\n", cudaGetErrorString(error));
-		cout << "An approximation of this quality is not possible due to memory limitations." << endl;
-    	exit(-1);
-  	}
+	integrator.initialize(pixArr, triArr, maxX, maxY, APPROXTYPE, resultSlots);
 
 	// create an initial approximation based on this triangulation
-	integrator.initialize(pixArr, triArr, maxX, maxY, APPROXTYPE, resultSlots);
 	updateApprox();
 }
 
 ConstantApprox::~ConstantApprox() {
 	cudaFree(pixArr);
-	cudaFree(results0);
-	cudaFree(results1);
 	cudaFree(points);
 	cudaFree(triArr);
 	cudaFree(grays);
@@ -92,7 +79,6 @@ ConstantApprox::~ConstantApprox() {
 	cudaFree(greens);
 	cudaFree(blues);
 	*/
-	cudaFree(workingTriangle);
 	delete[] imageInt;
 }
 
@@ -174,8 +160,7 @@ void ConstantApprox::undo() {
 void ConstantApprox::updateApprox() {
 	for(int t = 0; t < numTri; t++) {
 		// compute image dA and store it for reference on next iteration
-		//double val = doubleIntEval(APPROXTYPE, pixArr, maxX, maxY, triArr, t, results0);
-		double val = doubleIntApprox(APPROXTYPE, pixArr, maxY, triArr + t, results0, results1, ds, workingTriangle);
+		double val = integrator.doubleIntEval(t, ds);
 		imageInt[t] = val;
 		double area = triArr[t].getArea();
 		// take average value
@@ -186,12 +171,6 @@ void ConstantApprox::updateApprox() {
 			approxVal = 255; // TODO: something better than this
 		}
 		grays[t] = min(255.0, approxVal); // prevent blowup in case of poor approximation
-		// get rgb values
-		/*
-		reds[t] = doubleIntEval(APPROXTYPE, pixArr, maxX, maxY, triArr, t, results, red) / area;
-		greens[t] = doubleIntEval(APPROXTYPE, pixArr, maxX, maxY, triArr, t, results, green) / area;
-		blues[t] = doubleIntEval(APPROXTYPE, pixArr, maxX, maxY, triArr, t, results, blue) / area;
-		*/
 	}
 }
 
@@ -253,26 +232,10 @@ vector<array<double,3>> ConstantApprox::getColors() {
 		// scale to fit polyscope colors TODO: check that this is correct
 		int scale = 255;
 		double area = triArr[t].getArea();
-		/*
-		double r = doubleIntEval(APPROXTYPE, pixArr, maxX, maxY, triArr, t, results0, RED)/(scale * area);
-		double g = doubleIntEval(APPROXTYPE, pixArr, maxX, maxY, triArr, t, results0, GREEN)/(scale * area);
-		double b = doubleIntEval(APPROXTYPE, pixArr, maxX, maxY, triArr, t, results0, BLUE)/(scale * area);
-		*/
-		double r = doubleIntApprox(APPROXTYPE, pixArr, maxY, triArr + t, results0, results1, ds, workingTriangle, RED) / (scale * area);
-		double g = doubleIntApprox(APPROXTYPE, pixArr, maxY, triArr + t, results0, results1, ds, workingTriangle, GREEN) / (scale * area);
-		double b = doubleIntApprox(APPROXTYPE, pixArr, maxY, triArr + t, results0, results1, ds, workingTriangle, BLUE) / (scale * area);
+		double r = integrator.doubleIntEval(t, ds, RED) / (scale * area);
+		double g = integrator.doubleIntEval(t, ds, GREEN) / (scale * area);
+		double b = integrator.doubleIntEval(t, ds, BLUE) / (scale * area);
 		fullColors.push_back({r, g, b});
-		/*
-		if(max(r, max(g, b)) > 1.05) {
-			cout << triArr[t];
-			double rp = doubleIntApprox(APPROXTYPE, pixArr, maxY, triArr + t, results, ds, workingTriangle, RED);
-			double gp = doubleIntApprox(APPROXTYPE, pixArr, maxY, triArr + t, results, ds, workingTriangle, GREEN);
-			double bp = doubleIntApprox(APPROXTYPE, pixArr, maxY, triArr + t, results, ds, workingTriangle, BLUE);
-			printf("values %f, %f, %f\n", rp, gp, bp); 
-			printf("values obtained were %f, %f, %f\n", r * scale * area, g * scale * area, b * scale * area);
-			printf("area is %f\n", area);
-		}
-		*/
 	}
 	return fullColors;
 }

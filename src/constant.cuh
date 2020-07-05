@@ -26,7 +26,6 @@ class ConstantApprox {
 		int numPoints;
 		Triangle *triArr; // store triangles of triangulation
 		int numTri; // number of triangles
-		Point *workingTriangle; // shared memory holder for points of triangle in line integral
 		map<Point*, double> gradX; // map points to gradient x values
 		map<Point*, double> gradY; // map points to gradient y values
 		double *imageInt; // hold integrals of image dA over each triangle
@@ -37,9 +36,7 @@ class ConstantApprox {
 		double *blues;
 		*/
 		double ds; // step size for integration approximation
-		double *results0; // used to hold temporary results on device (minimize costly allocations)
-		double *results1;
-		ParallelIntegrator integrator;
+		ParallelIntegrator integrator; // do all the integrations
 
 	public:
 		// initialize a constant approximation triangulation on img

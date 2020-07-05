@@ -1,142 +1,5 @@
 #include "parallelInt.cuh"
 
-// thread setup
-int numThreadsX = 32;
-int numThreadsY = 16;
-dim3 threadsPerBlock(numThreadsX, numThreadsY);
-// NOTE: block grid will have to be set within each function
-
-// compute the sum of an array arr with given size, in parallel
-// with 1D thread/blocks, storing the result per block in result
-__global__ void sumBlock(double *arr, int size, double *result) {
-	extern __shared__ double partial[]; // hold partial results
-	int tid = threadIdx.x;
-	int ind = blockIdx.x * blockDim.x + tid;
-	// load into partial result array
-	if(ind < size) {
-		partial[tid] = arr[ind];
-	} else {
-		partial[tid] = 0;
-	}
-	__syncthreads();
-
-	for(int step = blockDim.x / 2; step > 0; step /= 2) {
-		if(tid < step) {
-			partial[tid] += partial[tid + step];
-		}
-		__syncthreads();
-	}
-
-	// write output for block to result
-	if(tid == 0) {
-		result[blockIdx.x] = partial[0];
-	}
-}
-
-// quickly sum an array with given size in parallel and return the result;
-// NOTE: arr, partialRes must already be shared between host and device 
-double sumArray(double *arr, int size, double *partialRes) {
-	int numThreads = 1024; // threads per block
-	// shared memory size for device
-	int memSize = numThreads * sizeof(double);
-	int curSize = size; // current length of array to sum
-	int numBlocks = (size + numThreads - 1) / numThreads;
-	bool ansArr = true; // whether results are currently held in arr
-	while(curSize > 1) {
-		if(ansArr) {
-			sumBlock<<<numBlocks, numThreads, memSize>>>(arr, curSize, partialRes);
-		} else {
-			sumBlock<<<numBlocks, numThreads, memSize>>>(partialRes, curSize, arr);
-		}
-		curSize = numBlocks;
-		numBlocks = (numBlocks + numThreads - 1) / numThreads;
-		ansArr = !ansArr;
-	}
-	// at this point the array has been summed
-	cudaDeviceSynchronize();
-	if(ansArr) { // arr should hold the results
-		return arr[0];
-	}
-	return partialRes[0];
-}
-
-// compute double integral of f dA for a single pixel and single triangle triArr[t]
-// pixArr is a 1D representation of image, where pixel (x, y) is at x * maxY + y
-// reults holds the result for each pixel
-__global__ void pixConstantDoubleInt(Pixel *pixArr, int maxX, int maxY, Triangle *triArr, int t, double *results, ColorChannel channel) {
-	int x = blockIdx.x * blockDim.x + threadIdx.x;
-	int y = blockIdx.y * blockDim.y + threadIdx.y;
-	int ind = x * maxY + y; // index in pixArr
-	if(x < maxX && y < maxY) { // check bounds
-		double area = pixArr[ind].intersectionArea(triArr[t]);
-		//double area = pixArr[ind].approxArea(triArr[t]);
-		results[ind] = area * pixArr[ind].getColor(channel);
-	}
-}
-
-double doubleIntEval(ApproxType approx, Pixel *pixArr, int &maxX, int &maxY, Triangle *triArr, int &t, double *res0, double *res1, ColorChannel channel) {
-	dim3 numBlocks((maxX + numThreadsX -1) / numThreadsX, (maxY + numThreadsY -1) / numThreadsY);
-	// compute integral in parallel based on function to integrate
-	switch (approx) {
-		case constant: {
-			pixConstantDoubleInt<<<numBlocks, threadsPerBlock>>>(pixArr, maxX, maxY, triArr, t, res0, channel);
-			break;
-		}
-		case linear: // TODO: fill out
-			break;
-		case quadratic: // TODO: fill out
-			break;
-	}
-	double answer = sumArray(res0, maxX * maxY, res1);
-	cudaDeviceSynchronize(); // wait for everything to finish
-	return answer;
-}
-
-// using Point a as vertex point, sample ~samples^2/2 points inside triangle with area element of dA
-// for details see approxConstantEnergySample below
-__global__ void constDoubleIntSample(Pixel *pixArr, int maxY, Point *a, Point *b, Point *c, double *results, double dA, int samples, ColorChannel channel) {
-	int u = blockIdx.x * blockDim.x + threadIdx.x; // component towards b
-	int v = blockIdx.y * blockDim.y + threadIdx.y; // component towards c
-	int ind = (2 * samples - u + 1) * u / 2 + v; // 1D index in results
-	if(u + v < samples) {
-		double x = (a->getX() * (samples - u - v) + b->getX() * u + c->getX() * v) / samples;
-		double y = (a->getY() * (samples - u - v) + b->getY() * u + c->getY() * v) / samples;
-		// find containing pixel
-		int pixX = pixelRound(x);
-		int pixY = pixelRound(y);
-		double areaContrib = (u+v == samples - 1) ? dA : 2 * dA;
-		results[ind] = pixArr[pixX * maxY + pixY].getColor(channel) * areaContrib;
-	}
-}
-
-double doubleIntApprox(ApproxType approx, Pixel *pixArr, int &maxY, Triangle *tri, double *res0, double *res1, double &ds, Point *workingTri, ColorChannel channel) {
-	int i = tri->midVertex();
-	tri->copyVertices(workingTri+((3-i)%3), workingTri+((4-i)%3), workingTri+((5-i)%3));
-	// compute number of samples
-	int samples = ceil(workingTri[1].distance(workingTri[2])/ds);
-	dim3 numBlocks((samples + numThreadsX - 1) / numThreadsX, (samples + numThreadsY - 1) / numThreadsY);
-	double dA = tri->getArea() / (samples * samples);
-	switch(approx) {
-		case constant: {
-			constDoubleIntSample<<<numBlocks, threadsPerBlock>>>(pixArr, maxY, workingTri, workingTri+1, workingTri+2, res0, dA, samples, channel);
-			cudaError_t error = cudaGetLastError();
-  			if(error != cudaSuccess)
-  			{
-    			// print the CUDA error message and exit
-				printf("CUDA error in double int: %s\n", cudaGetErrorString(error));
-				exit(-1);
-			}
-			break;
-		}
-		case linear:
-			break;
-		case quadratic:
-			break;
-	}
-	double answer = sumArray(res0, samples * (samples + 1) / 2, res1);
-	return answer;
-}
-
 ParallelIntegrator::ParallelIntegrator() {
 	threads2D = dim3(threadsX, threadsY);
 }
@@ -171,6 +34,34 @@ ParallelIntegrator::~ParallelIntegrator() {
 	cudaFree(arr);
 	cudaFree(helper);
 	cudaFree(curTri);
+}
+
+// kernel for sumArray
+// compute the sum of an array arr with given size, in parallel
+// with 1D thread/blocks, storing the result per block in result
+__global__ void sumBlock(double *arr, int size, double *result) {
+	extern __shared__ double partial[]; // hold partial results
+	int tid = threadIdx.x;
+	int ind = blockIdx.x * blockDim.x + tid;
+	// load into partial result array
+	if(ind < size) {
+		partial[tid] = arr[ind];
+	} else {
+		partial[tid] = 0;
+	}
+	__syncthreads();
+
+	for(int step = blockDim.x / 2; step > 0; step /= 2) {
+		if(tid < step) {
+			partial[tid] += partial[tid + step];
+		}
+		__syncthreads();
+	}
+
+	// write output for block to result
+	if(tid == 0) {
+		result[blockIdx.x] = partial[0];
+	}
 }
 
 double ParallelIntegrator::sumArray(int size) {
@@ -392,4 +283,91 @@ double ParallelIntegrator::lineIntEval(int t, int pt, bool isX, double ds) {
 		return lineIntExact(t, pt, isX);
 	}
 	return lineIntApprox(t, pt, isX, ds);
+}
+
+// kernel for exact double integral
+// compute double integral of f dA for a single pixel and single triangle triArr[t]
+// pixArr is a 1D representation of image, where pixel (x, y) is at x * maxY + y
+// reults holds the result for each pixel
+__global__ void pixConstantDoubleInt(Pixel *pixArr, int maxX, int maxY, Triangle *triArr, int t, double *results, ColorChannel channel) {
+	int x = blockIdx.x * blockDim.x + threadIdx.x;
+	int y = blockIdx.y * blockDim.y + threadIdx.y;
+	int ind = x * maxY + y; // index in pixArr
+	if(x < maxX && y < maxY) { // check bounds
+		double area = pixArr[ind].intersectionArea(triArr[t]);
+		//double area = pixArr[ind].approxArea(triArr[t]);
+		results[ind] = area * pixArr[ind].getColor(channel);
+	}
+}
+
+double ParallelIntegrator::doubleIntExact(int t, ColorChannel channel) {
+	dim3 numBlocks((maxX + threadsX -1) / threadsX, (maxY + threadsY -1) / threadsY);
+	// compute integral in parallel based on function to integrate
+	switch (approx) {
+		case constant: {
+			pixConstantDoubleInt<<<numBlocks, threads2D>>>(pixArr, maxX, maxY, triArr, t, arr, channel);
+			break;
+		}
+		case linear: // TODO: fill out
+			break;
+		case quadratic: // TODO: fill out
+			break;
+	}
+	double answer = sumArray(maxX * maxY);
+	return answer;
+}
+
+// kernel for double integral approximation
+// using Point a as vertex point, sample ~samples^2/2 points inside triangle with area element of dA
+// for details see approxConstantEnergySample below
+__global__ void constDoubleIntSample(Pixel *pixArr, int maxY, Point *a, Point *b, Point *c, double *results, double dA, int samples, ColorChannel channel) {
+	int u = blockIdx.x * blockDim.x + threadIdx.x; // component towards b
+	int v = blockIdx.y * blockDim.y + threadIdx.y; // component towards c
+	int ind = (2 * samples - u + 1) * u / 2 + v; // 1D index in results
+	if(u + v < samples) {
+		double x = (a->getX() * (samples - u - v) + b->getX() * u + c->getX() * v) / samples;
+		double y = (a->getY() * (samples - u - v) + b->getY() * u + c->getY() * v) / samples;
+		// find containing pixel
+		int pixX = pixelRound(x);
+		int pixY = pixelRound(y);
+		double areaContrib = (u+v == samples - 1) ? dA : 2 * dA;
+		results[ind] = pixArr[pixX * maxY + pixY].getColor(channel) * areaContrib;
+	}
+}
+
+double ParallelIntegrator::doubleIntApprox(int t, double ds, ColorChannel channel) {
+	int i = triArr[t].midVertex();
+	triArr[t].copyVertices(curTri+((3-i)%3), curTri+((4-i)%3), curTri+((5-i)%3));
+	// compute number of samples
+	int samples = ceil(curTri[1].distance(curTri[2])/ds);
+	dim3 numBlocks((samples + threadsX - 1) / threadsX, (samples + threadsY - 1) / threadsY);
+	double dA = triArr[t].getArea() / (samples * samples);
+	switch(approx) {
+		case constant: {
+			constDoubleIntSample<<<numBlocks, threads2D>>>(pixArr, maxY, curTri, curTri+1, curTri+2, arr, dA, samples, channel);
+			/*
+			cudaError_t error = cudaGetLastError();
+  			if(error != cudaSuccess)
+  			{
+    			// print the CUDA error message and exit
+				printf("CUDA error in double int: %s\n", cudaGetErrorString(error));
+				exit(-1);
+			}
+			*/
+			break;
+		}
+		case linear:
+			break;
+		case quadratic:
+			break;
+	}
+	double answer = sumArray(samples * (samples + 1) / 2);
+	return answer;
+}
+
+double ParallelIntegrator::doubleIntEval(int t, double ds, ColorChannel channel) {
+	if(computeExact) {
+		return doubleIntExact(t, channel);
+	}
+	return doubleIntApprox(t, ds, channel);
 }
