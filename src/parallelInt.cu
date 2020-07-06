@@ -7,8 +7,10 @@ ParallelIntegrator::ParallelIntegrator() {
 bool ParallelIntegrator::initialize(Pixel *pix, Triangle *tri, int xMax, int yMax, ApproxType a, long long space, bool exact) {
 	// allocate working computation space
 	cudaMallocManaged(&arr, space * sizeof(double));
-	cudaMallocManaged(&helper, space * sizeof(double));
-	// the above may cause errors because so much memory is required
+	// less space needed for helper because it is only used for summing arr
+	long long helperSpace = ceil(space / 512.0);
+	cudaMallocManaged(&helper, helperSpace * sizeof(double));
+	// the above operations may cause errors because so much memory is required
 	cudaError_t error = cudaGetLastError();
   	if(error != cudaSuccess) {
 		printf("CUDA error: %s\n", cudaGetErrorString(error));
@@ -36,26 +38,71 @@ ParallelIntegrator::~ParallelIntegrator() {
 	cudaFree(curTri);
 }
 
+template <unsigned int blockSize>
+__device__ void warpReduce(volatile int *sdata, unsigned int tid) {
+	if (blockSize >= 64) sdata[tid] += sdata[tid + 32];
+	if (blockSize >= 32) sdata[tid] += sdata[tid + 16];
+	if (blockSize >= 16) sdata[tid] += sdata[tid + 8];
+	if (blockSize >= 8) sdata[tid] += sdata[tid + 4];
+	if (blockSize >= 4) sdata[tid] += sdata[tid + 2];
+	if (blockSize >= 2) sdata[tid] += sdata[tid + 1];
+}
+
+__device__ void warpReduce(volatile double *sdata, unsigned int tid) {
+	sdata[tid] += sdata[tid + 32];
+	sdata[tid] += sdata[tid + 16];
+	sdata[tid] += sdata[tid + 8];
+	sdata[tid] += sdata[tid + 4];
+	sdata[tid] += sdata[tid + 2];
+	sdata[tid] += sdata[tid + 1];
+}
+
+template <unsigned int blockSize>
+__global__ void reduce6(int *g_idata, int *g_odata, unsigned int n) {
+	__shared__ double sdata[1024];
+	unsigned int tid = threadIdx.x;
+	unsigned int i = blockIdx.x*(blockSize*2) + tid;
+	unsigned int gridSize = blockSize*2*gridDim.x;
+	sdata[tid] = 0;
+	while (i < n) { sdata[tid] += g_idata[i] + g_idata[i+blockSize]; i += gridSize; }
+	__syncthreads();
+	if (blockSize >= 512) { if (tid < 256) { sdata[tid] += sdata[tid + 256]; } __syncthreads(); }
+	if (blockSize >= 256) { if (tid < 128) { sdata[tid] += sdata[tid + 128]; } __syncthreads(); }
+	if (blockSize >= 128) { if (tid < 64) { sdata[tid] += sdata[tid + 64]; } __syncthreads(); }
+	if (tid < 32) warpReduce(sdata, tid);
+	if (tid == 0) g_odata[blockIdx.x] = sdata[0];
+}
+
 // kernel for sumArray
 // compute the sum of an array arr with given size, in parallel
 // with 1D thread/blocks, storing the result per block in result
 __global__ void sumBlock(double *arr, int size, double *result) {
-	extern __shared__ double partial[]; // hold partial results
+	__shared__ double partial[1024]; // hold partial results
 	int tid = threadIdx.x;
-	int ind = blockIdx.x * blockDim.x + tid;
+	int ind = blockIdx.x * 2 * blockDim.x + tid;
+	//int ind = blockIdx.x * blockDim.x + tid;
 	// load into partial result array
+	if(ind + blockDim.x < size) {
+		partial[tid] = arr[ind] + arr[ind + blockDim.x];
+	} else if(ind < size) {
+		partial[tid] = arr[ind];
+		/*
 	if(ind < size) {
 		partial[tid] = arr[ind];
+		*/
 	} else {
 		partial[tid] = 0;
 	}
 	__syncthreads();
 
-	for(int step = blockDim.x / 2; step > 0; step /= 2) {
+	for(int step = blockDim.x / 2; step > 32; step >>= 1) {
 		if(tid < step) {
 			partial[tid] += partial[tid + step];
 		}
 		__syncthreads();
+	}
+	if(tid < 32) {
+		warpReduce(partial, tid);
 	}
 
 	// write output for block to result
@@ -65,19 +112,19 @@ __global__ void sumBlock(double *arr, int size, double *result) {
 }
 
 double ParallelIntegrator::sumArray(int size) {
-	// shared memory size for device
-	int memSize = threads1D * sizeof(double);
 	int curSize = size; // current length of array to sum
-	int numBlocks = (size + threads1D - 1) / threads1D;
+	int numBlocks = (size + 2 * threads1D - 1) / (2 * threads1D);
+	//int numBlocks = (size + threads1D - 1) / threads1D;
 	bool ansArr = true; // whether results are currently held in arr
 	while(curSize > 1) {
 		if(ansArr) {
-			sumBlock<<<numBlocks, threads1D, memSize>>>(arr, curSize, helper);
+			sumBlock<<<numBlocks, threads1D>>>(arr, curSize, helper);
 		} else {
-			sumBlock<<<numBlocks, threads1D, memSize>>>(helper, curSize, arr);
+			sumBlock<<<numBlocks, threads1D>>>(helper, curSize, arr);
 		}
 		curSize = numBlocks;
-		numBlocks = (numBlocks + threads1D - 1) / threads1D;
+		numBlocks = (numBlocks + 2 * threads1D - 1) / (2 * threads1D);
+		//numBlocks = (numBlocks + threads1D - 1) / threads1D;
 		ansArr = !ansArr;
 	}
 	// at this point the array has been summed
@@ -295,7 +342,6 @@ __global__ void pixConstantDoubleInt(Pixel *pixArr, int maxX, int maxY, Triangle
 	int ind = x * maxY + y; // index in pixArr
 	if(x < maxX && y < maxY) { // check bounds
 		double area = pixArr[ind].intersectionArea(triArr[t]);
-		//double area = pixArr[ind].approxArea(triArr[t]);
 		results[ind] = area * pixArr[ind].getColor(channel);
 	}
 }

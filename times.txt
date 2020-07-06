@@ -69,3 +69,24 @@ panda.jpeg, 1239 triangles: 0.05 is 130us per call and very accurate approximati
 ^ dumb mistake, actually using the middle length side to get num samples gives 1% approximation with 0.1 sample step on apple.jpeg, runtime 50us
 with approximate line integral, confirmed that as ds decreases each individual line integral approaches exact value; however the difference seems to add up across all segments and the final energy difference after a gradient step is significantly different (though this is likely due to step size being different because some triangles may be farther from inverting)
 
+7/6:
+sample apple.jpeg with ds of 0.1, sampling line integral 5 times as frequently; 320 triangles, 7 iterations
+GPU activities:   56.04%  1.31816s     30720  42.908us  8.5120us  1.0692ms  constLineIntSample(Pixel*, int, Point*, Point*, bool, bool, double*, double, int)
+                  22.86%  537.69ms     67446  7.9720us  4.6400us  985.55us  sumBlock(double*, int, double*)
+                  16.31%  383.76ms     12800  29.981us  8.6400us  1.1987ms  constDoubleIntSample(Pixel*, int, Point*, Point*, Point*, double*, double, int, ColorChannel)
+                   4.79%  112.65ms      4160  27.079us  8.8000us  467.34us  approxConstantEnergySample(Pixel*, int, Point*, Point*, Point*, double, double*, double, int)
+     API calls:   79.60%  2.28871s     47680  48.001us  2.0610us  1.4290ms  cudaDeviceSynchronize
+41 iterations with line integral sampling ds/4:
+GPU activities:   55.25%  5.72382s    157440  36.355us  7.5510us  1.2060ms  constLineIntSample(Pixel*, int, Point*, Point*, bool, bool, double*, double, int)
+                  24.47%  2.53507s    332366  7.6270us  5.1830us  1.0018ms  sumBlock(double*, int, double*)
+                  15.17%  1.57149s     60480  25.983us  8.5750us  804.48us  constDoubleIntSample(Pixel*, int, Point*, Point*, Point*, double*, double, int, ColorChannel)
+                   5.11%  529.05ms     20160  26.242us  8.7030us  464.39us  approxConstantEnergySample(Pixel*, int, Point*, Point*, Point*, double, double*, double, int)
+     API calls:   79.87%  9.78880s    238080  41.115us  1.8300us  1.5624ms  cudaDeviceSynchronize
+
+vase running to completion with 1598 triangles
+GPU activities:   54.00%  25.9797s    402696  64.514us  9.6320us  1.3968ms  constLineIntSample(Pixel*, int, Point*, Point*, bool, bool, double*, double, int)
+                  25.84%  12.4335s   1062676  11.700us  5.8880us  3.2208ms  sumBlock(double*, int, double*)
+                  15.44%  7.43089s    148614  50.001us  11.521us  8.3468ms  constDoubleIntSample(Pixel*, int, Point*, Point*, Point*, double*, double, int, ColorChannel)
+                   4.72%  2.27068s     43146  52.627us  12.352us  6.5882ms  approxConstantEnergySample(Pixel*, int, Point*, Point*, Point*, double, double*, double, int)
+     API calls:   87.66%  46.9362s    594456  78.956us  1.8820us  11.058ms  cudaDeviceSynchronize
+
