@@ -17,7 +17,7 @@ class ParallelIntegrator {
         // thread setup
         static const int threadsX = 32;
         static const int threadsY = 16;
-        static const int threads1D = 1024;
+        static const int threads1D = 1024; // NOTE: changing this will require changes in sumBlock
         dim3 threads2D;
         // two large arrays to do computations
         double *arr;

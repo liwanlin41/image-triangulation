@@ -38,8 +38,9 @@ ParallelIntegrator::~ParallelIntegrator() {
 	cudaFree(curTri);
 }
 
+/*
 template <unsigned int blockSize>
-__device__ void warpReduce(volatile int *sdata, unsigned int tid) {
+__device__ void warpReduce(volatile double *sdata, unsigned int tid) {
 	if (blockSize >= 64) sdata[tid] += sdata[tid + 32];
 	if (blockSize >= 32) sdata[tid] += sdata[tid + 16];
 	if (blockSize >= 16) sdata[tid] += sdata[tid + 8];
@@ -47,6 +48,7 @@ __device__ void warpReduce(volatile int *sdata, unsigned int tid) {
 	if (blockSize >= 4) sdata[tid] += sdata[tid + 2];
 	if (blockSize >= 2) sdata[tid] += sdata[tid + 1];
 }
+*/
 
 __device__ void warpReduce(volatile double *sdata, unsigned int tid) {
 	sdata[tid] += sdata[tid + 32];
@@ -55,22 +57,6 @@ __device__ void warpReduce(volatile double *sdata, unsigned int tid) {
 	sdata[tid] += sdata[tid + 4];
 	sdata[tid] += sdata[tid + 2];
 	sdata[tid] += sdata[tid + 1];
-}
-
-template <unsigned int blockSize>
-__global__ void reduce6(int *g_idata, int *g_odata, unsigned int n) {
-	__shared__ double sdata[1024];
-	unsigned int tid = threadIdx.x;
-	unsigned int i = blockIdx.x*(blockSize*2) + tid;
-	unsigned int gridSize = blockSize*2*gridDim.x;
-	sdata[tid] = 0;
-	while (i < n) { sdata[tid] += g_idata[i] + g_idata[i+blockSize]; i += gridSize; }
-	__syncthreads();
-	if (blockSize >= 512) { if (tid < 256) { sdata[tid] += sdata[tid + 256]; } __syncthreads(); }
-	if (blockSize >= 256) { if (tid < 128) { sdata[tid] += sdata[tid + 128]; } __syncthreads(); }
-	if (blockSize >= 128) { if (tid < 64) { sdata[tid] += sdata[tid + 64]; } __syncthreads(); }
-	if (tid < 32) warpReduce(sdata, tid);
-	if (tid == 0) g_odata[blockIdx.x] = sdata[0];
 }
 
 // kernel for sumArray
@@ -95,12 +81,25 @@ __global__ void sumBlock(double *arr, int size, double *result) {
 	}
 	__syncthreads();
 
-	for(int step = blockDim.x / 2; step > 32; step >>= 1) {
-		if(tid < step) {
-			partial[tid] += partial[tid + step];
-		}
-		__syncthreads();
+	// completely unroll the reduction
+	if(tid < 512) {
+		partial[tid] += partial[tid + 512];
 	}
+	__syncthreads();
+	if(tid < 256) {
+		partial[tid] += partial[tid + 256];
+	}
+	__syncthreads();
+	if(tid < 128) {
+		partial[tid] += partial[tid + 128];
+	}
+	__syncthreads();
+	if(tid < 64) {
+		partial[tid] += partial[tid + 64];
+	}
+	__syncthreads();
+
+	// only one active warp at this point
 	if(tid < 32) {
 		warpReduce(partial, tid);
 	}

@@ -83,10 +83,26 @@ GPU activities:   55.25%  5.72382s    157440  36.355us  7.5510us  1.2060ms  cons
                    5.11%  529.05ms     20160  26.242us  8.7030us  464.39us  approxConstantEnergySample(Pixel*, int, Point*, Point*, Point*, double, double*, double, int)
      API calls:   79.87%  9.78880s    238080  41.115us  1.8300us  1.5624ms  cudaDeviceSynchronize
 
+
+GOAL: increase speed of sumBlock
+
 vase running to completion with 1598 triangles
 GPU activities:   54.00%  25.9797s    402696  64.514us  9.6320us  1.3968ms  constLineIntSample(Pixel*, int, Point*, Point*, bool, bool, double*, double, int)
                   25.84%  12.4335s   1062676  11.700us  5.8880us  3.2208ms  sumBlock(double*, int, double*)
                   15.44%  7.43089s    148614  50.001us  11.521us  8.3468ms  constDoubleIntSample(Pixel*, int, Point*, Point*, Point*, double*, double, int, ColorChannel)
                    4.72%  2.27068s     43146  52.627us  12.352us  6.5882ms  approxConstantEnergySample(Pixel*, int, Point*, Point*, Point*, double, double*, double, int)
      API calls:   87.66%  46.9362s    594456  78.956us  1.8820us  11.058ms  cudaDeviceSynchronize
+With both warp unroll and add on first load:
+GPU activities:   61.46%  25.6676s    402696  63.739us  10.272us  1.4215ms  constLineIntSample(Pixel*, int, Point*, Point*, bool, bool, double*, double, int)
+                  17.73%  7.40586s    148614  49.832us  11.168us  8.2474ms  constDoubleIntSample(Pixel*, int, Point*, Point*, Point*, double*, double, int, ColorChannel)
+                  15.28%  6.38245s    802724  7.9500us  3.5520us  1.6369ms  sumBlock(double*, int, double*)
+                   5.52%  2.30402s     43146  53.400us  12.288us  7.1156ms  approxConstantEnergySample(Pixel*, int, Point*, Point*, Point*, double, double*, double, int)
+     API calls:   86.64%  40.9434s    594456  68.875us  2.0230us  9.1445ms  cudaDeviceSynchronize
+
+Completely unrolled:
+GPU activities:   64.55%  19.7032s    402696  48.928us  6.9760us  1.2744ms  constLineIntSample(Pixel*, int, Point*, Point*, bool, bool, double*, double, int)
+                  16.47%  5.02743s    148614  33.828us  8.3840us  8.3042ms  constDoubleIntSample(Pixel*, int, Point*, Point*, Point*, double*, double, int, ColorChannel)
+                  13.98%  4.26731s    802724  5.3160us  2.5920us  1.0157ms  sumBlock(double*, int, double*)
+                   5.01%  1.52814s     43146  35.417us  8.8000us  4.6879ms  approxConstantEnergySample(Pixel*, int, Point*, Point*, Point*, double, double*, double, int)
+     API calls:   83.12%  28.8949s    594456  48.607us  1.8670us  9.1353ms  cudaDeviceSynchronize
 
