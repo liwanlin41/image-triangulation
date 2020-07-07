@@ -38,18 +38,6 @@ ParallelIntegrator::~ParallelIntegrator() {
 	cudaFree(curTri);
 }
 
-/*
-template <unsigned int blockSize>
-__device__ void warpReduce(volatile double *sdata, unsigned int tid) {
-	if (blockSize >= 64) sdata[tid] += sdata[tid + 32];
-	if (blockSize >= 32) sdata[tid] += sdata[tid + 16];
-	if (blockSize >= 16) sdata[tid] += sdata[tid + 8];
-	if (blockSize >= 8) sdata[tid] += sdata[tid + 4];
-	if (blockSize >= 4) sdata[tid] += sdata[tid + 2];
-	if (blockSize >= 2) sdata[tid] += sdata[tid + 1];
-}
-*/
-
 __device__ void warpReduce(volatile double *sdata, unsigned int tid) {
 	sdata[tid] += sdata[tid + 32];
 	sdata[tid] += sdata[tid + 16];
@@ -66,16 +54,11 @@ __global__ void sumBlock(double *arr, int size, double *result) {
 	__shared__ double partial[1024]; // hold partial results
 	int tid = threadIdx.x;
 	int ind = blockIdx.x * 2 * blockDim.x + tid;
-	//int ind = blockIdx.x * blockDim.x + tid;
 	// load into partial result array
 	if(ind + blockDim.x < size) {
 		partial[tid] = arr[ind] + arr[ind + blockDim.x];
 	} else if(ind < size) {
 		partial[tid] = arr[ind];
-		/*
-	if(ind < size) {
-		partial[tid] = arr[ind];
-		*/
 	} else {
 		partial[tid] = 0;
 	}
@@ -113,7 +96,6 @@ __global__ void sumBlock(double *arr, int size, double *result) {
 double ParallelIntegrator::sumArray(int size) {
 	int curSize = size; // current length of array to sum
 	int numBlocks = (size + 2 * threads1D - 1) / (2 * threads1D);
-	//int numBlocks = (size + threads1D - 1) / threads1D;
 	bool ansArr = true; // whether results are currently held in arr
 	while(curSize > 1) {
 		if(ansArr) {
@@ -123,7 +105,6 @@ double ParallelIntegrator::sumArray(int size) {
 		}
 		curSize = numBlocks;
 		numBlocks = (numBlocks + 2 * threads1D - 1) / (2 * threads1D);
-		//numBlocks = (numBlocks + threads1D - 1) / threads1D;
 		ansArr = !ansArr;
 	}
 	// at this point the array has been summed
