@@ -106,3 +106,49 @@ GPU activities:   64.55%  19.7032s    402696  48.928us  6.9760us  1.2744ms  cons
                    5.01%  1.52814s     43146  35.417us  8.8000us  4.6879ms  approxConstantEnergySample(Pixel*, int, Point*, Point*, Point*, double, double*, double, int)
      API calls:   83.12%  28.8949s    594456  48.607us  1.8670us  9.1353ms  cudaDeviceSynchronize
 
+7/7:
+vase.jpg 11139 triangles to completion (11 iterations)
+GPU activities:   61.09%  35.8679s   1470348  24.394us  6.7830us  1.0633ms  constLineIntSample(Pixel*, int, Point*, Point*, bool, bool, double*, double, int)
+                  21.95%  12.8873s   2836222  4.5430us  2.5920us  1.0228ms  sumBlock(double*, int, double*)
+                  13.39%  7.86121s    545811  14.402us  7.0390us  5.7347ms  constDoubleIntSample(Pixel*, int, Point*, Point*, Point*, double*, double, int, ColorChannel)
+                   3.58%  2.09929s    144807  14.497us  7.3910us  4.6990ms  approxConstantEnergySample(Pixel*, int, Point*, Point*, Point*, double, double*, double, int)
+     API calls:   74.46%  53.6046s   2160966  24.805us  1.3140us  6.3058ms  cudaDeviceSynchronize
+
+panda.jpeg 27136 triangles to completion (5 iterations)
+GPU activities:   55.30%  33.0299s   1628160  20.286us  6.5920us  1.4110ms  constLineIntSample(Pixel*, int, Point*, Point*, bool, bool, double*, double, int)
+                  24.50%  14.6345s   3119665  4.6910us  2.6240us  1.5504ms  sumBlock(double*, int, double*)
+                  16.10%  9.61875s    651264  14.769us  5.6640us  2.5448ms  constDoubleIntSample(Pixel*, int, Point*, Point*, Point*, double*, double, int, ColorChannel)
+                   4.09%  2.44255s    162816  15.001us  5.8560us  1.9227ms  approxConstantEnergySample(Pixel*, int, Point*, Point*, Point*, double, double*, double, int)
+     API calls:   72.59%  55.3896s   2442240  22.679us  1.3030us  8.3018ms  cudaDeviceSynchronize
+panda.jpeg 13014 triangles to completion (8 iterations)
+GPU activities:   59.76%  34.0090s   1249344  27.221us  6.8150us  8.6128ms  constLineIntSample(Pixel*, int, Point*, Point*, bool, bool, double*, double, int)
+                  20.73%  11.7944s   2446068  4.8210us  2.5920us  1.3757ms  sumBlock(double*, int, double*)
+                  15.55%  8.84888s    468504  18.887us  5.7590us  6.9401ms  constDoubleIntSample(Pixel*, int, Point*, Point*, Point*, double*, double, int, ColorChannel)
+                   3.97%  2.25667s    117126  19.266us  5.8560us  4.9903ms  approxConstantEnergySample(Pixel*, int, Point*, Point*, Point*, double, double*, double, int)
+     API calls:   75.17%  51.5837s   1834974  28.111us  1.3430us  8.6138ms  cudaDeviceSynchronize
+panda.jpeg 7160 triangles to completion (8 iterations)
+GPU activities:   61.38%  23.8462s    687360  34.692us  6.8150us  1.0706ms  constLineIntSample(Pixel*, int, Point*, Point*, bool, bool, double*, double, int)
+                  17.29%  6.71663s   1365050  4.9200us  2.5920us  1.7422ms  sumBlock(double*, int, double*)
+                  16.97%  6.59301s    257760  25.578us  7.8080us  4.2805ms  constDoubleIntSample(Pixel*, int, Point*, Point*, Point*, double*, double, int, ColorChannel)
+                   4.36%  1.69190s     64440  26.255us  8.3200us  2.1915ms  approxConstantEnergySample(Pixel*, int, Point*, Point*, Point*, double, double*, double, int)
+     API calls:   80.34%  36.3484s   1009560  36.004us  1.4540us  6.8906ms  cudaDeviceSynchronize
+panda.jpeg 4068 triangles to completion (7 iterations)
+GPU activities:   60.47%  14.7595s    341712  43.192us  6.8480us  1.2575ms  constLineIntSample(Pixel*, int, Point*, Point*, bool, bool, double*, double, int)
+                  19.22%  4.69181s    130176  36.042us  7.9680us  4.1396ms  constDoubleIntSample(Pixel*, int, Point*, Point*, Point*, double*, double, int, ColorChannel)
+                  15.40%  3.75796s    696895  5.3920us  2.6230us  1.0080ms  sumBlock(double*, int, double*)
+                   4.91%  1.19745s     32544  36.794us  8.8320us  3.4883ms  approxConstantEnergySample(Pixel*, int, Point*, Point*, Point*, double, double*, double, int)
+      API calls:   83.32%  23.2277s    504432  46.047us  1.5620us  4.5993ms  cudaDeviceSynchronize
+panda.jpeg 1848 triangles to completion (10 iterations)
+GPU activities:   55.70%  11.1161s    221760  50.126us  6.8160us  1.0872ms  constLineIntSample(Pixel*, int, Point*, Point*, bool, bool, double*, double, int)
+                  24.07%  4.80240s     81312  59.061us  8.5760us  3.0481ms  constDoubleIntSample(Pixel*, int, Point*, Point*, Point*, double*, double, int, ColorChannel)
+                  14.16%  2.82491s    464291  6.0840us  2.6240us  1.9966ms  sumBlock(double*, int, double*)
+                   6.07%  1.21192s     20328  59.618us  8.7040us  1.9411ms  approxConstantEnergySample(Pixel*, int, Point*, Point*, Point*, double, double*, double, int)
+     API calls:   85.11%  19.0258s    323400  58.830us  1.7860us  3.8332ms  cudaDeviceSynchronize
+panda.jpeg 1086 triangles to completion (7 iterations)
+GPU activities:   45.41%  4.62908s     91224  50.744us  6.8800us  1.0706ms  constLineIntSample(Pixel*, int, Point*, Point*, bool, bool, double*, double, int)
+                  32.27%  3.28954s     34752  94.657us  8.8640us  7.7367ms  constDoubleIntSample(Pixel*, int, Point*, Point*, Point*, double*, double, int, ColorChannel)
+                  14.20%  1.44746s    221856  6.5240us  2.6230us  989.40us  sumBlock(double*, int, double*)
+                   8.12%  827.69ms      8688  95.268us  8.9600us  3.6119ms  approxConstantEnergySample(Pixel*, int, Point*, Point*, Point*, double, double*, double, int)
+     API calls:   86.86%  9.77674s    134664  72.601us  2.1020us  8.3767ms  cudaDeviceSynchronize
+
+Conclusion: overall time grows with number of triangles; average call times decrease (because each triangle is smaller and thus requires fewer samples)

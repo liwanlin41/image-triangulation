@@ -29,7 +29,7 @@ double adaptorF_custom_accessVector2Value(const Point& p, unsigned int ind) {
 int main(int argc, char* argv[]) {
     // default image path and density
     const char *imgPath = "../images/flower.jpg";
-    double density = 0.01;
+    double density = 0.05; // experimentally a good density for general images
 
     string inputPath = "../images/"; // to ensure non-null pointer later; find image directory
     if (argc >= 2) {
@@ -40,7 +40,7 @@ int main(int argc, char* argv[]) {
         density = atof(argv[2]);
     }
     // set default values
-    int maxIter = 50;
+    int maxIter = 100;
     double eps = 0.001;
     double prevEnergy = 100 * eps; // placeholder values
     double newEnergy = 0;
