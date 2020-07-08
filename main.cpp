@@ -223,7 +223,7 @@ int main(int argc, char* argv[]) {
     matlabPtr->eval(u"exportgraphics(g, '../outputs/data_energy.png')");
 
     // convert screenshot sequences to video
-    system("ffmpeg -hide_banner -loglevel warning -framerate 2 -i screenshot_%06d.tga -vcodec mpeg4 ../outputs/output.mp4");
+    system("ffmpeg -hide_banner -loglevel warning -framerate 2 -i screenshot_%06d.tga -vcodec mpeg4 ../outputs/video_output.mp4");
     system("rm screenshot_*");
 	return 0;
 }

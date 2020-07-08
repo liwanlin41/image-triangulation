@@ -4,3 +4,5 @@ installs.txt
 testing.txt
 cpp_code/build/*
 outputs/
+images/
+results/
