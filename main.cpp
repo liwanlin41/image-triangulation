@@ -141,6 +141,8 @@ int main(int argc, char* argv[]) {
         auto colors = triangulation->addFaceColorQuantity("approximate colors", approx.getColors());
         // allow colors by default
         colors->setEnabled(true);
+        // set material to flat to get more accurate rgb values
+        triangulation->setMaterial("flat");
         // setup gradient descent
         cout << "finding energy..." << endl;
         newEnergy = approx.computeEnergy();
