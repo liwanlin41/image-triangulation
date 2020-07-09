@@ -24,6 +24,7 @@ class ConstantApprox {
 		Pixel *pixArr; // pixel (x, y) is pixArr[x * maxY + y]
 		Point *points; // store vertices of triangulation
 		int numPoints;
+		vector<array<int, 3>> edges; // hold triangle connections
 		Triangle *triArr; // store triangles of triangulation
 		int numTri; // number of triangles
 		map<Point*, double> gradX; // map points to gradient x values
@@ -39,11 +40,18 @@ class ConstantApprox {
 		ParallelIntegrator integrator; // do all the integrations
 
 	public:
+		// create an approximation instance on img with given stepsize and sampling rate
+		ConstantApprox(CImg<unsigned char> *img, double step, double ds = 0.1);
 		// initialize a constant approximation triangulation on img
 		// with input triangulation points, faces
 		ConstantApprox(CImg<unsigned char> *img, vector<Point> *points, vector<array<int, 3>> &triangleInd, double step, double ds = 0.1);
 		// deallocate all the shared space
 		~ConstantApprox();
+
+		// initialize the triangulation on this approximation using a coarse grid,
+		// sampling once every pixelRate pixels
+		void initialize(int pixelRate);
+
 		// compute energy of triangulation at this point in time
 		double computeEnergy();
 		// compute gradient at this instant, updating gradX and gradY
@@ -71,6 +79,8 @@ class ConstantApprox {
 		double getStep();
 		// get points of triangulation
 		vector<Point> getVertices();
+		// get edges of triangulation
+		vector<array<int, 3>> getEdges();
 		// get colors for each triangle
 		vector<array<double, 3>> getColors();
 };

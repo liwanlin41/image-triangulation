@@ -2,6 +2,31 @@
 
 const double TOLERANCE = 1e-10;
 
+ConstantApprox::ConstantApprox(CImg<unsigned char> *img, double step, double ds_) : stepSize(step), ds(ds_) {
+	// create pixel array representation
+	maxX = img->width();
+	maxY = img->height();
+	cout << "image is " << maxX << "x" << maxY << endl;
+	// allocate shared space for pixel array
+	cudaMallocManaged(&pixArr, maxX * maxY * sizeof(Pixel));
+	bool isGrayscale = (img->spectrum() == 1);
+	for(int x = 0; x < maxX; x++) {
+		for(int y = 0; y < maxY; y++) {
+			int ind = x * maxY + y; // 1D pixel index
+			if(isGrayscale) {
+				pixArr[ind] = Pixel(x, y, (*img)(x, y));
+			} else {
+				int rgb[3];
+				for(int i = 0; i < 3; i++) {
+					rgb[i] = (*img)(x, y, 0, i);
+				}
+				int r = (*img)(x, y, 0, 0);
+				pixArr[ind] = Pixel(x, y, rgb[0], rgb[1], rgb[2]);
+			}
+		}
+	}
+}
+
 ConstantApprox::ConstantApprox(CImg<unsigned char> *img, vector<Point> *pts, vector<array<int, 3>> &inds, double step, double ds_) 
 : stepSize(step), ds(ds_) {
 	// create pixel array representation
@@ -55,6 +80,71 @@ ConstantApprox::ConstantApprox(CImg<unsigned char> *img, vector<Point> *pts, vec
 		maxLength = max(maxLength, triArr[i].maxLength());
 	}
 	imageInt = new double[numTri];
+
+	// initialize integrator
+
+	// find space needed for results, one slot per gpu worker
+	long long maxDivisions = (int) (maxLength/ds + 1); // max num samples per side, rounded up
+	// maximum possible number of samples per triangle is loosely upper bounded by 2 * maxDivisions^2
+	// assumming edge lengths are bounded above by maxDivisions * 2
+	long long resultSlots = max(2 * maxDivisions * maxDivisions, (long long) maxX * maxY); // at least num pixels
+	integrator.initialize(pixArr, triArr, maxX, maxY, APPROXTYPE, resultSlots);
+
+	// create an initial approximation based on this triangulation
+	updateApprox();
+}
+
+void ConstantApprox::initialize(int pixelRate) {
+	// create points
+	int numX = ceil(((double) maxX) / pixelRate); // number of samples in x direction
+	int numY = ceil(((double) maxY) / pixelRate);
+	double dx = ((double) maxX) / numX; // step size in x direction
+	double dy = ((double) maxY) / numY;
+
+	// create shared space for points
+	numPoints = numX * numY;
+	cudaMallocManaged(&points, numPoints * sizeof(Point));
+
+	for(int i = 0; i < numX; i++) {
+		bool isBoundX = (i == 0) || (i == numX - 1); // whether point is on vertical boundary
+		for(int j = 0; j < numY; j++) {
+			bool isBoundY = (j == 0) || (j == numY - 1);
+			int index1D = i * numY + j;
+			// shift by (-0.5, -0.5) to align to edge of image (lattice points at pixel centers)
+			points[index1D] = Point(i * dx - 0.5, j * dy - 0.5, isBoundX, isBoundY);
+		}
+	}
+
+	// create triangles
+	numTri = 2 * (numX - 1) * (numY - 1);
+	cudaMallocManaged(&triArr, numTri * sizeof(Triangle));
+	cudaMallocManaged(&grays, numTri * sizeof(double));
+	imageInt = new double[numTri];
+
+	int triInd = 0; // index the triangles
+	for(int i = 0; i < numX; i++) {
+		for(int j = 0; j < numY; j++) {
+			int index1D = i * numY + j;
+			// randomly triangulate the square with min x,y corner at this point
+			if(i < numX - 1 && j < numY - 1) {
+				Point *pt = points + index1D; // easier reference to current point
+				if(rand() % 2 == 0) {
+					triArr[triInd] = Triangle(pt, pt + numY, pt + numY + 1);
+					edges.push_back({index1D, index1D + numY, index1D + numY + 1});
+					triArr[triInd+1] = Triangle(pt, pt + numY + 1, pt + 1);
+					edges.push_back({index1D, index1D + numY + 1, index1D + 1});
+				} else {
+					triArr[triInd] = Triangle(pt, pt + 1, pt + numY);
+					edges.push_back({index1D, index1D + 1, index1D + numY});
+					triArr[triInd+1] = Triangle(pt + numY, pt + 1, pt + numY + 1);
+					edges.push_back({index1D + numY, index1D + 1, index1D + numY + 1});
+				}
+				triInd += 2;
+			}
+		}
+	}
+
+	double maxLength = 2 * max(dx, dy); // generously round up maximum triangle side length
 
 	// initialize integrator
 
@@ -224,6 +314,10 @@ vector<Point> ConstantApprox::getVertices() {
 		vertices.push_back(points[i]);
 	}
 	return vertices;
+}
+
+vector<array<int, 3>> ConstantApprox::getEdges() {
+	return edges;
 }
 
 vector<array<double,3>> ConstantApprox::getColors() {
