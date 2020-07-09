@@ -96,10 +96,10 @@ ConstantApprox::ConstantApprox(CImg<unsigned char> *img, vector<Point> *pts, vec
 
 void ConstantApprox::initialize(int pixelRate) {
 	// create points
-	int numX = ceil(((double) maxX) / pixelRate); // number of samples in x direction
-	int numY = ceil(((double) maxY) / pixelRate);
-	double dx = ((double) maxX) / numX; // step size in x direction
-	double dy = ((double) maxY) / numY;
+	int numX = ceil(((double) maxX) / pixelRate) + 1; // number of samples in x direction
+	int numY = ceil(((double) maxY) / pixelRate) + 1;
+	double dx = ((double) maxX) / (numX - 1); // step size in x direction, remembering to get both endpoints
+	double dy = ((double) maxY) / (numY - 1);
 
 	// create shared space for points
 	numPoints = numX * numY;
