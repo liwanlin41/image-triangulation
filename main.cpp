@@ -29,7 +29,7 @@ double adaptorF_custom_accessVector2Value(const Point& p, unsigned int ind) {
 int main(int argc, char* argv[]) {
     // default image path and density
     const char *imgPath = "../images/flower.jpg";
-    //double density = 0.05; // experimentally a good density for general images
+    //double density = 0.05; // experimentally a good density for general images with TRIM
     int dx = 50; // take one sample every dx pixels
 
     string inputPath = "../images/"; // to ensure non-null pointer later; find image directory
@@ -51,6 +51,7 @@ int main(int argc, char* argv[]) {
     CImg<unsigned char> image(imgPath);
 
     /*
+    {
     // start matlab to get initial triangulation
     std::unique_ptr<MATLABEngine> matlabPtr = startMATLAB();
     matlab::data::ArrayFactory factory;
@@ -126,6 +127,7 @@ int main(int argc, char* argv[]) {
         edges.push_back(vertexInds);
     }
     cout << "done\n";
+    }
     */
 
     cout << "Initializing mesh...\n";

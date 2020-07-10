@@ -114,6 +114,7 @@ void ConstantApprox::initialize(int pixelRate) {
 			points[index1D] = Point(i * dx - 0.5, j * dy - 0.5, isBoundX, isBoundY);
 		}
 	}
+	cout << "starting grid: " << numX << "x" << numY << endl;
 
 	// create triangles
 	numTri = 2 * (numX - 1) * (numY - 1);
@@ -211,8 +212,8 @@ void ConstantApprox::gradient(int t, int movingPt, double imageIntegral, double 
 		double boundaryChange[2];
 		// compute gradient in x and y direction
 		for(int i = 0; i < 2; i++) {
-			// sample more frequently because both time and space allow
-			boundaryChange[i] = integrator.lineIntEval(t, movingPt, (i == 0), ds/4);
+			// sample more frequently because both time and space allow (or don't)
+			boundaryChange[i] = integrator.lineIntEval(t, movingPt, (i == 0), ds);
 		}
 		for(int j = 0; j < 2; j++) {
 			gradient[j] = (2 * area * imageIntegral * boundaryChange[j]
