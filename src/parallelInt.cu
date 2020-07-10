@@ -4,7 +4,7 @@ ParallelIntegrator::ParallelIntegrator() {
 	threads2D = dim3(threadsX, threadsY);
 }
 
-bool ParallelIntegrator::initialize(Pixel *pix, Triangle *tri, int xMax, int yMax, ApproxType a, long long space, bool exact) {
+bool ParallelIntegrator::initialize(Pixel *pix, int xMax, int yMax, ApproxType a, long long space, bool exact) {
 	// allocate working computation space
 	cudaMallocManaged(&arr, space * sizeof(double));
 	// less space needed for helper because it is only used for summing arr
@@ -24,7 +24,6 @@ bool ParallelIntegrator::initialize(Pixel *pix, Triangle *tri, int xMax, int yMa
 	}
 	// steal references for easy access later
 	pixArr = pix;
-	triArr = tri;
 	approx = a;
 	maxX = xMax;
 	maxY = yMax;
@@ -117,21 +116,20 @@ double ParallelIntegrator::sumArray(int size) {
 
 // kernel for constantEnergyEval
 // compute the energy of a single pixel on triangle triArr[t]
-__global__ void pixConstantEnergyInt(Pixel *pixArr, int maxX, int maxY, Triangle *triArr, double color, int t, double *results) {
+__global__ void pixConstantEnergyInt(Pixel *pixArr, int maxX, int maxY, Triangle tri, double color, double *results) {
 	int x = blockIdx.x * blockDim.x + threadIdx.x;
 	int y = blockIdx.y * blockDim.y + threadIdx.y;
 	int ind = x * maxY + y; // index in pixArr;
 	if(x < maxX && y < maxY) {
-		double area = pixArr[ind].intersectionArea(triArr[t]);
-		//double area = pixArr[ind].approxArea(triArr[t]);
+		double area = pixArr[ind].intersectionArea(tri);
 		double diff = color - pixArr[ind].getColor();
 		results[ind] = diff * diff * area;
 	}
 }
 
-double ParallelIntegrator::constantEnergyExact(double color, int t) {
+double ParallelIntegrator::constantEnergyExact(Triangle *tri, double color) {
 	dim3 numBlocks((maxX + threadsX - 1) / threadsX, (maxY + threadsY - 1) / threadsY);
-	pixConstantEnergyInt<<<numBlocks, threads2D>>>(pixArr, maxX, maxY, triArr, color, t, arr);
+	pixConstantEnergyInt<<<numBlocks, threads2D>>>(pixArr, maxX, maxY, *tri, color, arr);
 	double answer = sumArray(maxX * maxY);
 	return answer;
 }
@@ -160,24 +158,13 @@ __global__ void approxConstantEnergySample(Pixel *pixArr, int maxY, Point *a, Po
 	}
 }
 
-double ParallelIntegrator::constantEnergyApprox(double color, int t, double ds) {
-	int i = triArr[t].midVertex(); // vertex opposite middle side
-	// ensure minVertex is copied into location workingTri
-	triArr[t].copyVertices(curTri+((3-i)%3), curTri+((4-i)%3), curTri+((5-i)%3));
-	// compute number of samples needed, using median number per side as reference
-	int samples = ceil(curTri[1].distance(curTri[2])/ds);
-	// unfortunately half of these threads will not be doing useful work; no good way to fix this, sqrt is too slow
-	dim3 numBlocks((samples + threadsX - 1) / threadsX, (samples + threadsY - 1) / threadsY);
-	double dA = triArr[t].getArea() / (samples * samples);
-	approxConstantEnergySample<<<numBlocks, threads2D>>>(pixArr, maxY, curTri, curTri + 1, curTri + 2, color, arr, dA, samples);
-	double answer = sumArray(samples * (samples + 1) / 2);
-	return answer;
-}
-
-double ParallelIntegrator::constantEnergyApprox(double color, Triangle *tri, double ds) {
-	int i = tri->midVertex();
+double ParallelIntegrator::constantEnergyApprox(Triangle *tri, double color, double ds) {
+	int i = tri->midVertex(); // vertex opposite middle side
+	// ensure minVertex is copied into location curTri
 	tri->copyVertices(curTri+((3-i)%3), curTri+((4-i)%3), curTri+((5-i)%3));
+	// compute number of samples needed, using median number per side
 	int samples = ceil(curTri[1].distance(curTri[2])/ds);
+	// unfortunately half of these threads will not be doing useful work; no good fix, sqrt is too slow for triangular indexing
 	dim3 numBlocks((samples + threadsX - 1) / threadsX, (samples + threadsY - 1) / threadsY);
 	double dA = tri->getArea() / (samples * samples);
 	approxConstantEnergySample<<<numBlocks, threads2D>>>(pixArr, maxY, curTri, curTri + 1, curTri + 2, color, arr, dA, samples);
@@ -185,12 +172,12 @@ double ParallelIntegrator::constantEnergyApprox(double color, Triangle *tri, dou
 	return answer;
 }
 
-double ParallelIntegrator::constantEnergyEval(double color, int t, double ds) {
+double ParallelIntegrator::constantEnergyEval(Triangle *tri, double color, double ds) {
 	// switch integration method based on exactnes required
 	if(computeExact) {
-		return constantEnergyExact(color, t);
+		return constantEnergyExact(tri, color);
 	}
-	return constantEnergyApprox(color, t, ds);
+	return constantEnergyApprox(tri, color, ds);
 }
 
 // kernel for constant line integral exact evaluation
@@ -226,9 +213,9 @@ __global__ void pixConstantLineInt(Pixel *pixArr, int maxX, int maxY, Point *a, 
 	}
 }
 
-double ParallelIntegrator::lineIntExact(int t, int pt, bool isX) {
+double ParallelIntegrator::lineIntExact(Triangle *tri, int pt, bool isX) {
 	dim3 numBlocks((maxX + threadsX - 1) / threadsX, (maxY + threadsY - 1) / threadsY);
-	triArr[t].copyVertices(curTri, curTri+1, curTri+2);
+	tri->copyVertices(curTri, curTri+1, curTri+2);
 	// compute integral in parallel based on function to integrate
 	switch (approx) {
 		case constant: {
@@ -271,9 +258,9 @@ __global__ void constLineIntSample(Pixel *pixArr, int maxY, Point *a, Point *b, 
 	}
 }
 
-double ParallelIntegrator::lineIntApprox(int t, int pt, bool isX, double ds) {
+double ParallelIntegrator::lineIntApprox(Triangle *tri, int pt, bool isX, double ds) {
 	// ensure pt is copied into the first slot of curTri
-	triArr[t].copyVertices(curTri+((3-pt)%3), curTri+((4-pt)%3), curTri+((5-pt)%3));
+	tri->copyVertices(curTri+((3-pt)%3), curTri+((4-pt)%3), curTri+((5-pt)%3));
 	// get number of samples for side pt, pt+1 and side pt, pt+2
 	int samples[2];
 	int numBlocks[2];
@@ -300,33 +287,33 @@ double ParallelIntegrator::lineIntApprox(int t, int pt, bool isX, double ds) {
 	return answer;
 }
 
-double ParallelIntegrator::lineIntEval(int t, int pt, bool isX, double ds) {
+double ParallelIntegrator::lineIntEval(Triangle *tri, int pt, bool isX, double ds) {
 	if(computeExact) {
-		return lineIntExact(t, pt, isX);
+		return lineIntExact(tri, pt, isX);
 	}
-	return lineIntApprox(t, pt, isX, ds);
+	return lineIntApprox(tri, pt, isX, ds);
 }
 
 // kernel for exact double integral
 // compute double integral of f dA for a single pixel and single triangle triArr[t]
 // pixArr is a 1D representation of image, where pixel (x, y) is at x * maxY + y
 // reults holds the result for each pixel
-__global__ void pixConstantDoubleInt(Pixel *pixArr, int maxX, int maxY, Triangle *triArr, int t, double *results, ColorChannel channel) {
+__global__ void pixConstantDoubleInt(Pixel *pixArr, int maxX, int maxY, Triangle tri, double *results, ColorChannel channel) {
 	int x = blockIdx.x * blockDim.x + threadIdx.x;
 	int y = blockIdx.y * blockDim.y + threadIdx.y;
 	int ind = x * maxY + y; // index in pixArr
 	if(x < maxX && y < maxY) { // check bounds
-		double area = pixArr[ind].intersectionArea(triArr[t]);
+		double area = pixArr[ind].intersectionArea(tri);
 		results[ind] = area * pixArr[ind].getColor(channel);
 	}
 }
 
-double ParallelIntegrator::doubleIntExact(int t, ColorChannel channel) {
+double ParallelIntegrator::doubleIntExact(Triangle *tri, ColorChannel channel) {
 	dim3 numBlocks((maxX + threadsX -1) / threadsX, (maxY + threadsY -1) / threadsY);
 	// compute integral in parallel based on function to integrate
 	switch (approx) {
 		case constant: {
-			pixConstantDoubleInt<<<numBlocks, threads2D>>>(pixArr, maxX, maxY, triArr, t, arr, channel);
+			pixConstantDoubleInt<<<numBlocks, threads2D>>>(pixArr, maxX, maxY, *tri, arr, channel);
 			break;
 		}
 		case linear: // TODO: fill out
@@ -356,25 +343,16 @@ __global__ void constDoubleIntSample(Pixel *pixArr, int maxY, Point *a, Point *b
 	}
 }
 
-double ParallelIntegrator::doubleIntApprox(int t, double ds, ColorChannel channel) {
-	int i = triArr[t].midVertex();
-	triArr[t].copyVertices(curTri+((3-i)%3), curTri+((4-i)%3), curTri+((5-i)%3));
+double ParallelIntegrator::doubleIntApprox(Triangle *tri, double ds, ColorChannel channel) {
+	int i = tri->midVertex();
+	tri->copyVertices(curTri+((3-i)%3), curTri+((4-i)%3), curTri+((5-i)%3));
 	// compute number of samples
 	int samples = ceil(curTri[1].distance(curTri[2])/ds);
 	dim3 numBlocks((samples + threadsX - 1) / threadsX, (samples + threadsY - 1) / threadsY);
-	double dA = triArr[t].getArea() / (samples * samples);
+	double dA = tri->getArea() / (samples * samples);
 	switch(approx) {
 		case constant: {
 			constDoubleIntSample<<<numBlocks, threads2D>>>(pixArr, maxY, curTri, curTri+1, curTri+2, arr, dA, samples, channel);
-			/*
-			cudaError_t error = cudaGetLastError();
-  			if(error != cudaSuccess)
-  			{
-    			// print the CUDA error message and exit
-				printf("CUDA error in double int: %s\n", cudaGetErrorString(error));
-				exit(-1);
-			}
-			*/
 			break;
 		}
 		case linear:
@@ -386,9 +364,9 @@ double ParallelIntegrator::doubleIntApprox(int t, double ds, ColorChannel channe
 	return answer;
 }
 
-double ParallelIntegrator::doubleIntEval(int t, double ds, ColorChannel channel) {
+double ParallelIntegrator::doubleIntEval(Triangle *tri, double ds, ColorChannel channel) {
 	if(computeExact) {
-		return doubleIntExact(t, channel);
+		return doubleIntExact(tri, channel);
 	}
-	return doubleIntApprox(t, ds, channel);
+	return doubleIntApprox(tri, ds, channel);
 }

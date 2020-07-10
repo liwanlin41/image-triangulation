@@ -24,7 +24,6 @@ class ParallelIntegrator {
         double *helper;
         ApproxType approx; // type of approximation to do
         Pixel *pixArr; // reference to the image being approximated
-        Triangle *triArr; // reference to triangles of mesh
         Point *curTri; // hold vertices of current working triangle
         int maxX, maxY; // size of image
         // true if computations are exact rather than approximate
@@ -39,7 +38,7 @@ class ParallelIntegrator {
         // space indicates the amount of computation space needed
         // default to using approximate integrals
         // return true if successful
-        bool initialize(Pixel *pix, Triangle *tri, int xMax, int yMax, ApproxType a, long long space, bool exact = false);
+        bool initialize(Pixel *pix, int xMax, int yMax, ApproxType a, long long space, bool exact = false);
         // free allocated space
         ~ParallelIntegrator();
 
@@ -48,30 +47,28 @@ class ParallelIntegrator {
         // for energy, it makes sense to separate approximation types into different functions
         // because the inputs will be greatly different (one array for each coefficient)
 
-        // compute energy integral over triArr[t]
-        double constantEnergyEval(double color, int t, double ds);
+        // compute energy integral over tri
+        double constantEnergyEval(Triangle *tri, double color, double ds);
         // compute energy by exact integral
-        double constantEnergyExact(double color, int t);
+        double constantEnergyExact(Triangle *tri, double color);
         // approximate energy using barycentric sampling
-        double constantEnergyApprox(double color, int t, double ds);
-        // approximate energy over an input triangle, used for retriangulating
-        double constantEnergyApprox(double color, Triangle *tri, double ds);
+        double constantEnergyApprox(Triangle *tri, double color, double ds);
 
-        // compute exact line integral (v dot n) * f phi ds over triangle triArr[t]
+        // compute exact line integral (v dot n) * f phi ds over triangle tri
         // where FEM basis phi is dependent on approx
         // consider when point with index pt in triArr[t] is moving at velocity (1,0) if isX and (0,1) if !isX
-        double lineIntEval(int t, int pt, bool isX, double ds);
+        double lineIntEval(Triangle *tri, int pt, bool isX, double ds);
         // compute by exact integral
-        double lineIntExact(int t, int pt, bool isX);
+        double lineIntExact(Triangle *tri, int pt, bool isX);
         // approximate line integral using one sample every ds length
-        double lineIntApprox(int t, int pt, bool isX, double ds);
+        double lineIntApprox(Triangle *tri, int pt, bool isX, double ds);
 
         // compute double integral f phi dA over triangle triArr[t] where FEM basis phi depends on approx
-        double doubleIntEval(int t, double ds, ColorChannel channel = GRAY);
+        double doubleIntEval(Triangle *tri, double ds, ColorChannel channel = GRAY);
         // compute by exact integral
-        double doubleIntExact(int t, ColorChannel channel);
+        double doubleIntExact(Triangle *tri, ColorChannel channel);
         // approximate by grid with side length ds
-        double doubleIntApprox(int t, double ds, ColorChannel channel);
+        double doubleIntApprox(Triangle *tri, double ds, ColorChannel channel);
 };
 
 #endif

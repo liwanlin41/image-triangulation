@@ -65,7 +65,7 @@ void ConstantApprox::initialize(vector<Point> *pts, vector<array<int, 3>> &inds)
 	// maximum possible number of samples per triangle is loosely upper bounded by 2 * maxDivisions^2
 	// assumming edge lengths are bounded above by maxDivisions * 2
 	long long resultSlots = max(2 * maxDivisions * maxDivisions, (long long) maxX * maxY); // at least num pixels
-	integrator.initialize(pixArr, triArr, maxX, maxY, APPROXTYPE, resultSlots);
+	integrator.initialize(pixArr, maxX, maxY, APPROXTYPE, resultSlots);
 
 	// create an initial approximation based on this triangulation
 	updateApprox();
@@ -147,7 +147,7 @@ void ConstantApprox::initialize(int pixelRate) {
 	// maximum possible number of samples per triangle is loosely upper bounded by 2 * maxDivisions^2
 	// assumming edge lengths are bounded above by maxDivisions * 2
 	long long resultSlots = max(2 * maxDivisions * maxDivisions, (long long) maxX * maxY); // at least num pixels
-	integrator.initialize(pixArr, triArr, maxX, maxY, APPROXTYPE, resultSlots);
+	integrator.initialize(pixArr, maxX, maxY, APPROXTYPE, resultSlots);
 
 	// create an initial approximation based on this triangulation
 	updateApprox();
@@ -169,7 +169,7 @@ ConstantApprox::~ConstantApprox() {
 double ConstantApprox::computeEnergy() {
 	double totalEnergy = 0;
 	for(int t = 0; t < numTri; t++) {
-		totalEnergy += integrator.constantEnergyEval(grays[t], t, ds);
+		totalEnergy += integrator.constantEnergyEval(triArr+t, grays[t], ds);
 	}
 	return totalEnergy;
 }
@@ -210,7 +210,7 @@ void ConstantApprox::gradient(int t, int movingPt, double imageIntegral, double 
 		// compute gradient in x and y direction
 		for(int i = 0; i < 2; i++) {
 			// sample more frequently because both time and space allow (or don't)
-			boundaryChange[i] = integrator.lineIntEval(t, movingPt, (i == 0), ds);
+			boundaryChange[i] = integrator.lineIntEval(triArr+t, movingPt, (i == 0), ds);
 		}
 		for(int j = 0; j < 2; j++) {
 			gradient[j] = (2 * area * imageIntegral * boundaryChange[j]
@@ -248,7 +248,7 @@ void ConstantApprox::undo() {
 void ConstantApprox::updateApprox() {
 	for(int t = 0; t < numTri; t++) {
 		// compute image dA and store it for reference on next iteration
-		double val = integrator.doubleIntEval(t, ds);
+		double val = integrator.doubleIntEval(triArr+t, ds);
 		imageInt[t] = val;
 		double area = triArr[t].getArea();
 		// take average value
@@ -308,7 +308,7 @@ void ConstantApprox::computeEdgeEnergies(vector<double> *edgeEnergies) {
 		// compute current total energy over these triangles
 		double curEnergy = 0;
 		for(int t : triangles) {
-			curEnergy += integrator.constantEnergyEval(grays[t], t, ds);
+			curEnergy += integrator.constantEnergyEval(triArr+t, grays[t], ds);
 		}
 		// find new point that may be added to mesh
 		Point endpoint0 = points[edge[0]];
@@ -329,7 +329,6 @@ void ConstantApprox::computeEdgeEnergies(vector<double> *edgeEnergies) {
 			// the two triangles formed by cutting this edge
 			Triangle t1(&midpoint, &opposite, &endpoint0);
 			Triangle t2(&midpoint, &opposite, &endpoint1);
-			
 		}
 
 
@@ -364,9 +363,9 @@ vector<array<double,3>> ConstantApprox::getColors() {
 		// scale to fit polyscope colors TODO: check that this is correct
 		int scale = 255;
 		double area = triArr[t].getArea();
-		double r = integrator.doubleIntEval(t, ds, RED) / (scale * area);
-		double g = integrator.doubleIntEval(t, ds, GREEN) / (scale * area);
-		double b = integrator.doubleIntEval(t, ds, BLUE) / (scale * area);
+		double r = integrator.doubleIntEval(triArr+t, ds, RED) / (scale * area);
+		double g = integrator.doubleIntEval(triArr+t, ds, GREEN) / (scale * area);
+		double b = integrator.doubleIntEval(triArr+t, ds, BLUE) / (scale * area);
 		fullColors.push_back({r, g, b});
 	}
 	return fullColors;
