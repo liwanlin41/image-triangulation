@@ -42,6 +42,9 @@ class ConstantApprox {
 		map<array<int, 2>, vector<int>> edgeBelonging; // map edge to indices of triangles containing edge
 		// edge represented by sorted indices of points
 
+		// compute energy change associated with subdividing each edge at its midpoint
+		void computeEdgeEnergies(double *edgeEnergies);
+
 	public:
 		// create an approximation instance on img with given stepsize and sampling rate
 		ConstantApprox(CImg<unsigned char> *img, double step, double ds = 0.1);
@@ -77,6 +80,11 @@ class ConstantApprox {
 		// run the entire procedure for either maxIter iterations or
 		// until change in energy is at most eps
 		void run(int maxIter = 1000, double eps = 0.001);
+
+		// handle adaptive retriangulation to finer mesh
+
+		// greedily subdivide the top n edges
+		void subdivide(int n);
 
 		// return data for image to be displayed
 		double getStep();

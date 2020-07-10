@@ -48,12 +48,12 @@ class ParallelIntegrator {
         // for energy, it makes sense to separate approximation types into different functions
         // because the inputs will be greatly different (one array for each coefficient)
 
-        // compute energy integral over the numTri existing triangles
-        double constantEnergyEval(double *colors, int numTri, double ds);
+        // compute energy integral over triArr[t]
+        double constantEnergyEval(double color, int t, double ds);
         // compute energy by exact integral
-        double constantEnergyExact(double *colors, int numTri);
+        double constantEnergyExact(double color, int t);
         // approximate energy using barycentric sampling
-        double constantEnergyApprox(double *colors, int numTri, double ds);
+        double constantEnergyApprox(double color, int t, double ds);
 
         // compute exact line integral (v dot n) * f phi ds over triangle triArr[t]
         // where FEM basis phi is dependent on approx

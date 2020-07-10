@@ -117,26 +117,23 @@ double ParallelIntegrator::sumArray(int size) {
 
 // kernel for constantEnergyEval
 // compute the energy of a single pixel on triangle triArr[t]
-__global__ void pixConstantEnergyInt(Pixel *pixArr, int maxX, int maxY, Triangle *triArr, double *colors, int t, double *results) {
+__global__ void pixConstantEnergyInt(Pixel *pixArr, int maxX, int maxY, Triangle *triArr, double color, int t, double *results) {
 	int x = blockIdx.x * blockDim.x + threadIdx.x;
 	int y = blockIdx.y * blockDim.y + threadIdx.y;
 	int ind = x * maxY + y; // index in pixArr;
 	if(x < maxX && y < maxY) {
 		double area = pixArr[ind].intersectionArea(triArr[t]);
 		//double area = pixArr[ind].approxArea(triArr[t]);
-		double diff = colors[t] - pixArr[ind].getColor();
+		double diff = color - pixArr[ind].getColor();
 		results[ind] = diff * diff * area;
 	}
 }
 
-double ParallelIntegrator::constantEnergyExact(double *colors, int numTri) {
+double ParallelIntegrator::constantEnergyExact(double color, int t) {
 	dim3 numBlocks((maxX + threadsX - 1) / threadsX, (maxY + threadsY - 1) / threadsY);
-	double totalEnergy = 0;
-	for(int t = 0; t < numTri; t++) {
-		pixConstantEnergyInt<<<numBlocks, threads2D>>>(pixArr, maxX, maxY, triArr, colors, t, arr);
-		totalEnergy += sumArray(maxX * maxY);
-	}
-	return totalEnergy;
+	pixConstantEnergyInt<<<numBlocks, threads2D>>>(pixArr, maxX, maxY, triArr, color, t, arr);
+	double answer = sumArray(maxX * maxY);
+	return answer;
 }
 
 // kernel for constant energy approx
@@ -163,39 +160,26 @@ __global__ void approxConstantEnergySample(Pixel *pixArr, int maxY, Point *a, Po
 	}
 }
 
-double ParallelIntegrator::constantEnergyApprox(double *colors, int numTri, double ds) {
-	double totalEnergy = 0;
-	for(int t = 0; t < numTri; t++) {
-		int i = triArr[t].midVertex(); // vertex opposite middle side
-		// ensure minVertex is copied into location workingTri
-		triArr[t].copyVertices(curTri+((3-i)%3), curTri+((4-i)%3), curTri+((5-i)%3));
-		// compute number of samples needed, using median number per side as reference
-		int samples = ceil(curTri[1].distance(curTri[2])/ds);
-		// unfortunately half of these threads will not be doing useful work; no good way to fix this, sqrt is too slow
-		dim3 numBlocks((samples + threadsX - 1) / threadsX, (samples + threadsY - 1) / threadsY);
-		double dA = triArr[t].getArea() / (samples * samples);
-		approxConstantEnergySample<<<numBlocks, threads2D>>>(pixArr, maxY, curTri, curTri + 1, curTri + 2, colors[t], arr, dA, samples);
-		/*
-		cudaError_t error = cudaGetLastError();
-  		if(error != cudaSuccess)
-  		{
-    		// print the CUDA error message and exit
-			printf("CUDA error in energy: %s\n", cudaGetErrorString(error));
-			printf("num samples is %d\n", samples);
-			exit(-1);
-		  }
-		*/
-		totalEnergy += sumArray(samples * (samples + 1) / 2);
-	}
-	return totalEnergy;
+double ParallelIntegrator::constantEnergyApprox(double color, int t, double ds) {
+	int i = triArr[t].midVertex(); // vertex opposite middle side
+	// ensure minVertex is copied into location workingTri
+	triArr[t].copyVertices(curTri+((3-i)%3), curTri+((4-i)%3), curTri+((5-i)%3));
+	// compute number of samples needed, using median number per side as reference
+	int samples = ceil(curTri[1].distance(curTri[2])/ds);
+	// unfortunately half of these threads will not be doing useful work; no good way to fix this, sqrt is too slow
+	dim3 numBlocks((samples + threadsX - 1) / threadsX, (samples + threadsY - 1) / threadsY);
+	double dA = triArr[t].getArea() / (samples * samples);
+	approxConstantEnergySample<<<numBlocks, threads2D>>>(pixArr, maxY, curTri, curTri + 1, curTri + 2, color, arr, dA, samples);
+	double answer = sumArray(samples * (samples + 1) / 2);
+	return answer;
 }
 
-double ParallelIntegrator::constantEnergyEval(double *colors, int numTri, double ds) {
-	// switch integration method based on exactness required
+double ParallelIntegrator::constantEnergyEval(double color, int t, double ds) {
+	// switch integration method based on exactnes required
 	if(computeExact) {
-		return constantEnergyExact(colors, numTri);
+		return constantEnergyExact(color, t);
 	}
-	return constantEnergyApprox(colors, numTri, ds);
+	return constantEnergyApprox(color, t, ds);
 }
 
 // kernel for constant line integral exact evaluation

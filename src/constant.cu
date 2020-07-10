@@ -139,17 +139,6 @@ void ConstantApprox::initialize(int pixelRate) {
 		}		
 	}
 
-	/* print output for sanity check
-	for(auto i = edgeBelonging.begin(); i != edgeBelonging.end(); i++) {
-		array<int, 2> edge = i->first;
-		cout << points[edge[0]] << "--" << points[edge[1]] << endl;
-		vector<int> incident = i->second;
-		for(int j : incident) {
-			cout << triArr[j];
-		}
-	}
-	*/
-
 	// initialize integrator
 	double maxLength = 2 * max(dx, dy); // generously round up maximum triangle side length
 
@@ -178,7 +167,12 @@ ConstantApprox::~ConstantApprox() {
 }
 
 double ConstantApprox::computeEnergy() {
-	return integrator.constantEnergyEval(grays, numTri, ds);
+	double totalEnergy = 0;
+	for(int t = 0; t < numTri; t++) {
+		totalEnergy += integrator.constantEnergyEval(grays[t], t, ds);
+	}
+	return totalEnergy;
+	//return integrator.constantEnergyEval(grays, numTri, ds);
 }
 
 void ConstantApprox::computeGrad() {
@@ -306,6 +300,14 @@ void ConstantApprox::run(int maxIter, double eps) {
 		step(prevEnergy, newEnergy);
 		iterCount++;
 	}
+}
+
+void ConstantApprox::computeEdgeEnergies(double *edgeEnergies) {
+
+}
+
+void ConstantApprox::subdivide(int n) {
+
 }
 
 double ConstantApprox::getStep() {
