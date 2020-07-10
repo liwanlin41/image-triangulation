@@ -5,6 +5,7 @@
 #include <map>
 #include <vector>
 #include <array>
+#include <set>
 #include "triangle.cuh"
 #include "CImg.h"
 #include "parallelInt.cuh"
@@ -43,7 +44,10 @@ class ConstantApprox {
 		// edge represented by sorted indices of points
 
 		// compute energy change associated with subdividing each edge at its midpoint
-		void computeEdgeEnergies(vector<double> *edgeEnergies);
+		// {i, j, e} in vector means edge (i, j) has energy e
+		void computeEdgeEnergies(vector<array<double, 3>> *edgeEnergies);
+		// update subdivided mesh
+		void updateMesh(vector<Point> *newPoints, vector<array<int, 3>> *newFaces, vector<int> *discardedFaces);
 
 	public:
 		// create an approximation instance on img with given stepsize and sampling rate
@@ -84,7 +88,7 @@ class ConstantApprox {
 		// handle adaptive retriangulation to finer mesh
 
 		// greedily subdivide the top n edges
-		void subdivide(int n = 5);
+		void subdivide(int);
 
 		// return data for image to be displayed
 		double getStep();

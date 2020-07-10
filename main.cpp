@@ -42,6 +42,7 @@ int main(int argc, char* argv[]) {
     }
     // set default values
     int maxIter = 100;
+    int subdivisions = 5;
     double eps = 0.001;
     double prevEnergy = 100 * eps; // placeholder values
     double newEnergy = 0;
@@ -196,7 +197,7 @@ int main(int argc, char* argv[]) {
 
     // lambda for retriangulating by subdivision
     auto retriangulate = [&]() {
-        approx.subdivide();
+        approx.subdivide(subdivisions);
         // re-initialize new mesh
         auto triangulation = polyscope::registerSurfaceMesh2D("Triangulation", approx.getVertices(), approx.getFaces());
         auto colors = triangulation->addFaceColorQuantity("approximate colors", approx.getColors());
@@ -213,6 +214,7 @@ int main(int argc, char* argv[]) {
     // lambda to handle GUI updates
     auto callback = [&]() {
         ImGui::InputInt("max iterations", &maxIter); 
+        ImGui::InputInt("new triangles on subdivision", &subdivisions);
         ImGui::InputDouble("stopping condition", &eps);  
 
         if (ImGui::Button("Start")) {

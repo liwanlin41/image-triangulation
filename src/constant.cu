@@ -301,7 +301,7 @@ void ConstantApprox::run(int maxIter, double eps) {
 	}
 }
 
-void ConstantApprox::computeEdgeEnergies(vector<double> *edgeEnergies) {
+void ConstantApprox::computeEdgeEnergies(vector<array<double, 3>> *edgeEnergies) {
 	for(auto ii = edgeBelonging.begin(); ii != edgeBelonging.end(); ii++) {
 		array<int, 2> edge = ii->first;
 		vector<int> triangles = ii->second; // triangles containing edge
@@ -322,7 +322,8 @@ void ConstantApprox::computeEdgeEnergies(vector<double> *edgeEnergies) {
 			Point opposite;
 			// get opposite vertex
 			for(int v = 0; v < 3; v++) {
-				if(*(triArr[t].vertices[v]) != endpoint0 && *(triArr[t].vertices[v]) != endpoint1) {
+				// for accuracy, use indices
+				if(faces.at(t).at(v) != edge[0] && faces.at(t).at(v) != edge[1]) {
 					opposite = *(triArr[t].vertices[v]);
 				}
 			}
@@ -337,15 +338,64 @@ void ConstantApprox::computeEdgeEnergies(vector<double> *edgeEnergies) {
 			newEnergy += integrator.constantEnergyEval(&t1, color1, ds) + integrator.constantEnergyEval(&t2, color2, ds);
 		}
 		// change in energy due to subdivision
-		edgeEnergies->push_back(newEnergy - curEnergy);
+		edgeEnergies->push_back({(double) edge[0], (double) edge[1], newEnergy - curEnergy});
 	}
 }
 
 void ConstantApprox::subdivide(int n) {
-	vector<double> edgeEnergies;
+	vector<array<double, 3>> edgeEnergies;
 	computeEdgeEnergies(&edgeEnergies);
-	//assert(edgeEnergies.size() == edgeBelonging.size());
-	cout << "done subdividing" << endl;
+	cout << "done computing energies" << endl;
+	// sort by energies
+	sort(edgeEnergies.begin(), edgeEnergies.end(), [](const array<double, 3> a, const array<double, 3> b) {
+		return a[2] < b[2];
+	});
+
+	// proceed through edgeEnergies and extract up to n edges to subdivide
+	set<int> trianglesToRemove; // hold indices of triangles in triArr
+	vector<Point> newPoints; // points to append
+	vector<array<int, 3>> newTriangles; // new faces to add
+
+	int numDivided = 0; // number of edges already divided
+	int curIndex = 0; // current edge being considered
+	while(numDivided < n && curIndex < edgeEnergies.size()) {
+		array<int, 2> edge = {(int) edgeEnergies.at(curIndex)[0], (int) edgeEnergies.at(curIndex)[1]};
+		vector<int> incidentFaces = edgeBelonging.at(edge);
+		// for clean subdivision, don't cut the same face twice
+		bool alreadyDivided = false;
+		for(int t : incidentFaces) {
+			if(trianglesToRemove.find(t) != trianglesToRemove.end()) { 
+				alreadyDivided = true;
+			}
+		}
+		if(!alreadyDivided) { // this edge can be used
+			// get new point to add to mesh
+			double x0 = points[edge[0]].getX();
+			double x1 = points[edge[1]].getX();
+			double y0 = points[edge[0]].getY();
+			double y1 = points[edge[1]].getY();
+			bool borderX = points[edge[0]].isBorderX() && x0 == x1;
+			bool borderY = points[edge[0]].isBorderY() && y0 == y1;
+			Point midpoint((x0 + x1) / 2, (y0 + y1) / 2, borderX, borderY);
+			newPoints.push_back(midpoint); // note overall index of this point is numPoints + numDivided
+			// handle triangles
+			for(int t : incidentFaces) {
+				trianglesToRemove.insert(t);
+				// get opposite vertex
+				int oppositeInd;
+				for(int v = 0; v < 3; v++) {
+					if(faces.at(t).at(v) != edge[0] && faces.at(t).at(v) != edge[1]) {
+						oppositeInd = faces.at(t).at(v);
+					}
+				}
+				newTriangles.push_back({oppositeInd, edge[0], numPoints + numDivided});
+				newTriangles.push_back({oppositeInd, edge[1], numPoints + numDivided});
+			}
+			numDivided++;
+		}
+		curIndex++;
+	}
+	cout << "subdivisions extracted" << endl;
 }
 
 double ConstantApprox::getStep() {
