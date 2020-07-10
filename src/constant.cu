@@ -27,31 +27,7 @@ ConstantApprox::ConstantApprox(CImg<unsigned char> *img, double step, double ds_
 	}
 }
 
-ConstantApprox::ConstantApprox(CImg<unsigned char> *img, vector<Point> *pts, vector<array<int, 3>> &inds, double step, double ds_) 
-: stepSize(step), ds(ds_) {
-	// create pixel array representation
-	maxX = img->width();
-	maxY = img->height();
-	cout << "image is " << maxX << "x" << maxY << endl;
-	// allocate shared space for pixel array
-	cudaMallocManaged(&pixArr, maxX * maxY * sizeof(Pixel));
-	bool isGrayscale = (img->spectrum() == 1);
-	for(int x = 0; x < maxX; x++) {
-		for(int y = 0; y < maxY; y++) {
-			int ind = x * maxY + y; // 1D pixel index
-			if(isGrayscale) {
-				pixArr[ind] = Pixel(x, y, (*img)(x, y));
-			} else {
-				int rgb[3];
-				for(int i = 0; i < 3; i++) {
-					rgb[i] = (*img)(x, y, 0, i);
-				}
-				int r = (*img)(x, y, 0, 0);
-				pixArr[ind] = Pixel(x, y, rgb[0], rgb[1], rgb[2]);
-			}
-		}
-	}
-
+void ConstantApprox::initialize(vector<Point> *pts, vector<array<int, 3>> &inds) {
 	// load in points of triangulation
 	numPoints = pts->size();
 	// allocate shared space for points
@@ -73,6 +49,7 @@ ConstantApprox::ConstantApprox(CImg<unsigned char> *img, vector<Point> *pts, vec
 	*/
 
 	double maxLength = 0; // get maximum side length of a triangle for space allocation
+	faces = inds;
 	for(int i = 0; i < numTri; i++) {
 		array<int, 3> t = inds.at(i); // vertex indices for this triangle
 		// constructor takes point addresses
@@ -131,14 +108,14 @@ void ConstantApprox::initialize(int pixelRate) {
 				Point *pt = points + index1D; // easier reference to current point
 				if(rand() % 2 == 0) {
 					triArr[triInd] = Triangle(pt, pt + numY, pt + numY + 1);
-					edges.push_back({index1D, index1D + numY, index1D + numY + 1});
+					faces.push_back({index1D, index1D + numY, index1D + numY + 1});
 					triArr[triInd+1] = Triangle(pt, pt + numY + 1, pt + 1);
-					edges.push_back({index1D, index1D + numY + 1, index1D + 1});
+					faces.push_back({index1D, index1D + numY + 1, index1D + 1});
 				} else {
 					triArr[triInd] = Triangle(pt, pt + 1, pt + numY);
-					edges.push_back({index1D, index1D + 1, index1D + numY});
+					faces.push_back({index1D, index1D + 1, index1D + numY});
 					triArr[triInd+1] = Triangle(pt + numY, pt + 1, pt + numY + 1);
-					edges.push_back({index1D + numY, index1D + 1, index1D + numY + 1});
+					faces.push_back({index1D + numY, index1D + 1, index1D + numY + 1});
 				}
 				triInd += 2;
 			}
@@ -317,8 +294,8 @@ vector<Point> ConstantApprox::getVertices() {
 	return vertices;
 }
 
-vector<array<int, 3>> ConstantApprox::getEdges() {
-	return edges;
+vector<array<int, 3>> ConstantApprox::getFaces() {
+	return faces;
 }
 
 vector<array<double,3>> ConstantApprox::getColors() {

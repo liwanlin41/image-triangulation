@@ -29,7 +29,7 @@ double adaptorF_custom_accessVector2Value(const Point& p, unsigned int ind) {
 int main(int argc, char* argv[]) {
     // default image path and density
     const char *imgPath = "../images/flower.jpg";
-    //double density = 0.05; // experimentally a good density for general images with TRIM
+    double density = 0.05; // experimentally a good density for general images with TRIM
     int dx = 50; // take one sample every dx pixels
 
     string inputPath = "../images/"; // to ensure non-null pointer later; find image directory
@@ -50,8 +50,10 @@ int main(int argc, char* argv[]) {
     // create image to read pixels
     CImg<unsigned char> image(imgPath);
 
+    // create approximation instance
+    ConstantApprox approx(&image, 0.05);
+
     /*
-    {
     // start matlab to get initial triangulation
     std::unique_ptr<MATLABEngine> matlabPtr = startMATLAB();
     matlab::data::ArrayFactory factory;
@@ -127,12 +129,10 @@ int main(int argc, char* argv[]) {
         edges.push_back(vertexInds);
     }
     cout << "done\n";
-    }
-    */
+    */ 
 
     cout << "Initializing mesh...\n";
-    //ConstantApprox approx(&image, &points, edges, 0.05);
-    ConstantApprox approx(&image, 0.05);
+    //approx.initialize(&points, edges);
     approx.initialize(dx);
     cout << "ready\n";
 
@@ -143,7 +143,7 @@ int main(int argc, char* argv[]) {
     // lambda for initializing triangulation
     auto initialize = [&]() {
         cout << "creating mesh\n";
-        auto triangulation = polyscope::registerSurfaceMesh2D("Triangulation", approx.getVertices(), approx.getEdges());
+        auto triangulation = polyscope::registerSurfaceMesh2D("Triangulation", approx.getVertices(), approx.getFaces());
         cout << "getting colors\n";
         auto colors = triangulation->addFaceColorQuantity("approximate colors", approx.getColors());
         // allow colors by default
