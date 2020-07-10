@@ -32,11 +32,11 @@ void Point::move(double deltaX, double deltaY) {
 	y += deltaY;
 }
 
-__device__ bool Point::operator==(const Point& other) const {
+bool Point::operator==(const Point& other) const {
 	return x == other.x && y == other.y;
 }
 
-__device__ bool Point::operator!=(const Point &other) const {
+bool Point::operator!=(const Point &other) const {
 	return !(*this == other);
 }
 

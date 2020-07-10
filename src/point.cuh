@@ -35,8 +35,8 @@ class Point {
 		bool isBorderY() const;
 		CUDA_HOSTDEV double distance(Point &other);
 		void move(double deltaX, double deltaY);
-		CUDA_DEV bool operator==(const Point &other) const;
-		CUDA_DEV bool operator!=(const Point &other) const;
+		CUDA_HOSTDEV bool operator==(const Point &other) const;
+		CUDA_HOSTDEV bool operator!=(const Point &other) const;
 
 		friend ostream& operator<<(ostream& os, const Point &p);
 };

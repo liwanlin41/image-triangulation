@@ -172,7 +172,6 @@ double ConstantApprox::computeEnergy() {
 		totalEnergy += integrator.constantEnergyEval(grays[t], t, ds);
 	}
 	return totalEnergy;
-	//return integrator.constantEnergyEval(grays, numTri, ds);
 }
 
 void ConstantApprox::computeGrad() {
@@ -302,7 +301,39 @@ void ConstantApprox::run(int maxIter, double eps) {
 	}
 }
 
-void ConstantApprox::computeEdgeEnergies(double *edgeEnergies) {
+void ConstantApprox::computeEdgeEnergies(vector<double> *edgeEnergies) {
+	for(auto ii = edgeBelonging.begin(); ii != edgeBelonging.end(); ii++) {
+		array<int, 2> edge = ii->first;
+		vector<int> triangles = ii->second; // triangles containing edge
+		// compute current total energy over these triangles
+		double curEnergy = 0;
+		for(int t : triangles) {
+			curEnergy += integrator.constantEnergyEval(grays[t], t, ds);
+		}
+		// find new point that may be added to mesh
+		Point endpoint0 = points[edge[0]];
+		Point endpoint1 = points[edge[1]];
+		double midX = (endpoint0.getX() + endpoint1.getX()) / 2;
+		double midY = (endpoint0.getY() + endpoint1.getY()) / 2; 
+		Point midpoint(midX, midY);
+
+		double newEnergy = 0;
+		for(int t : triangles) {
+			Point opposite;
+			// get opposite vertex
+			for(int v = 0; v < 3; v++) {
+				if(*(triArr[t].vertices[v]) != endpoint0 && *(triArr[t].vertices[v]) != endpoint1) {
+					opposite = *(triArr[t].vertices[v]);
+				}
+			}
+			// the two triangles formed by cutting this edge
+			Triangle t1(&midpoint, &opposite, &endpoint0);
+			Triangle t2(&midpoint, &opposite, &endpoint1);
+			
+		}
+
+
+	}
 
 }
 

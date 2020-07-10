@@ -43,7 +43,7 @@ class ConstantApprox {
 		// edge represented by sorted indices of points
 
 		// compute energy change associated with subdividing each edge at its midpoint
-		void computeEdgeEnergies(double *edgeEnergies);
+		void computeEdgeEnergies(vector<double> *edgeEnergies);
 
 	public:
 		// create an approximation instance on img with given stepsize and sampling rate

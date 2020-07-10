@@ -54,6 +54,8 @@ class ParallelIntegrator {
         double constantEnergyExact(double color, int t);
         // approximate energy using barycentric sampling
         double constantEnergyApprox(double color, int t, double ds);
+        // approximate energy over an input triangle, used for retriangulating
+        double constantEnergyApprox(double color, Triangle *tri, double ds);
 
         // compute exact line integral (v dot n) * f phi ds over triangle triArr[t]
         // where FEM basis phi is dependent on approx

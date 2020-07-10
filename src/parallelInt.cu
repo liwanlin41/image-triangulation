@@ -174,6 +174,17 @@ double ParallelIntegrator::constantEnergyApprox(double color, int t, double ds) 
 	return answer;
 }
 
+double ParallelIntegrator::constantEnergyApprox(double color, Triangle *tri, double ds) {
+	int i = tri->midVertex();
+	tri->copyVertices(curTri+((3-i)%3), curTri+((4-i)%3), curTri+((5-i)%3));
+	int samples = ceil(curTri[1].distance(curTri[2])/ds);
+	dim3 numBlocks((samples + threadsX - 1) / threadsX, (samples + threadsY - 1) / threadsY);
+	double dA = tri->getArea() / (samples * samples);
+	approxConstantEnergySample<<<numBlocks, threads2D>>>(pixArr, maxY, curTri, curTri + 1, curTri + 2, color, arr, dA, samples);
+	double answer = sumArray(samples * (samples + 1) / 2);
+	return answer;
+}
+
 double ParallelIntegrator::constantEnergyEval(double color, int t, double ds) {
 	// switch integration method based on exactnes required
 	if(computeExact) {
