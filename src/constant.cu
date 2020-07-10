@@ -329,15 +329,23 @@ void ConstantApprox::computeEdgeEnergies(vector<double> *edgeEnergies) {
 			// the two triangles formed by cutting this edge
 			Triangle t1(&midpoint, &opposite, &endpoint0);
 			Triangle t2(&midpoint, &opposite, &endpoint1);
+			// equal area of both triangles
+			double area = triArr[t].getArea() / 2;
+			// get energy on subdivided triangles
+			double color1 = integrator.doubleIntEval(&t1, ds) / area;
+			double color2 = integrator.doubleIntEval(&t2, ds) / area;
+			newEnergy += integrator.constantEnergyEval(&t1, color1, ds) + integrator.constantEnergyEval(&t2, color2, ds);
 		}
-
-
+		// change in energy due to subdivision
+		edgeEnergies->push_back(newEnergy - curEnergy);
 	}
-
 }
 
 void ConstantApprox::subdivide(int n) {
-
+	vector<double> edgeEnergies;
+	computeEdgeEnergies(&edgeEnergies);
+	//assert(edgeEnergies.size() == edgeBelonging.size());
+	cout << "done subdividing" << endl;
 }
 
 double ConstantApprox::getStep() {

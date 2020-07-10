@@ -84,7 +84,7 @@ class ConstantApprox {
 		// handle adaptive retriangulation to finer mesh
 
 		// greedily subdivide the top n edges
-		void subdivide(int n);
+		void subdivide(int n = 5);
 
 		// return data for image to be displayed
 		double getStep();
