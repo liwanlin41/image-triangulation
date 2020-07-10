@@ -22,6 +22,7 @@ class ConstantApprox {
 		static const ApproxType APPROXTYPE = constant;
 		int maxX, maxY; // dimensions of image
 		double stepSize; // size of gradient descent step
+		double originalStep; // starting step size
 		Pixel *pixArr; // pixel (x, y) is pixArr[x * maxY + y]
 		Point *points; // store vertices of triangulation
 		int numPoints;
@@ -47,7 +48,7 @@ class ConstantApprox {
 		// {i, j, e} in vector means edge (i, j) has energy e
 		void computeEdgeEnergies(vector<array<double, 3>> *edgeEnergies);
 		// update subdivided mesh
-		void updateMesh(vector<Point> *newPoints, vector<array<int, 3>> *newFaces, vector<int> *discardedFaces);
+		void updateMesh(vector<Point> *newPoints, vector<array<int, 3>> *newFaces, set<int> *discardedFaces);
 
 	public:
 		// create an approximation instance on img with given stepsize and sampling rate

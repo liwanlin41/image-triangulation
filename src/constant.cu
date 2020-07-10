@@ -2,7 +2,7 @@
 
 const double TOLERANCE = 1e-10;
 
-ConstantApprox::ConstantApprox(CImg<unsigned char> *img, double step, double ds_) : stepSize(step), ds(ds_) {
+ConstantApprox::ConstantApprox(CImg<unsigned char> *img, double step, double ds_) : originalStep(step), stepSize(step), ds(ds_) {
 	// create pixel array representation
 	maxX = img->width();
 	maxY = img->height();
@@ -57,6 +57,22 @@ void ConstantApprox::initialize(vector<Point> *pts, vector<array<int, 3>> &inds)
 		maxLength = max(maxLength, triArr[i].maxLength());
 	}
 	imageInt = new double[numTri];
+
+	// initialize edge dictionary from faces
+	for(int i = 0; i < numTri; i++) {
+		for(int j = 0; j < 3; j++) {
+			array<int, 2> edge = {faces.at(i)[j], faces.at(i)[((j+1)%3)]};
+			// ensure edges are ordered
+			if(edge[0] > edge[1]) {
+				edge[0] = edge[1];
+				edge[1] = faces.at(i)[j];
+			}
+			if(edgeBelonging.find(edge) == edgeBelonging.end()) { // does not exist
+				edgeBelonging[edge] = vector<int>();
+			}
+			edgeBelonging[edge].push_back(i);
+		}		
+	}
 
 	// initialize integrator
 
@@ -396,13 +412,75 @@ void ConstantApprox::subdivide(int n) {
 		curIndex++;
 	}
 	cout << "subdivisions extracted" << endl;
+
+	stepSize = originalStep;
+	updateMesh(&newPoints, &newTriangles, &trianglesToRemove);
+	updateApprox();
+}
+
+void ConstantApprox::updateMesh(vector<Point> *newPoints, vector<array<int, 3>> *newFaces, set<int> *discardedFaces) {
+	vector<Point> oldPoints = getVertices();
+	// free old memory
+	cudaFree(points);
+	cudaFree(triArr);
+	cudaFree(grays);
+	delete[] imageInt;
+	// reallocate space
+	int oldNumPoints = numPoints;
+	numPoints += newPoints->size();
+	numTri += newFaces->size() - discardedFaces->size();
+	cudaMallocManaged(&points, numPoints * sizeof(Point));
+	cudaMallocManaged(&triArr, numTri * sizeof(Triangle));
+	cudaMallocManaged(&grays, numTri * sizeof(double));
+	imageInt = new double[numTri];
+
+	// load points
+	for(int i = 0; i < oldNumPoints; i++) {
+		points[i] = oldPoints.at(i);
+	}
+	for(int i = 0; i < newPoints->size(); i++) {
+		points[oldNumPoints + i] = newPoints->at(i);
+	}
+
+	// handle triangles
+	// first remove triangles that were split by going in reverse order, since sets are sorted (?)
+	for(auto f = discardedFaces->rbegin(); f != discardedFaces->rend(); f++) {
+		faces.erase(faces.begin() + *f);
+	}
+	// add new triangles
+	for(auto f = newFaces->begin(); f != newFaces->end(); f++) {
+		faces.push_back(*f);
+	}
+
+	// update triArr
+	for(int i = 0; i < numTri; i++) {
+		array<int, 3> t = faces.at(i);
+		triArr[i] = Triangle(points + t[0], points + t[1], points + t[2]);
+	}
+
+	// update edges for next subdivision
+	// TODO: don't clear the whole array, remove only the necessary parts
+	edgeBelonging.clear();
+	for(int i = 0; i < numTri; i++) {
+		for(int j = 0; j < 3; j++) {
+			array<int, 2> edge = {faces.at(i)[j], faces.at(i)[((j+1)%3)]};
+			// ensure edges are ordered
+			if(edge[0] > edge[1]) {
+				edge[0] = edge[1];
+				edge[1] = faces.at(i)[j];
+			}
+			if(edgeBelonging.find(edge) == edgeBelonging.end()) { // does not exist
+				edgeBelonging[edge] = vector<int>();
+			}
+			edgeBelonging[edge].push_back(i);
+		}		
+	}
 }
 
 double ConstantApprox::getStep() {
 	return stepSize;
 }
 
-// inefficient TODO: fix
 vector<Point> ConstantApprox::getVertices() {
 	vector<Point> vertices;
 	for(int i = 0; i < numPoints; i++) {

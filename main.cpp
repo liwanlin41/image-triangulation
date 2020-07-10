@@ -173,7 +173,7 @@ int main(int argc, char* argv[]) {
     auto step = [&]() {
         if(iterCount < maxIter && numSmallChanges < maxSmallChanges) {
         //if(iterCount < maxIter && abs(prevEnergy - newEnergy) > eps * prevEnergy) {
-            cout << "iteration " << iterCount << endl;
+            cout << "iteration " << iterCount << " (" << totalIters << " total)" << endl;
             totalStep += approx.step(prevEnergy, newEnergy);
             // data collection
             elapsedTimeVec.push_back(totalStep);
@@ -203,11 +203,13 @@ int main(int argc, char* argv[]) {
         auto colors = triangulation->addFaceColorQuantity("approximate colors", approx.getColors());
         // reset values
         iterCount = 0;
-        totalStep = 0; 
+        //totalStep = 0; 
+        numSmallChanges = 0;
         totalIters++;
         newEnergy = approx.computeEnergy();
         elapsedTimeVec.push_back(totalStep);
         energyVec.push_back(newEnergy);
+        cout << "energy after subdivision: " << newEnergy << endl;
         polyscope::screenshot(false);
     };
 
