@@ -46,6 +46,7 @@ int main(int argc, char* argv[]) {
     double prevEnergy = 100 * eps; // placeholder values
     double newEnergy = 0;
     int iterCount = 0;
+    int totalIters = 0; // total iterations over multiple retriangulations
 
     // create image to read pixels
     CImg<unsigned char> image(imgPath);
@@ -157,6 +158,7 @@ int main(int argc, char* argv[]) {
         // initialize to something higher than newEnergy
         prevEnergy = newEnergy * 2;
         iterCount = 0;
+        totalIters = 0;
         elapsedTimeVec.push_back(totalStep); // initial values
         energyVec.push_back(newEnergy);
         polyscope::screenshot(false);
@@ -176,6 +178,7 @@ int main(int argc, char* argv[]) {
             elapsedTimeVec.push_back(totalStep);
             energyVec.push_back(newEnergy);
             iterCount++;
+            totalIters++;
             if(abs(prevEnergy - newEnergy) > eps * prevEnergy) {
                 numSmallChanges = 0;
             } else {
@@ -191,6 +194,22 @@ int main(int argc, char* argv[]) {
         }
     };
 
+    // lambda for retriangulating by subdivision
+    auto retriangulate = [&]() {
+        approx.subdivide();
+        // re-initialize new mesh
+        auto triangulation = polyscope::registerSurfaceMesh2D("Triangulation", approx.getVertices(), approx.getFaces());
+        auto colors = triangulation->addFaceColorQuantity("approximate colors", approx.getColors());
+        // reset values
+        iterCount = 0;
+        totalStep = 0; 
+        totalIters++;
+        newEnergy = approx.computeEnergy();
+        elapsedTimeVec.push_back(totalStep);
+        energyVec.push_back(newEnergy);
+        polyscope::screenshot(false);
+    };
+
     // lambda to handle GUI updates
     auto callback = [&]() {
         ImGui::InputInt("max iterations", &maxIter); 
@@ -202,6 +221,10 @@ int main(int argc, char* argv[]) {
         // run the triangulation
         if (ImGui::Button("Step")) {
             step();
+        }
+        // allow retriangulation
+        if (ImGui::Button("More Triangles")) {
+            retriangulate();
         }
     };
 
@@ -216,10 +239,10 @@ int main(int argc, char* argv[]) {
     // create suitable matlab arrays for data display purposes
     std::unique_ptr<MATLABEngine> matlabPtr = startMATLAB();
     matlab::data::ArrayFactory factory;
-    matlab::data::TypedArray<int> iters = factory.createArray<int>({1, (unsigned long) iterCount + 1});
-    matlab::data::TypedArray<double> elapsedTime = factory.createArray<double>({1, (unsigned long) iterCount + 1});
-    matlab::data::TypedArray<double> energy = factory.createArray<double>({1, (unsigned long) iterCount + 1});
-    for(int i = 0; i <= iterCount; i++) {
+    matlab::data::TypedArray<int> iters = factory.createArray<int>({1, (unsigned long) totalIters + 1});
+    matlab::data::TypedArray<double> elapsedTime = factory.createArray<double>({1, (unsigned long) totalIters + 1});
+    matlab::data::TypedArray<double> energy = factory.createArray<double>({1, (unsigned long) totalIters + 1});
+    for(int i = 0; i <= totalIters; i++) {
         iters[i] = i;
         elapsedTime[i] = elapsedTimeVec.at(i);
         energy[i] = energyVec.at(i);
