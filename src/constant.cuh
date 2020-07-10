@@ -39,6 +39,9 @@ class ConstantApprox {
 		double ds; // step size for integration approximation
 		ParallelIntegrator integrator; // do all the integrations
 
+		map<array<int, 2>, vector<int>> edgeBelonging; // map edge to indices of triangles containing edge
+		// edge represented by sorted indices of points
+
 	public:
 		// create an approximation instance on img with given stepsize and sampling rate
 		ConstantApprox(CImg<unsigned char> *img, double step, double ds = 0.1);

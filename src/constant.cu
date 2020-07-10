@@ -121,10 +121,37 @@ void ConstantApprox::initialize(int pixelRate) {
 			}
 		}
 	}
+	assert(triInd == numTri);
 
-	double maxLength = 2 * max(dx, dy); // generously round up maximum triangle side length
+	// initialize edge dictionary from faces
+	for(int i = 0; i < numTri; i++) {
+		for(int j = 0; j < 3; j++) {
+			array<int, 2> edge = {faces.at(i)[j], faces.at(i)[((j+1)%3)]};
+			// ensure edges are ordered
+			if(edge[0] > edge[1]) {
+				edge[0] = edge[1];
+				edge[1] = faces.at(i)[j];
+			}
+			if(edgeBelonging.find(edge) == edgeBelonging.end()) { // does not exist
+				edgeBelonging[edge] = vector<int>();
+			}
+			edgeBelonging[edge].push_back(i);
+		}		
+	}
+
+	/* print output for sanity check
+	for(auto i = edgeBelonging.begin(); i != edgeBelonging.end(); i++) {
+		array<int, 2> edge = i->first;
+		cout << points[edge[0]] << "--" << points[edge[1]] << endl;
+		vector<int> incident = i->second;
+		for(int j : incident) {
+			cout << triArr[j];
+		}
+	}
+	*/
 
 	// initialize integrator
+	double maxLength = 2 * max(dx, dy); // generously round up maximum triangle side length
 
 	// find space needed for results, one slot per gpu worker
 	long long maxDivisions = (int) (maxLength/ds + 1); // max num samples per side, rounded up
