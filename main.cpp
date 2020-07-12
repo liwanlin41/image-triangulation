@@ -131,7 +131,7 @@ int main(int argc, char* argv[]) {
         edges.push_back(vertexInds);
     }
     cout << "done\n";
-    */ 
+    */
 
     cout << "Initializing mesh...\n";
     //approx.initialize(&points, edges);
@@ -174,7 +174,9 @@ int main(int argc, char* argv[]) {
         if(iterCount < maxIter && numSmallChanges < maxSmallChanges) {
         //if(iterCount < maxIter && abs(prevEnergy - newEnergy) > eps * prevEnergy) {
             cout << "iteration " << iterCount << " (" << totalIters << " total)" << endl;
-            totalStep += approx.step(prevEnergy, newEnergy);
+            // allow energy increases in the first 10 iterations but not after that
+            // in order to handle poor initialization
+            totalStep += approx.step(prevEnergy, newEnergy, iterCount >= 10);
             // data collection
             elapsedTimeVec.push_back(totalStep);
             energyVec.push_back(newEnergy);

@@ -278,7 +278,7 @@ void ConstantApprox::updateApprox() {
 	}
 }
 
-double ConstantApprox::step(double &prevEnergy, double &newEnergy) {
+double ConstantApprox::step(double &prevEnergy, double &newEnergy, bool stringent) {
 	double usedStep;
 	computeGrad();
     while(!gradUpdate()) {
@@ -289,11 +289,13 @@ double ConstantApprox::step(double &prevEnergy, double &newEnergy) {
 	newEnergy = computeEnergy();
     // TODO: tune this
 	if(newEnergy > prevEnergy) { // overshot optimum?
-        do {
-            undo();
-        } while (!gradUpdate());
-        updateApprox();
-		newEnergy = computeEnergy();
+		do {
+        	do {
+            	undo();
+        	} while (!gradUpdate());
+        	updateApprox();
+			newEnergy = computeEnergy();
+		} while(stringent && newEnergy > prevEnergy);
 		usedStep = stepSize;
     } else {
 		usedStep = stepSize;

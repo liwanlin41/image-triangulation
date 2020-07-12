@@ -81,7 +81,9 @@ class ConstantApprox {
 		void updateApprox();
 		// run one full step of the procedure while tracking energy values
 		// return stepsize used in this step
-		double step(double &prevEnergy, double &newEnergy);
+		// stringent determines whether any energy increase is tolerated,
+		// defaults true (no tolerance)
+		double step(double &prevEnergy, double &newEnergy, bool stringent = true);
 		// run the entire procedure for either maxIter iterations or
 		// until change in energy is at most eps
 		void run(int maxIter = 1000, double eps = 0.001);
