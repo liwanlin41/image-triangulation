@@ -16,6 +16,9 @@
 using namespace cimg_library;
 using namespace matlab::engine;
 
+static const double DENSITY_DEFAULT = 0.05; // experimentally a decent starting density
+static const int DX_DEFAULT = 50; // sampling default
+
 // let polyscope read values from point
 double adaptorF_custom_accessVector2Value(const Point& p, unsigned int ind) {
     // reflect everything so that it displays correctly
@@ -29,16 +32,13 @@ double adaptorF_custom_accessVector2Value(const Point& p, unsigned int ind) {
 int main(int argc, char* argv[]) {
     // default image path and density
     const char *imgPath = "../images/flower.jpg";
-    double density = 0.05; // experimentally a good density for general images with TRIM
-    int dx = 50; // take one sample every dx pixels
+    double density; // density input for TRIM
+    int dx; // take one sample every dx pixels
 
     string inputPath = "../images/"; // to ensure non-null pointer later; find image directory
     if (argc >= 2) {
         inputPath += argv[1];
         imgPath = inputPath.c_str();
-    }
-    if (argc >= 3) {
-        dx = atof(argv[2]);
     }
     // set default values
     int maxIter = 100;
@@ -73,6 +73,14 @@ int main(int argc, char* argv[]) {
 
     // initialize triangulation
     if(useTRIM) {
+        // prompt for density
+        cout << "Density argument: ";
+        cin >> density;
+        if(cin.fail()) {
+            cin.clear();
+            cout << "bad" << endl;
+            density = DENSITY_DEFAULT;
+        }
         // add path to TRIM code
         vector<matlab::data::Array> genPathArgs({
             factory.createCharArray("../deps/trim")
@@ -148,6 +156,14 @@ int main(int argc, char* argv[]) {
         cout << "Initializing mesh...\n";
         approx.initialize(&points, edges);
     } else {
+        // prompt for dx
+        cout << "Sample once every __ pixels? ";
+        cin >> dx;
+        if(cin.fail()) {
+            cin.clear();
+            dx = DX_DEFAULT;
+            cout << "also bad" << endl;
+        }
         approx.initialize(dx);
     }
     cout << "ready\n";
