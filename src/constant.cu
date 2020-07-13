@@ -341,10 +341,8 @@ void ConstantApprox::computeEdgeEnergies(vector<array<double, 3>> *edgeEnergies)
 			Point opposite;
 			// get opposite vertex
 			for(int v = 0; v < 3; v++) {
-				// for accuracy, use indices
+				// for accuracy, use raw indices rather than point location
 				if(faces.at(t).at(v) != edge[0] && faces.at(t).at(v) != edge[1]) {
-					// note cannot use triArr[t].vertices because the order of vertices
-					// may be wrong (Triangle fixes order for ccw orientation)
 					opposite = points[faces.at(t).at(v)];
 				}
 			}

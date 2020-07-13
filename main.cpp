@@ -49,93 +49,107 @@ int main(int argc, char* argv[]) {
     int iterCount = 0;
     int totalIters = 0; // total iterations over multiple retriangulations
 
+    string trimString;
+    bool useTRIM = false; // default to uniform initialization
+    cout << "Use TRIM initialization? y/N: ";
+    cin >> trimString;
+    vector<string> yesAnswers = {"y", "Y"};
+    // anything other than y/Y will be false
+    for(int i = 0; i < 2; i++) {
+        if(trimString == yesAnswers.at(i)) {
+            useTRIM = true;
+        }
+    }
+
     // create image to read pixels
     CImg<unsigned char> image(imgPath);
 
     // create approximation instance
     ConstantApprox approx(&image, 0.05);
 
-    /*
     // start matlab to get initial triangulation
     std::unique_ptr<MATLABEngine> matlabPtr = startMATLAB();
     matlab::data::ArrayFactory factory;
-    // add path to TRIM code
-    vector<matlab::data::Array> genPathArgs({
-        factory.createCharArray("../deps/trim")
-    });
-    auto generatedPath = matlabPtr->feval(u"genpath",genPathArgs);
-    matlabPtr->feval(u"addpath", generatedPath);
 
-    // read image
-    vector<matlab::data::Array> pathToImage({
-        factory.createCharArray(imgPath)
-    });
-    auto img = matlabPtr->feval(u"imread", pathToImage);
+    // initialize triangulation
+    if(useTRIM) {
+        // add path to TRIM code
+        vector<matlab::data::Array> genPathArgs({
+            factory.createCharArray("../deps/trim")
+        });
+        auto generatedPath = matlabPtr->feval(u"genpath",genPathArgs);
+        matlabPtr->feval(u"addpath", generatedPath);
 
-    // generate triangulation
-    vector<matlab::data::Array> tArgs({
-        img,
-        factory.createScalar<double>(density) // density 
-    });
-    cout << "Triangulating...\n";
-    vector<matlab::data::Array> output = matlabPtr->feval(u"imtriangulate", 3, tArgs);
-    cout << "done\n";
-    // vertices of triangulation
-    matlab::data::Array vertices = output.at(0);
-    matlab::data::Array triangleConnections = output.at(1);
-    int n = vertices.getDimensions().at(0); // number of points in triangulation
+        // read image
+        vector<matlab::data::Array> pathToImage({
+            factory.createCharArray(imgPath)
+        });
+        auto img = matlabPtr->feval(u"imread", pathToImage);
 
-    // initialize points of mesh
-    cout << "Getting " << n << " points...\n";
-    vector<Point> points;
-    // appears to affect only large images:
-    // adjust image boundaries to TRIM result (may crop a line of pixels)
-    int minX = 1000;
-    int minY = 1000;
-    int maxX = 0;
-    int maxY = 0;
-    for(int i = 0; i < n; i++) {
-        int x = vertices[i][0];
-        int y = vertices[i][1];
-        maxX = max(x, maxX);
-        maxY = max(y, maxY);
-        minX = min(x, minX);
-        minY = min(y, minY);
-    }
-    for(int i = 0; i < n; i++) {
-        // note these are 1-indexed pixel values; will need
-        // to convert to usable points 
-        int x = vertices[i][0];
-        int y = vertices[i][1];
-        // determine whether this point lies on edge of image
-        bool isBorderX = (x == minX || x == maxX);
-        bool isBorderY = (y == minY || y == maxY);
-        Point p(x-0.5 - minX, y-0.5 - minY, isBorderX, isBorderY); // translate to coordinate system in this code
-        points.push_back(p);
-    }
-    cout << "done\n";
+        // generate triangulation
+        vector<matlab::data::Array> tArgs({
+            img,
+            factory.createScalar<double>(density) // density 
+        });
+        cout << "Triangulating...\n";
+        vector<matlab::data::Array> output = matlabPtr->feval(u"imtriangulate", 3, tArgs);
+        cout << "done\n";
+        // vertices of triangulation
+        matlab::data::Array vertices = output.at(0);
+        matlab::data::Array triangleConnections = output.at(1);
+        int n = vertices.getDimensions().at(0); // number of points in triangulation
 
-    // convert connections to vector<vector<int>>
-    cout << "Getting edges...\n";
-    vector<array<int, 3>> edges;
-    int f = triangleConnections.getDimensions().at(0); // number of triangles
-    cout << "number of triangles: " << f << endl;
-    for(int i = 0; i < f; i++) {
-        array<int, 3> vertexInds;
-        for(int j = 0; j < 3; j++) {
-            // matlab is 1 indexed for some bizarre reason;
-            // change back to zero indexing
-            int ind = triangleConnections[i][j];
-            vertexInds[j] = ind - 1;
+        // initialize points of mesh
+        cout << "Getting " << n << " points...\n";
+        vector<Point> points;
+        // appears to affect only large images:
+        // adjust image boundaries to TRIM result (may crop a line of pixels)
+        int minX = 1000;
+        int minY = 1000;
+        int maxX = 0;
+        int maxY = 0;
+        for(int i = 0; i < n; i++) {
+            int x = vertices[i][0];
+            int y = vertices[i][1];
+            maxX = max(x, maxX);
+            maxY = max(y, maxY);
+            minX = min(x, minX);
+            minY = min(y, minY);
         }
-        edges.push_back(vertexInds);
-    }
-    cout << "done\n";
-    */
+        for(int i = 0; i < n; i++) {
+            // note these are 1-indexed pixel values; will need
+            // to convert to usable points 
+            int x = vertices[i][0];
+            int y = vertices[i][1];
+            // determine whether this point lies on edge of image
+            bool isBorderX = (x == minX || x == maxX);
+            bool isBorderY = (y == minY || y == maxY);
+            Point p(x-0.5 - minX, y-0.5 - minY, isBorderX, isBorderY); // translate to coordinate system in this code
+            points.push_back(p);
+        }
+        cout << "done\n";
 
-    cout << "Initializing mesh...\n";
-    //approx.initialize(&points, edges);
-    approx.initialize(dx);
+        // convert connections to vector<vector<int>>
+        cout << "Getting edges...\n";
+        vector<array<int, 3>> edges;
+        int f = triangleConnections.getDimensions().at(0); // number of triangles
+        cout << "number of triangles: " << f << endl;
+        for(int i = 0; i < f; i++) {
+            array<int, 3> vertexInds;
+            for(int j = 0; j < 3; j++) {
+                // matlab is 1 indexed for some bizarre reason;
+                // change back to zero indexing
+                int ind = triangleConnections[i][j];
+                vertexInds[j] = ind - 1;
+            }
+            edges.push_back(vertexInds);
+        }
+        cout << "done\n";
+        cout << "Initializing mesh...\n";
+        approx.initialize(&points, edges);
+    } else {
+        approx.initialize(dx);
+    }
     cout << "ready\n";
 
     vector<double> elapsedTimeVec; // hold cumulative step size
@@ -243,8 +257,6 @@ int main(int argc, char* argv[]) {
     polyscope::screenshot("../outputs/triangulation.tga", false);
 
     // create suitable matlab arrays for data display purposes
-    std::unique_ptr<MATLABEngine> matlabPtr = startMATLAB();
-    matlab::data::ArrayFactory factory;
     matlab::data::TypedArray<int> iters = factory.createArray<int>({1, (unsigned long) totalIters + 1});
     matlab::data::TypedArray<double> elapsedTime = factory.createArray<double>({1, (unsigned long) totalIters + 1});
     matlab::data::TypedArray<double> energy = factory.createArray<double>({1, (unsigned long) totalIters + 1});
