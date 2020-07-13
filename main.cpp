@@ -78,7 +78,7 @@ int main(int argc, char* argv[]) {
         cin >> density;
         if(cin.fail()) {
             cin.clear();
-            cout << "bad" << endl;
+            cout << "defaulting to " << DENSITY_DEFAULT << endl;
             density = DENSITY_DEFAULT;
         }
         // add path to TRIM code
@@ -162,7 +162,7 @@ int main(int argc, char* argv[]) {
         if(cin.fail()) {
             cin.clear();
             dx = DX_DEFAULT;
-            cout << "also bad" << endl;
+            cout << "defaulting to " << DX_DEFAULT << endl;
         }
         approx.initialize(dx);
     }
@@ -246,9 +246,15 @@ int main(int argc, char* argv[]) {
     };
 
     // lambda to handle GUI updates
+    vector<string> angryButtonVec = {"MoRe TrIaNgLeS", "MORE TRIANGLES", "Are you done yet?", 
+        "MORE", "I SAID MORE", "GIVE ME MORE", "We're done here.", "MORE",
+        "Why are you so demanding?", "MORE", "I'm trying to be nice.", "MORE",
+        "But you're really trying me here.", "MORE", "Okay, have it your way..", "More Triangles"};
+    int numPresses = 0;
+    string angryButton = "More Triangles";
     auto callback = [&]() {
         ImGui::InputInt("max iterations", &maxIter); 
-        ImGui::InputInt("new triangles on subdivision", &subdivisions);
+        ImGui::InputInt("# triangles on subdivision", &subdivisions);
         ImGui::InputDouble("stopping condition", &eps);  
 
         if (ImGui::Button("Start")) {
@@ -259,8 +265,14 @@ int main(int argc, char* argv[]) {
             step();
         }
         // allow retriangulation
-        if (ImGui::Button("More Triangles")) {
+        if (ImGui::Button(angryButton.c_str())) {
             retriangulate();
+            if(numPresses >= 3 && numPresses < 3 + angryButtonVec.size()) {
+                angryButton = angryButtonVec.at(numPresses - 3);
+            } else if (numPresses >= 3 + angryButtonVec.size()) {
+                angryButton.append("!");
+            }
+            numPresses++;
         }
     };
 
