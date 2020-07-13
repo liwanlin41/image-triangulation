@@ -176,7 +176,7 @@ int main(int argc, char* argv[]) {
             cout << "iteration " << iterCount << " (" << totalIters << " total)" << endl;
             // allow energy increases in the first 10 iterations but not after that
             // in order to handle poor initialization
-            totalStep += approx.step(prevEnergy, newEnergy, iterCount >= 10);
+            totalStep += approx.step(prevEnergy, newEnergy, totalIters >= 10);
             // data collection
             elapsedTimeVec.push_back(totalStep);
             energyVec.push_back(newEnergy);

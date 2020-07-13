@@ -230,7 +230,8 @@ void ConstantApprox::gradient(int t, int movingPt, double imageIntegral, double 
 		}
 		for(int j = 0; j < 2; j++) {
 			gradient[j] = (2 * area * imageIntegral * boundaryChange[j]
-				- imageIntegral * imageIntegral * dA[j]) / (-area * area);
+				- imageIntegral * imageIntegral * dA[j]) / (-area * area)
+				- 100 * dA[j] / area; // add in log barrier gradient
 		}
 	}
 	// check for null pointers
@@ -342,7 +343,9 @@ void ConstantApprox::computeEdgeEnergies(vector<array<double, 3>> *edgeEnergies)
 			for(int v = 0; v < 3; v++) {
 				// for accuracy, use indices
 				if(faces.at(t).at(v) != edge[0] && faces.at(t).at(v) != edge[1]) {
-					opposite = *(triArr[t].vertices[v]);
+					// note cannot use triArr[t].vertices because the order of vertices
+					// may be wrong (Triangle fixes order for ccw orientation)
+					opposite = points[faces.at(t).at(v)];
 				}
 			}
 			// the two triangles formed by cutting this edge
@@ -477,6 +480,8 @@ void ConstantApprox::updateMesh(vector<Point> *newPoints, vector<array<int, 3>> 
 			edgeBelonging[edge].push_back(i);
 		}		
 	}
+	gradX.clear();
+	gradY.clear();
 }
 
 double ConstantApprox::getStep() {
