@@ -295,12 +295,12 @@ __device__ double Pixel::approxArea(Triangle &t, int n) {
 	return numPoints / (2.0 * n * n);
 } 
 
-int pixelRound(double x) {
+int pixelRound(double x, int bound) {
 	int floor = (int) x;
 	if (abs(x - floor) <= 0.5) {
 		return floor;
 	} else if (x > 0) {
-		return floor + 1;
+		return min(floor + 1, bound - 1);
 	}
-	return floor - 1;
+	return 0;
 }

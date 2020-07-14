@@ -138,7 +138,7 @@ double ParallelIntegrator::constantEnergyExact(Triangle *tri, double color) {
 // using Point a as vertex point, sample ~samples^2/2 points inside the triangle with a triangular area element of dA
 // NOTE: samples does not count endpoints along edge bc as the parallelograms rooted there lie outside the triangle
 // maxY is for converting 2D pixel index to 1D index
-__global__ void approxConstantEnergySample(Pixel *pixArr, int maxY, Point *a, Point *b, Point *c, double color, double *results, double dA, int samples) {
+__global__ void approxConstantEnergySample(Pixel *pixArr, int maxX, int maxY, Point *a, Point *b, Point *c, double color, double *results, double dA, int samples) {
 	int u = blockIdx.x * blockDim.x + threadIdx.x; // component towards b
 	int v = blockIdx.y * blockDim.y + threadIdx.y; // component towards c
 	int ind = (2 * samples - u + 1) * u / 2 + v; // 1D index in results
@@ -148,8 +148,8 @@ __global__ void approxConstantEnergySample(Pixel *pixArr, int maxY, Point *a, Po
 		double x = (a->getX() * (samples - u - v) + b->getX() * u + c->getX() * v) / samples;
 		double y = (a->getY() * (samples - u - v) + b->getY() * u + c->getY() * v) / samples;
 		// find containing pixel
-		int pixX = pixelRound(x);
-		int pixY = pixelRound(y);
+		int pixX = pixelRound(x, maxX);
+		int pixY = pixelRound(y, maxY);
 		double diff = color - pixArr[pixX * maxY + pixY].getColor();
 		// account for points near edge bc having triangle contributions rather than parallelograms,
 		// written for fast access and minimal branching
@@ -167,7 +167,7 @@ double ParallelIntegrator::constantEnergyApprox(Triangle *tri, double color, dou
 	// unfortunately half of these threads will not be doing useful work; no good fix, sqrt is too slow for triangular indexing
 	dim3 numBlocks((samples + threadsX - 1) / threadsX, (samples + threadsY - 1) / threadsY);
 	double dA = tri->getArea() / (samples * samples);
-	approxConstantEnergySample<<<numBlocks, threads2D>>>(pixArr, maxY, curTri, curTri + 1, curTri + 2, color, arr, dA, samples);
+	approxConstantEnergySample<<<numBlocks, threads2D>>>(pixArr, maxX, maxY, curTri, curTri + 1, curTri + 2, color, arr, dA, samples);
 	double answer = -100 * log(tri->getArea()) + sumArray(samples * (samples + 1) / 2);
 	return answer;
 }
@@ -234,14 +234,14 @@ double ParallelIntegrator::lineIntExact(Triangle *tri, int pt, bool isX) {
 // kernel for constant line integral approximation
 // compute line integral of v dot n f ds where point a is moving; 
 // reverse determines if integral should be computed from a to b (false) or opposite
-__global__ void constLineIntSample(Pixel *pixArr, int maxY, Point *a, Point *b, bool reverse, bool isX, double *results, double ds, int samples) {
+__global__ void constLineIntSample(Pixel *pixArr, int maxX, int maxY, Point *a, Point *b, bool reverse, bool isX, double *results, double ds, int samples) {
 	int k = blockIdx.x * blockDim.x + threadIdx.x; // index along a to b
 	if(k < samples) {
 		// extract current point and containing pixel
 		double x = (a->getX() * (samples - k) + b->getX() * k) / samples;
 		double y = (a->getY() * (samples - k) + b->getY() * k) / samples;
-		int pixX = pixelRound(x);
-		int pixY = pixelRound(y);
+		int pixX = pixelRound(x, maxX);
+		int pixY = pixelRound(y, maxY);
 		// velocity components
 		double scale = ((double) samples - k) / samples; // 1 when k = 0 (evaluate at a) and 0 at b
 		double velX = (isX) ? scale : 0;
@@ -275,7 +275,7 @@ double ParallelIntegrator::lineIntApprox(Triangle *tri, int pt, bool isX, double
 				double totalLength = curTri->distance(curTri[i+1]);
 				// actual dx being used
 				double dx = totalLength / samples[i];
-				constLineIntSample<<<numBlocks[i], threads1D>>>(pixArr, maxY, curTri, curTri+i+1, (i==1), isX, arr, dx, samples[i]);
+				constLineIntSample<<<numBlocks[i], threads1D>>>(pixArr, maxX, maxY, curTri, curTri+i+1, (i==1), isX, arr, dx, samples[i]);
 				answer += sumArray(samples[i]);
 			}
 		}
@@ -328,7 +328,7 @@ double ParallelIntegrator::doubleIntExact(Triangle *tri, ColorChannel channel) {
 // kernel for double integral approximation
 // using Point a as vertex point, sample ~samples^2/2 points inside triangle with area element of dA
 // for details see approxConstantEnergySample below
-__global__ void constDoubleIntSample(Pixel *pixArr, int maxY, Point *a, Point *b, Point *c, double *results, double dA, int samples, ColorChannel channel) {
+__global__ void constDoubleIntSample(Pixel *pixArr, int maxX, int maxY, Point *a, Point *b, Point *c, double *results, double dA, int samples, ColorChannel channel) {
 	int u = blockIdx.x * blockDim.x + threadIdx.x; // component towards b
 	int v = blockIdx.y * blockDim.y + threadIdx.y; // component towards c
 	int ind = (2 * samples - u + 1) * u / 2 + v; // 1D index in results
@@ -336,8 +336,8 @@ __global__ void constDoubleIntSample(Pixel *pixArr, int maxY, Point *a, Point *b
 		double x = (a->getX() * (samples - u - v) + b->getX() * u + c->getX() * v) / samples;
 		double y = (a->getY() * (samples - u - v) + b->getY() * u + c->getY() * v) / samples;
 		// find containing pixel
-		int pixX = pixelRound(x);
-		int pixY = pixelRound(y);
+		int pixX = pixelRound(x, maxX);
+		int pixY = pixelRound(y, maxY);
 		double areaContrib = (u+v == samples - 1) ? dA : 2 * dA;
 		results[ind] = pixArr[pixX * maxY + pixY].getColor(channel) * areaContrib;
 	}
@@ -352,7 +352,7 @@ double ParallelIntegrator::doubleIntApprox(Triangle *tri, double ds, ColorChanne
 	double dA = tri->getArea() / (samples * samples);
 	switch(approx) {
 		case constant: {
-			constDoubleIntSample<<<numBlocks, threads2D>>>(pixArr, maxY, curTri, curTri+1, curTri+2, arr, dA, samples, channel);
+			constDoubleIntSample<<<numBlocks, threads2D>>>(pixArr, maxX, maxY, curTri, curTri+1, curTri+2, arr, dA, samples, channel);
 			break;
 		}
 		case linear:

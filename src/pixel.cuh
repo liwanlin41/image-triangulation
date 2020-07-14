@@ -49,6 +49,8 @@ class Pixel {
 };
 
 // helper function for rounding to pixel values
-CUDA_HOSTDEV int pixelRound(double x);
+// where -0.5 <= x <= bound - 0.5
+// upper bounded by bound in case of floating point error
+CUDA_HOSTDEV int pixelRound(double x, int bound);
 
 #endif
