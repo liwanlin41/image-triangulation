@@ -200,31 +200,39 @@ int main(int argc, char* argv[]) {
     // track number of times for which change in energy has been "small"
     int numSmallChanges = 0;
     const int maxSmallChanges = 3; // maximum number of consecutive "small" changes allowed
+    auto singleStep = [&]() {
+        cout << "iteration " << iterCount << " (" << totalIters << " total)" << endl;
+        // allow a fixed number of energy increases to avoid getting stuck
+        totalStep += approx.step(prevEnergy, newEnergy, (totalIters >= 10) && (iterCount >= 5));
+        // data collection
+        elapsedTimeVec.push_back(totalStep);
+        energyVec.push_back(newEnergy);
+        iterCount++;
+        totalIters++;
+        if(abs(prevEnergy - newEnergy) > eps * prevEnergy) {
+            numSmallChanges = 0;
+        } else {
+            numSmallChanges++;
+        }
+        // handle display
+        auto triangulation = polyscope::getSurfaceMesh("Triangulation");
+        triangulation->updateVertexPositions2D(approx.getVertices());
+        triangulation->addFaceColorQuantity("approximate colors", approx.getColors());
+        polyscope::screenshot(false);
+    };
+
     auto step = [&]() {
         if(iterCount < maxIter && numSmallChanges < maxSmallChanges) {
-        //if(iterCount < maxIter && abs(prevEnergy - newEnergy) > eps * prevEnergy) {
-            cout << "iteration " << iterCount << " (" << totalIters << " total)" << endl;
-            // allow energy increases in the first 10 iterations but not after that
-            // in order to handle poor initialization
-            totalStep += approx.step(prevEnergy, newEnergy, totalIters >= 10);
-            // data collection
-            elapsedTimeVec.push_back(totalStep);
-            energyVec.push_back(newEnergy);
-            iterCount++;
-            totalIters++;
-            if(abs(prevEnergy - newEnergy) > eps * prevEnergy) {
-                numSmallChanges = 0;
-            } else {
-                numSmallChanges++;
-            }
-            // handle display
-            auto triangulation = polyscope::getSurfaceMesh("Triangulation");
-            triangulation->updateVertexPositions2D(approx.getVertices());
-            triangulation->addFaceColorQuantity("approximate colors", approx.getColors());
-            polyscope::screenshot(false);
+            singleStep();
         } else {
             polyscope::warning("done");
         }
+    };
+
+    auto runGradient = [&]() {
+        while(iterCount < maxIter && numSmallChanges < maxSmallChanges) {
+            singleStep();
+        } 
     };
 
     // lambda for retriangulating by subdivision
@@ -254,16 +262,23 @@ int main(int argc, char* argv[]) {
     string angryButton = "More Triangles";
     auto callback = [&]() {
         ImGui::InputInt("max iterations", &maxIter); 
-        ImGui::InputInt("# triangles on subdivision", &subdivisions);
+        ImGui::InputInt("# edges to divide", &subdivisions);
         ImGui::InputDouble("stopping condition", &eps);  
 
         if (ImGui::Button("Start")) {
             initialize();
         }
-        // run the triangulation
+
+        // step by step
         if (ImGui::Button("Step")) {
             step();
         }
+        ImGui::SameLine();
+        // run the triangulation
+        if (ImGui::Button("Gradient Flow")) {
+            runGradient();
+        }
+
         // allow retriangulation
         if (ImGui::Button(angryButton.c_str())) {
             retriangulate();
@@ -304,6 +319,6 @@ int main(int argc, char* argv[]) {
 
     // convert screenshot sequences to video
     system("ffmpeg -hide_banner -loglevel warning -framerate 2 -i screenshot_%06d.tga -vcodec mpeg4 ../outputs/video_output.mp4");
-    system("rm screenshot_*");
+    system("rm *.tga");
 	return 0;
 }
