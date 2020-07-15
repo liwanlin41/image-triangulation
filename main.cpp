@@ -3,6 +3,7 @@
 #include "polyscope/polyscope.h"
 #include "polyscope/surface_mesh.h"
 #include "polyscope/point_cloud.h"
+#include "polyscope/view.h"
 #define cimg_use_png 1
 #define cimg_use_jpg 1
 #include "CImg.h"
@@ -42,7 +43,7 @@ int main(int argc, char* argv[]) {
     }
     // set default values
     int maxIter = 100;
-    int subdivisions = 5;
+    int subdivisions = 50;
     double eps = 0.001;
     double prevEnergy = 100 * eps; // placeholder values
     double newEnergy = 0;
@@ -174,6 +175,9 @@ int main(int argc, char* argv[]) {
 
     // lambda for initializing triangulation
     auto initialize = [&]() {
+        // complete restart
+        elapsedTimeVec.clear();
+        energyVec.clear();
         cout << "creating mesh\n";
         auto triangulation = polyscope::registerSurfaceMesh2D("Triangulation", approx.getVertices(), approx.getFaces());
         cout << "getting colors\n";
@@ -192,6 +196,10 @@ int main(int argc, char* argv[]) {
         totalIters = 0;
         elapsedTimeVec.push_back(totalStep); // initial values
         energyVec.push_back(newEnergy);
+        // center mesh
+        polyscope::view::resetCameraToHomeView();
+        polyscope::resetScreenshotIndex();
+        // screenshot
         polyscope::screenshot(false);
         polyscope::screenshot("../outputs/initial.tga", false);
     };
@@ -291,8 +299,6 @@ int main(int argc, char* argv[]) {
         }
     };
 
-    polyscope::options::autocenterStructures = true;
-    polyscope::options::autoscaleStructures = true;
     polyscope::init();
     polyscope::view::style = polyscope::view::NavigateStyle::Planar;
     polyscope::state::userCallback = callback;
