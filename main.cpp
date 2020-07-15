@@ -12,7 +12,7 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 
-#include "src/constant.cuh"
+#include "src/constant.h"
 
 using namespace cimg_library;
 using namespace matlab::engine;
@@ -66,7 +66,9 @@ int main(int argc, char* argv[]) {
     CImg<unsigned char> image(imgPath);
 
     // create approximation instance
-    ConstantApprox approx(&image, 0.05);
+    Approx *approx;
+    ConstantApprox constantInstance(&image, 0.05);
+    approx = &constantInstance;
 
     // start matlab to get initial triangulation
     std::unique_ptr<MATLABEngine> matlabPtr = startMATLAB();
@@ -155,7 +157,7 @@ int main(int argc, char* argv[]) {
         }
         cout << "done\n";
         cout << "Initializing mesh...\n";
-        approx.initialize(&points, edges);
+        approx->initialize(points, edges);
     } else {
         // prompt for dx
         cout << "Sample once every __ pixels? ";
@@ -165,7 +167,7 @@ int main(int argc, char* argv[]) {
             dx = DX_DEFAULT;
             cout << "defaulting to " << DX_DEFAULT << endl;
         }
-        approx.initialize(dx);
+        approx->initialize(dx);
     }
     cout << "ready\n";
 
@@ -179,16 +181,16 @@ int main(int argc, char* argv[]) {
         elapsedTimeVec.clear();
         energyVec.clear();
         cout << "creating mesh\n";
-        auto triangulation = polyscope::registerSurfaceMesh2D("Triangulation", approx.getVertices(), approx.getFaces());
+        auto triangulation = polyscope::registerSurfaceMesh2D("Triangulation", approx->getVertices(), approx->getFaces());
         cout << "getting colors\n";
-        auto colors = triangulation->addFaceColorQuantity("approximate colors", approx.getColors());
+        auto colors = triangulation->addFaceColorQuantity("approximate colors", approx->getColors());
         // allow colors by default
         colors->setEnabled(true);
         // set material to flat to get more accurate rgb values
         triangulation->setMaterial("flat");
         // setup gradient descent
         cout << "finding energy..." << endl;
-        newEnergy = approx.computeEnergy();
+        newEnergy = approx->computeEnergy();
         cout << "done, energy is " << newEnergy << endl;
         // initialize to something higher than newEnergy
         prevEnergy = newEnergy * 2;
@@ -211,7 +213,7 @@ int main(int argc, char* argv[]) {
     auto singleStep = [&]() {
         cout << "iteration " << iterCount << " (" << totalIters << " total)" << endl;
         // allow a fixed number of energy increases to avoid getting stuck
-        totalStep += approx.step(prevEnergy, newEnergy, (totalIters >= 10) && (iterCount >= 5));
+        totalStep += approx->step(prevEnergy, newEnergy, (totalIters >= 10) && (iterCount >= 5));
         // data collection
         elapsedTimeVec.push_back(totalStep);
         energyVec.push_back(newEnergy);
@@ -224,8 +226,8 @@ int main(int argc, char* argv[]) {
         }
         // handle display
         auto triangulation = polyscope::getSurfaceMesh("Triangulation");
-        triangulation->updateVertexPositions2D(approx.getVertices());
-        triangulation->addFaceColorQuantity("approximate colors", approx.getColors());
+        triangulation->updateVertexPositions2D(approx->getVertices());
+        triangulation->addFaceColorQuantity("approximate colors", approx->getColors());
         polyscope::screenshot(false);
     };
 
@@ -245,16 +247,16 @@ int main(int argc, char* argv[]) {
 
     // lambda for retriangulating by subdivision
     auto retriangulate = [&]() {
-        approx.subdivide(subdivisions);
+        approx->subdivide(subdivisions);
         // re-initialize new mesh
-        auto triangulation = polyscope::registerSurfaceMesh2D("Triangulation", approx.getVertices(), approx.getFaces());
-        auto colors = triangulation->addFaceColorQuantity("approximate colors", approx.getColors());
+        auto triangulation = polyscope::registerSurfaceMesh2D("Triangulation", approx->getVertices(), approx->getFaces());
+        auto colors = triangulation->addFaceColorQuantity("approximate colors", approx->getColors());
         // reset values
         iterCount = 0;
         //totalStep = 0; 
         numSmallChanges = 0;
         totalIters++;
-        newEnergy = approx.computeEnergy();
+        newEnergy = approx->computeEnergy();
         elapsedTimeVec.push_back(totalStep);
         energyVec.push_back(newEnergy);
         cout << "energy after subdivision: " << newEnergy << endl;

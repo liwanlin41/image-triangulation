@@ -4,6 +4,7 @@
 #include <assert.h>
 #include "pixel.cuh"
 #include "triangle.cuh"
+#include "cuda_runtime.h"
 
 using namespace std;
 
