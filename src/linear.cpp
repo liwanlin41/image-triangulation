@@ -135,16 +135,9 @@ void LinearApprox::computeEdgeEnergies(vector<array<double, 3>> *edgeEnergies) {
 			// get energy on subdivided triangles
             double coeffs1[3];
             double coeffs2[3];
-            double L1[3];
-            double L2[3];
-            // get integral f phi_i dA
-            for(int i = 0; i < 3; i++) {
-                L1[i] = integrator.doubleIntEval(&t1, ds, GRAY, i);
-                L2[i] = integrator.doubleIntEval(&t2, ds, GRAY, i);
-            }
-			double color1 = integrator.doubleIntEval(&t1, ds) / area;
-			double color2 = integrator.doubleIntEval(&t2, ds) / area;
-			newEnergy += integrator.constantEnergyEval(&t1, color1, ds) + integrator.constantEnergyEval(&t2, color2, ds);
+            computeCoeffs(&t1, coeffs1);
+            computeCoeffs(&t2, coeffs2);
+			newEnergy += integrator.linearEnergyApprox(&t1, coeffs1, ds) + integrator.linearEnergyApprox(&t2, coeffs2, ds);
 		}
 		// change in energy due to subdivision
 		edgeEnergies->push_back({(double) edge[0], (double) edge[1], newEnergy - curEnergy});
