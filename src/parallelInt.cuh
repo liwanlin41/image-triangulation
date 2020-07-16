@@ -70,11 +70,11 @@ class ParallelIntegrator {
         double lineIntApprox(Triangle *tri, int pt, bool isX, double ds);
 
         // compute double integral f phi dA over triangle triArr[t] where FEM basis phi depends on approx
-        double doubleIntEval(Triangle *tri, double ds, int basisInd = 0, ColorChannel channel = GRAY);
+        double doubleIntEval(Triangle *tri, double ds, ColorChannel channel = GRAY, int basisInd = 0);
         // compute by exact integral
         double doubleIntExact(Triangle *tri, ColorChannel channel);
         // approximate by grid with side length ds
-        double doubleIntApprox(Triangle *tri, double ds, int basisInd, ColorChannel channel);
+        double doubleIntApprox(Triangle *tri, double ds, ColorChannel channel, int basisInd);
 };
 
 #endif

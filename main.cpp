@@ -102,7 +102,7 @@ int main(int argc, char* argv[]) {
     CImg<unsigned char> image(imgPath);
 
     // wrapper for running approximation
-    Simulator sim(imgPath, &image, constant);
+    Simulator sim(imgPath, &image, linear);
 
     // set default values
     int maxIter = 100;

@@ -367,7 +367,7 @@ __global__ void linearDoubleIntSample(Pixel *pixArr, int maxX, int maxY, Point *
 	}
 }
 
-double ParallelIntegrator::doubleIntApprox(Triangle *tri, double ds, int basisInd, ColorChannel channel) {
+double ParallelIntegrator::doubleIntApprox(Triangle *tri, double ds, ColorChannel channel, int basisInd) {
 	int i = tri->midVertex();
 	tri->copyVertices(curTri+((3-i)%3), curTri+((4-i)%3), curTri+((5-i)%3));
 	// compute number of samples
@@ -389,11 +389,11 @@ double ParallelIntegrator::doubleIntApprox(Triangle *tri, double ds, int basisIn
 	return answer;
 }
 
-double ParallelIntegrator::doubleIntEval(Triangle *tri, double ds, int basisInd, ColorChannel channel) {
+double ParallelIntegrator::doubleIntEval(Triangle *tri, double ds, ColorChannel channel, int basisInd) {
 	if(computeExact) {
 		return doubleIntExact(tri, channel);
 	}
-	return doubleIntApprox(tri, ds, basisInd, channel);
+	return doubleIntApprox(tri, ds, channel, basisInd);
 }
 
 // kernel function for linearEnergyApprox
@@ -425,17 +425,15 @@ __global__ void approxLinearEnergySample(Pixel *pixArr, int maxX, int maxY, Poin
 
 double ParallelIntegrator::linearEnergyApprox(Triangle *tri, double *coeffs, double ds) {
 	int i = tri->midVertex(); // vertex opposite middle side
-	// make sure curTri and coeffs are properly aligned;
-	// ensure midVertex is copied into location curTri
-	int cycle[] = {(3-i)%3, (4-i)%3, (5-i)%3};
-	tri->copyVertices(curTri + cycle[0], curTri + cycle[1], curTri + cycle[2]);
+	// curTri[0] = tri.vertices[i]
+	tri->copyVertices(curTri + ((3-i)%3), curTri + ((4-i)%3), curTri + ((5-i)%3));
 	// compute number of samples needed, using median number per side
 	int samples = ceil(curTri[1].distance(curTri[2])/ds);
 	// unfortunately half of these threads will not be doing useful work; no good fix, sqrt is too slow for triangular indexing
 	dim3 numBlocks((samples + threadsX - 1) / threadsX, (samples + threadsY - 1) / threadsY);
 	double dA = tri->getArea() / (samples * samples);
-	approxLinearEnergySample<<<numBlocks, threads2D>>>(pixArr, maxX, maxY, curTri, curTri + 1, curTri + 2, 
-		coeffs[cycle[0]], coeffs[cycle[1]], coeffs[cycle[2]], arr, dA, samples);
+	approxLinearEnergySample<<<numBlocks, threads2D>>>(pixArr, maxX, maxY, curTri, curTri + 1, curTri + 2,
+		coeffs[i], coeffs[(i+1)%3], coeffs[(i+2)%3], arr, dA, samples);
 	double answer = -100 * log(tri->getArea()) + sumArray(samples * (samples + 1) / 2);
 	return answer;
 }

@@ -59,9 +59,8 @@ double LinearApprox::computeEnergy() {
     double totalEnergy = 0;
     for(int t = 0; t < numTri; t++) {
         array<int, 3> vertices = faces.at(t);
-        double energy1 = integrator.linearEnergyApprox(points + vertices[0], points + vertices[1], points + vertices[2], coefficients[t], ds);
-        double energy2 = integrator.linearEnergyApprox(triArr + t, coefficients[t], ds);
-        assert(energy1 == energy2);
+        //double energy1 = integrator.linearEnergyApprox(points + vertices[0], points + vertices[1], points + vertices[2], coefficients[t], ds);
+        totalEnergy += integrator.linearEnergyApprox(triArr + t, coefficients[t], ds);
         totalEnergy += integrator.linearEnergyApprox(points + vertices[0], points + vertices[1], points + vertices[2],
             coefficients[t], ds);
     }
@@ -76,7 +75,7 @@ void LinearApprox::updateApprox() {
     for(int t = 0; t < numTri; t++) {
 		// compute image phi_i dA and store it for reference on next iteration
         for(int i = 0; i < 3; i++) {
-            basisIntegral[t][i] = integrator.doubleIntEval(triArr + t, ds, i);
+            basisIntegral[t][i] = integrator.doubleIntEval(triArr + t, ds, GRAY, i);
         }
 		double area = triArr[t].getArea();
         // extract coefficients
@@ -95,6 +94,19 @@ void LinearApprox::computeEdgeEnergies(vector<array<double, 3>> *edgeEnergies) {
 }
 
 vector<array<double, 3>> LinearApprox::getColors() {
+    vector<array<double, 3>> colors;
+    int scale = 255;
+    for(int t = 0; t < numTri; t++) {
+        double area = triArr[t].getArea();
+        // one vertex at a time
+        for(int j = 0; j < 3; j++) {
+            double r = integrator.doubleIntEval(triArr + t, ds, RED, j) / (scale * area);
+            double g = integrator.doubleIntEval(triArr + t, ds, GREEN, j) / (scale * area);
+            double b = integrator.doubleIntEval(triArr + t, ds, BLUE, j) / (scale * area);
+            colors.push_back({r, g, b});
+        }
+    }
+    return colors;
     /*
     vector<array<double, 3>> colors;
     colors.push_back({1,0,0});
