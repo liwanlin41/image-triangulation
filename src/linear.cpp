@@ -61,8 +61,6 @@ double LinearApprox::computeEnergy() {
         array<int, 3> vertices = faces.at(t);
         //double energy1 = integrator.linearEnergyApprox(points + vertices[0], points + vertices[1], points + vertices[2], coefficients[t], ds);
         totalEnergy += integrator.linearEnergyApprox(triArr + t, coefficients[t], ds);
-        totalEnergy += integrator.linearEnergyApprox(points + vertices[0], points + vertices[1], points + vertices[2],
-            coefficients[t], ds);
     }
     return totalEnergy;
 }
@@ -95,15 +93,27 @@ void LinearApprox::computeEdgeEnergies(vector<array<double, 3>> *edgeEnergies) {
 
 vector<array<double, 3>> LinearApprox::getColors() {
     vector<array<double, 3>> colors;
-    int scale = 255;
+    const int scale = 255;
     for(int t = 0; t < numTri; t++) {
         double area = triArr[t].getArea();
-        // one vertex at a time
+        // one vertex at a time and extract rgb separately
+        double r[3];
+        double g[3];
+        double b[3];
         for(int j = 0; j < 3; j++) {
-            double r = integrator.doubleIntEval(triArr + t, ds, RED, j) / (scale * area);
-            double g = integrator.doubleIntEval(triArr + t, ds, GREEN, j) / (scale * area);
-            double b = integrator.doubleIntEval(triArr + t, ds, BLUE, j) / (scale * area);
-            colors.push_back({r, g, b});
+            r[j] = integrator.doubleIntEval(triArr + t, ds, RED, j);
+            g[j] = integrator.doubleIntEval(triArr + t, ds, GREEN, j);
+            b[j] = integrator.doubleIntEval(triArr + t, ds, BLUE, j);
+        }
+        // do each vertex
+        for(int i = 0; i < 3; i++) {
+            array<double, 3> vColor = {0,0,0};
+            for(int j = 0; j < 3; j++) {
+                vColor[0] += matrix[i][j] * r[j] / (scale * area);
+                vColor[1] += matrix[i][j] * g[j] / (scale * area);
+                vColor[2] += matrix[i][j] * b[j] / (scale * area);
+            }
+            colors.push_back(vColor);
         }
     }
     return colors;

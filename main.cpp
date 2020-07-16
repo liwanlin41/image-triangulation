@@ -116,12 +116,18 @@ int main(int argc, char* argv[]) {
         polyscope::view::resetCameraToHomeView();
         polyscope::resetScreenshotIndex();
         // screenshot
-        polyscope::screenshot(false);
         polyscope::screenshot("../outputs/initial.tga", false);
     };
 
+    // allow adjustments to frame before taking initial screenshot
+    bool first = true;
     // lambda for making a single step of gradient flow
     auto step = [&]() {
+        if(first) {
+            polyscope::screenshot(false);
+            polyscope::screenshot("../outputs/initial.tga", false);
+            first = false;
+        }
        if(sim.step(maxIter, eps)) {
             polyscope::screenshot(false);
        } else {

@@ -57,7 +57,6 @@ class ParallelIntegrator {
 
         // compute integral of (f-g)^2 dA over triangle abc where
         // approximation is coeff[0] * a + coeff[1] * b + coeff[2] * c
-        double linearEnergyApprox(Point *a, Point *b, Point *c, double *coeffs, double ds);
         double linearEnergyApprox(Triangle *tri, double *coeffs, double ds);
 
         // compute exact line integral (v dot n) * f phi ds over triangle tri

@@ -437,34 +437,3 @@ double ParallelIntegrator::linearEnergyApprox(Triangle *tri, double *coeffs, dou
 	double answer = -100 * log(tri->getArea()) + sumArray(samples * (samples + 1) / 2);
 	return answer;
 }
-
-double ParallelIntegrator::linearEnergyApprox(Point *a, Point *b, Point *c, double *coeffs, double ds) {
-	*curTri = *a;
-	*(curTri + 1) = *b;
-	*(curTri + 2) = *c;
-	double lengths[3];
-	for(int i = 0; i < 3; i++) {
-		lengths[i] = curTri[(i+1)%3].distance(curTri[(i+2)%3]);
-	}
-	int medInd = 0;
-	double medianDist = 0;
-	for(int i = 0; i < 3; i++) {
-		if(lengths[i] >= min(lengths[(i+1)%3], lengths[(i+2)%3]) && lengths[i] <= max(lengths[(i+1)%3], lengths[(i+2)%3])) {
-			medianDist = lengths[i];
-			medInd = i;
-			break;
-		}
-	}
-	// use curTri[medInd] as vertex when computing energy
-	int cycle[] = {medInd, (medInd+1)%3, (medInd+2)%3};
-	// compute number of samples needed, using median number per side
-	int samples = ceil(medianDist/ds);
-	// unfortunately half of these threads will not be doing useful work; no good fix, sqrt is too slow for triangular indexing
-	dim3 numBlocks((samples + threadsX - 1) / threadsX, (samples + threadsY - 1) / threadsY);
-	double area = abs(Triangle::getSignedArea(a, b, c));
-	double dA = area / (samples * samples);
-	approxLinearEnergySample<<<numBlocks, threads2D>>>(pixArr, maxX, maxY, curTri + cycle[0], curTri + cycle[1], curTri + cycle[2],
-		coeffs[cycle[0]], coeffs[cycle[1]], coeffs[cycle[2]], arr, dA, samples);
-	double answer = -100 * log(area) + sumArray(samples * (samples + 1) / 2);
-	return answer;
-}
