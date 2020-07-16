@@ -5,6 +5,10 @@ const double TOLERANCE = 1e-10;
 ConstantApprox::ConstantApprox(CImg<unsigned char> *img, double step, double ds) : Approx(img, step, ds) {
 }
 
+ApproxType ConstantApprox::getApproxType() {
+	return APPROXTYPE;
+}
+
 void ConstantApprox::reallocateSpace() {
 	delete[] imageInt;
 	delete[] grays;
@@ -154,7 +158,7 @@ void ConstantApprox::computeEdgeEnergies(vector<array<double, 3>> *edgeEnergies)
 vector<array<double,3>> ConstantApprox::getColors() {
 	vector<array<double, 3>> fullColors;
 	for(int t = 0; t < numTri; t++) {
-		// scale to fit polyscope colors TODO: check that this is correct
+		// scale to fit polyscope colors 
 		int scale = 255;
 		double area = triArr[t].getArea();
 		double r = integrator.doubleIntEval(triArr+t, ds, RED) / (scale * area);
@@ -164,3 +168,24 @@ vector<array<double,3>> ConstantApprox::getColors() {
 	}
 	return fullColors;
 }
+
+/*
+void ConstantApprox::registerMesh(bool first) {
+	auto triangulation = polyscope::registerSurfaceMesh2D("Triangulation", getVertices(), getFaces());
+    auto colors = triangulation->addFaceColorQuantity("approximate colors", getColors());
+	if(first) {
+		// allow colors by default
+    	colors->setEnabled(true);
+    	// set material to flat to get more accurate rgb values
+    	triangulation->setMaterial("flat");
+	}
+}
+*/
+
+/*
+void ConstantApprox::updateMesh() {
+	auto triangulation = polyscope::getSurfaceMesh("Triangulation");
+    triangulation->updateVertexPositions2D(getVertices());
+    triangulation->addFaceColorQuantity("approximate colors", getColors());
+}
+*/

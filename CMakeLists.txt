@@ -4,6 +4,9 @@ project(CoarseTriangulation LANGUAGES CXX CUDA)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+# include polyscope
+add_subdirectory(deps/polyscope)
+
 add_subdirectory(src)
 
 set_target_properties(src PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
@@ -20,9 +23,6 @@ include_directories(${PNG_INCLUDE_DIR})
 find_package(JPEG REQUIRED)
 include_directories(${JPEG_INCLUDE_DIR})
 
-# include polyscope
-add_subdirectory(deps/polyscope)
-
 # include matlab
 find_package(Matlab REQUIRED)
 include_directories("${Matlab_ROOT_DIR}/extern/include")
@@ -32,9 +32,9 @@ find_package(Threads REQUIRED)
 target_link_libraries(CoarseTriangulation PUBLIC Threads::Threads)
 target_link_libraries(CoarseTriangulation PUBLIC ${PNG_LIBRARY})
 target_link_libraries(CoarseTriangulation PUBLIC ${JPEG_LIBRARY})
-target_link_libraries(CoarseTriangulation PUBLIC src)
 target_link_libraries(CoarseTriangulation PUBLIC polyscope)
-target_link_libraries(CoarseTriangulation PUBLIC ${Matlab_ROOT_DIR}/extern/bin/glnxa64/libMatlabEngine.so)
-target_link_libraries(CoarseTriangulation PUBLIC ${Matlab_ROOT_DIR}/extern/bin/glnxa64/libMatlabDataArray.so)
+target_link_libraries(CoarseTriangulation PUBLIC src)
+#target_link_libraries(CoarseTriangulation PUBLIC ${Matlab_ROOT_DIR}/extern/bin/glnxa64/libMatlabEngine.so)
+#target_link_libraries(CoarseTriangulation PUBLIC ${Matlab_ROOT_DIR}/extern/bin/glnxa64/libMatlabDataArray.so)
 
 target_include_directories(CoarseTriangulation PUBLIC "${PROJECT_BINARY_DIR}" "${PROJECT_SOURCE_DIR}/src")

@@ -28,6 +28,7 @@ class ConstantApprox : public Approx {
 		ConstantApprox(CImg<unsigned char> *img, double step, double ds = 0.1);
 		// deallocate all the shared space
 		~ConstantApprox();
+		ApproxType getApproxType();
 
 		void reallocateSpace();
 
@@ -46,6 +47,11 @@ class ConstantApprox : public Approx {
 		void computeEdgeEnergies(vector<array<double, 3>> *edgeEnergies);
 
 		vector<array<double, 3>> getColors();
+
+		/*
+		void registerMesh(bool first = false);
+		void updateMesh();
+		*/
 };
 
 #endif

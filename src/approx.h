@@ -10,6 +10,12 @@
 #include "CImg.h"
 #include "cuda.h"
 #include "cuda_runtime.h"
+/*
+#include "polyscope/polyscope.h"
+#include "polyscope/surface_mesh.h"
+#include "polyscope/point_cloud.h"
+#include "polyscope/view.h"
+*/
 
 using namespace std;
 using namespace cimg_library;
@@ -49,7 +55,8 @@ class Approx {
 		// create an approximation instance on img with given stepsize and sampling rate
 		Approx(CImg<unsigned char> *img, double step, double ds = 0.1);
 		// deallocate all the shared space
-		~Approx();
+		virtual ~Approx() = 0;
+        virtual ApproxType getApproxType() = 0;
 
         // free and reassign space that is not handled in approx 
         virtual void reallocateSpace() = 0;
@@ -70,14 +77,6 @@ class Approx {
 		void undo();
 		// update approximation value for each triangle
 		virtual void updateApprox() = 0;
-		// run one full step of the procedure while tracking energy values
-		// return stepsize used in this step
-		// stringent determines whether any energy increase is tolerated,
-		// defaults true (no tolerance)
-		double step(double &prevEnergy, double &newEnergy, bool stringent = true);
-		// run the entire procedure for either maxIter iterations or
-		// until change in energy is at most eps
-		void run(int maxIter = 100, double eps = 0.001);
 
 		// handle adaptive retriangulation to finer mesh
 
@@ -95,7 +94,25 @@ class Approx {
 		vector<Point> getVertices();
 		// get edges of triangulation
 		vector<array<int, 3>> getFaces();
+        // return colors in a 1D array; note for linear approximation
+        // the colors will be ordered triangle 0 vertex 0, triangle 0 vertex 1, etc.
         virtual vector<array<double, 3>> getColors() = 0;
+
+		// run one full step of the procedure while tracking energy values
+		// return stepsize used in this step
+		// stringent determines whether any energy increase is tolerated,
+		// defaults true (no tolerance)
+		double step(double &prevEnergy, double &newEnergy, bool stringent = true);
+		// run the entire procedure for either maxIter iterations or
+		// until change in energy is at most eps
+		void run(int maxIter = 100, double eps = 0.001);
+
+        // for rendering mesh and colors
+        // first indicates whether this is the first registration of the mesh
+        /*
+        virtual void registerMesh(bool first = false) = 0;
+        virtual void updateMesh() = 0;
+        */
 };
 
 #endif
