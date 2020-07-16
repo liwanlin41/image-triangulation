@@ -64,22 +64,27 @@ void Approx::initialize(ApproxType approxtype, int pixelRate) {
 			// randomly triangulate the square with min x,y corner at this point
 			if(i < numX - 1 && j < numY - 1) {
 				Point *pt = points + index1D; // easier reference to current point
+				// make sure face indices are ccw
 				if(rand() % 2 == 0) {
 					triArr[triInd] = Triangle(pt, pt + numY, pt + numY + 1);
 					faces.push_back({index1D, index1D + numY, index1D + numY + 1});
 					triArr[triInd+1] = Triangle(pt, pt + numY + 1, pt + 1);
 					faces.push_back({index1D, index1D + numY + 1, index1D + 1});
 				} else {
-					triArr[triInd] = Triangle(pt, pt + 1, pt + numY);
-					faces.push_back({index1D, index1D + 1, index1D + numY});
+					triArr[triInd] = Triangle(pt, pt + numY, pt + 1);
+					faces.push_back({index1D, index1D + numY, index1D + 1});
 					triArr[triInd+1] = Triangle(pt + numY, pt + 1, pt + numY + 1);
-					faces.push_back({index1D + numY, index1D + 1, index1D + numY + 1});
+					faces.push_back({index1D + numY, index1D + numY + 1, index1D + 1});
 				}
 				triInd += 2;
 			}
 		}
 	}
 	assert(triInd == numTri);
+	for(int t = 0; t < numTri; t++) {
+		array<int, 3> vertexInds = faces.at(t);
+		assert(Triangle::getSignedArea(points + vertexInds[0], points + vertexInds[1], points + vertexInds[2]) >= 0);
+	}
 
 	// initialize edge dictionary from faces
 	for(int i = 0; i < numTri; i++) {
@@ -129,7 +134,18 @@ void Approx::initialize(ApproxType approxtype, vector<Point> &pts, vector<array<
 		array<int, 3> t = inds.at(i); // vertex indices for this triangle
 		// constructor takes point addresses
 		triArr[i] = Triangle(points + t.at(0), points + t.at(1), points + t.at(2));
+		// ensure faces holds vertices in ccw order
+		if(Triangle::getSignedArea(points + t.at(0), points + t.at(1), points + t.at(2)) < 0) {
+			// flip second and third indices to match Triangle constructor
+			faces.at(i).at(1) = t.at(2);
+			faces.at(i).at(2) = t.at(1);
+		}
 		maxLength = max(maxLength, triArr[i].maxLength());
+	}
+
+	for(int i = 0; i < numTri; i++) {
+		array<int, 3> t = faces.at(i);
+		assert(Triangle::getSignedArea(points + t[0], points + t[1], points + t[2]) >= 0);
 	}
 
 	// initialize edge dictionary from faces
@@ -315,6 +331,16 @@ void Approx::updateMesh(vector<Point> *newPoints, vector<array<int, 3>> *newFace
 	for(int i = 0; i < numTri; i++) {
 		array<int, 3> t = faces.at(i);
 		triArr[i] = Triangle(points + t[0], points + t[1], points + t[2]);
+		// ensure faces is ccw
+		if(Triangle::getSignedArea(points + t[0], points + t[1], points + t[2]) < 0) {
+			faces.at(i)[1] = t[2];
+			faces.at(i)[2] = t[1];
+		}
+	}
+
+	for(int i = 0; i < numTri; i++) {
+		array<int, 3> t = faces.at(i);
+		assert(Triangle::getSignedArea(points + t[0], points + t[1], points + t[2]) >= 0);
 	}
 
 	// update edges for next subdivision

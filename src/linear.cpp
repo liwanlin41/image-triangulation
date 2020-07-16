@@ -6,7 +6,6 @@ LinearApprox::LinearApprox(CImg<unsigned char> *img, double step, double ds) : A
 }
 
 LinearApprox::~LinearApprox() {
-    // TODO
     for(int i = 0; i < numTri; i++) {
         delete[] coefficients[i];
         delete[] basisIntegral[i];
@@ -57,7 +56,13 @@ void LinearApprox::initialize(vector<Point> &pts, vector<array<int, 3>> &faces) 
 }
 
 double LinearApprox::computeEnergy() {
-
+    double totalEnergy = 0;
+    for(int t = 0; t < numTri; t++) {
+        array<int, 3> vertices = faces.at(t);
+        totalEnergy += integrator.linearEnergyApprox(points + vertices[0], points + vertices[1], points + vertices[2],
+            coefficients[t], ds);
+    }
+    return totalEnergy;
 }
 
 void LinearApprox::computeGrad() {
@@ -65,7 +70,22 @@ void LinearApprox::computeGrad() {
 }
 
 void LinearApprox::updateApprox() {
-
+    /*
+    for(int t = 0; t < numTri; t++) {
+		// compute image dA and store it for reference on next iteration
+		double val = integrator.doubleIntEval(triArr+t, ds);
+		imageInt[t] = val;
+		double area = triArr[t].getArea();
+		// take average value
+		double approxVal = val / area;
+		// handle degeneracy
+		if (isnan(approxVal)) {
+			assert(area < TOLERANCE);
+			approxVal = 255; // TODO: something better than this
+		}
+		grays[t] = min(255.0, approxVal); // prevent blowup in case of poor approximation
+	}
+    */
 }
 
 void LinearApprox::computeEdgeEnergies(vector<array<double, 3>> *edgeEnergies) {

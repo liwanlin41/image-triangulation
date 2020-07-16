@@ -55,6 +55,10 @@ class ParallelIntegrator {
         // approximate energy using barycentric sampling
         double constantEnergyApprox(Triangle *tri, double color, double ds);
 
+        // compute integral of (f-g)^2 dA over triangle abc where
+        // approximation is coeff[0] * a + coeff[1] * b + coeff[2] * c
+        double linearEnergyApprox(Point *a, Point *b, Point *c, double *coeffs, double ds);
+
         // compute exact line integral (v dot n) * f phi ds over triangle tri
         // where FEM basis phi is dependent on approx
         // consider when point with index pt in triArr[t] is moving at velocity (1,0) if isX and (0,1) if !isX
@@ -70,6 +74,8 @@ class ParallelIntegrator {
         double doubleIntExact(Triangle *tri, ColorChannel channel);
         // approximate by grid with side length ds
         double doubleIntApprox(Triangle *tri, double ds, ColorChannel channel);
+
+        double doubleIntApprox(Point *a, Point *b, Point *c, double ds, ColorChannel channel, int basisIndex);
 };
 
 #endif

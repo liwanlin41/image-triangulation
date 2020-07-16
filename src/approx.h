@@ -32,7 +32,7 @@ class Approx {
 		Pixel *pixArr; // pixel (x, y) is pixArr[x * maxY + y]
 		Point *points; // store vertices of triangulation
 		int numPoints;
-		vector<array<int, 3>> faces; // hold triangle connections
+		vector<array<int, 3>> faces; // hold triangle connections; MUST BE IN CCW ORDER
 		Triangle *triArr; // store triangles of triangulation
 		int numTri; // number of triangles
 		map<Point*, double> gradX; // map points to gradient x values

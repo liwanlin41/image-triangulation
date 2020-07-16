@@ -327,7 +327,7 @@ double ParallelIntegrator::doubleIntExact(Triangle *tri, ColorChannel channel) {
 
 // kernel for double integral approximation
 // using Point a as vertex point, sample ~samples^2/2 points inside triangle with area element of dA
-// for details see approxConstantEnergySample below
+// for details see approxConstantEnergySample above
 __global__ void constDoubleIntSample(Pixel *pixArr, int maxX, int maxY, Point *a, Point *b, Point *c, double *results, double dA, int samples, ColorChannel channel) {
 	int u = blockIdx.x * blockDim.x + threadIdx.x; // component towards b
 	int v = blockIdx.y * blockDim.y + threadIdx.y; // component towards c
@@ -340,6 +340,28 @@ __global__ void constDoubleIntSample(Pixel *pixArr, int maxX, int maxY, Point *a
 		int pixY = pixelRound(y, maxY);
 		double areaContrib = (u+v == samples - 1) ? dA : 2 * dA;
 		results[ind] = pixArr[pixX * maxY + pixY].getColor(channel) * areaContrib;
+	}
+}
+
+__global__ void linearDoubleIntSample(Pixel *pixArr, int maxX, int maxY, Point *a, Point *b, Point *c, double *results, double dA, int samples, ColorChannel channel, int basisInd) {
+	int u = blockIdx.x * blockDim.x + threadIdx.x; // component towards b
+	int v = blockIdx.y * blockDim.y + threadIdx.y; // component towards c
+	int ind = (2 * samples - u + 1) * u / 2 + v; // 1D index in results
+	double scaledU = (double) u / samples;
+	double scaledV = (double) v / samples;
+	if(u + v < samples) {
+		double x = (a->getX() * (samples - u - v) + b->getX() * u + c->getX() * v) / samples;
+		double y = (a->getY() * (samples - u - v) + b->getY() * u + c->getY() * v) / samples;
+		// find containing pixel
+		int pixX = pixelRound(x, maxX);
+		int pixY = pixelRound(y, maxY);
+		double areaContrib = (u+v == samples - 1) ? dA : 2 * dA;
+		// get FEM basis value at this point
+		double phi;
+		if(basisInd == 0) phi = 1 - scaledU - scaledV;
+		if(basisInd == 1) phi = scaledU;
+		if(basisInd == 2) phi = scaledV;
+		results[ind] = pixArr[pixX * maxY + pixY].getColor(channel) * areaContrib * phi;
 	}
 }
 
@@ -369,4 +391,62 @@ double ParallelIntegrator::doubleIntEval(Triangle *tri, double ds, ColorChannel 
 		return doubleIntExact(tri, channel);
 	}
 	return doubleIntApprox(tri, ds, channel);
+}
+
+// kernel function for linearEnergyApprox
+// assuming point a as vertex and matching k0, k1, k2 to a, b, c,
+// sample (f - sum k_i phi_i)^2 over the triangle
+__global__ void approxLinearEnergySample(Pixel *pixArr, int maxX, int maxY, Point *a, Point *b, Point *c, double k0, double k1, double k2, double *results, double dA, int samples) {
+	int u = blockIdx.x * blockDim.x + threadIdx.x; // component towards b
+	int v = blockIdx.y * blockDim.y + threadIdx.y; // component towards c
+	double scaledU = (double) u / samples;
+	double scaledV = (double) v / samples;
+	int ind = (2 * samples - u + 1) * u / 2 + v; // 1D index in results
+	// this is because there are s points in the first column, s-1 in the next, etc. up to s - u + 1
+	if(u + v < samples) {
+		// get coordinates of this point using appropriate weights
+		double x = (a->getX() * (samples - u - v) + b->getX() * u + c->getX() * v) / samples;
+		double y = (a->getY() * (samples - u - v) + b->getY() * u + c->getY() * v) / samples;
+		// find containing pixel
+		int pixX = pixelRound(x, maxX);
+		int pixY = pixelRound(y, maxY);
+		// find color at this point using standard transform
+		double color = k0 * (1 -scaledU -scaledV) + k1 * scaledU + k2 * scaledV;
+		double diff = color - pixArr[pixX * maxY + pixY].getColor();
+		// account for points near edge bc having triangle contributions rather than parallelograms,
+		// written for fast access and minimal branching
+		double areaContrib = (u + v == samples - 1) ? dA : 2 * dA;
+		results[ind] = diff * diff * areaContrib;
+	}
+}
+
+double ParallelIntegrator::linearEnergyApprox(Point *a, Point *b, Point *c, double *coeffs, double ds) {
+	*curTri = *a;
+	*(curTri + 1) = *b;
+	*(curTri + 2) = *c;
+	double lengths[3];
+	for(int i = 0; i < 3; i++) {
+		lengths[i] = curTri[(i+1)%3].distance(curTri[(i+2)%3]);
+	}
+	int medInd = 0;
+	double medianDist = 0;
+	for(int i = 0; i < 3; i++) {
+		if(lengths[i] >= min(lengths[(i+1)%3], lengths[(i+2)%3]) && lengths[i] <= max(lengths[(i+1)%3], lengths[(i+2)%3])) {
+			medianDist = lengths[i];
+			medInd = i;
+			break;
+		}
+	}
+	// use curTri[medInd] as vertex when computing energy
+	int cycle[] = {medInd, (medInd+1)%3, (medInd+2)%3};
+	// compute number of samples needed, using median number per side
+	int samples = ceil(medianDist/ds);
+	// unfortunately half of these threads will not be doing useful work; no good fix, sqrt is too slow for triangular indexing
+	dim3 numBlocks((samples + threadsX - 1) / threadsX, (samples + threadsY - 1) / threadsY);
+	double area = abs(Triangle::getSignedArea(a, b, c));
+	double dA = area / (samples * samples);
+	approxLinearEnergySample<<<numBlocks, threads2D>>>(pixArr, maxX, maxY, curTri + cycle[0], curTri + cycle[1], curTri + cycle[2],
+		coeffs[cycle[0]], coeffs[cycle[1]], coeffs[cycle[2]], arr, dA, samples);
+	double answer = -100 * log(area) + sumArray(samples * (samples + 1) / 2);
+	return answer;
 }
