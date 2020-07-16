@@ -87,8 +87,68 @@ void LinearApprox::updateApprox() {
 	}
 }
 
-void LinearApprox::computeEdgeEnergies(vector<array<double, 3>> *edgeEnergies) {
+void LinearApprox::computeCoeffs(Triangle *tri, double *coeffs, ColorChannel channel) {
+    double L[3]; // integral of f phi_i dA
+    for(int i = 0; i < 3; i++) {
+        L[i] = integrator.doubleIntEval(tri, ds, channel, i);
+    }
+    for(int i = 0; i < 3; i++) {
+        double coeff = 0;
+        for(int j = 0; j < 3; j++) {
+            coeff += matrix[i][j] * L[j];
+        }
+        coeffs[i] = min(255.0, coeff / tri->getArea());
+    }
+}
 
+void LinearApprox::computeEdgeEnergies(vector<array<double, 3>> *edgeEnergies) {
+    for(auto ii = edgeBelonging.begin(); ii != edgeBelonging.end(); ii++) {
+		array<int, 2> edge = ii->first;
+		vector<int> triangles = ii->second; // triangles containing edge
+		// compute current total energy over these triangles
+		double curEnergy = 0;
+		for(int t : triangles) {
+			curEnergy += integrator.linearEnergyApprox(triArr+t, coefficients[t], ds);
+		}
+		// find new point that may be added to mesh
+		Point endpoint0 = points[edge[0]];
+		Point endpoint1 = points[edge[1]];
+		double midX = (endpoint0.getX() + endpoint1.getX()) / 2;
+		double midY = (endpoint0.getY() + endpoint1.getY()) / 2; 
+		Point midpoint(midX, midY);
+
+		double newEnergy = 0;
+		for(int t : triangles) {
+			Point opposite;
+			// get opposite vertex
+			for(int v = 0; v < 3; v++) {
+				// for accuracy, use raw indices rather than point location
+				if(faces.at(t).at(v) != edge[0] && faces.at(t).at(v) != edge[1]) {
+					opposite = points[faces.at(t).at(v)];
+				}
+			}
+			// the two triangles formed by cutting this edge
+			Triangle t1(&midpoint, &opposite, &endpoint0);
+			Triangle t2(&midpoint, &opposite, &endpoint1);
+			// equal area of both triangles
+			double area = triArr[t].getArea() / 2;
+			// get energy on subdivided triangles
+            double coeffs1[3];
+            double coeffs2[3];
+            double L1[3];
+            double L2[3];
+            // get integral f phi_i dA
+            for(int i = 0; i < 3; i++) {
+                L1[i] = integrator.doubleIntEval(&t1, ds, GRAY, i);
+                L2[i] = integrator.doubleIntEval(&t2, ds, GRAY, i);
+            }
+			double color1 = integrator.doubleIntEval(&t1, ds) / area;
+			double color2 = integrator.doubleIntEval(&t2, ds) / area;
+			newEnergy += integrator.constantEnergyEval(&t1, color1, ds) + integrator.constantEnergyEval(&t2, color2, ds);
+		}
+		// change in energy due to subdivision
+		edgeEnergies->push_back({(double) edge[0], (double) edge[1], newEnergy - curEnergy});
+	}
 }
 
 vector<array<double, 3>> LinearApprox::getColors() {
@@ -100,61 +160,12 @@ vector<array<double, 3>> LinearApprox::getColors() {
         double r[3];
         double g[3];
         double b[3];
-        for(int j = 0; j < 3; j++) {
-            r[j] = integrator.doubleIntEval(triArr + t, ds, RED, j);
-            g[j] = integrator.doubleIntEval(triArr + t, ds, GREEN, j);
-            b[j] = integrator.doubleIntEval(triArr + t, ds, BLUE, j);
-        }
-        // do each vertex
+        computeCoeffs(triArr + t, r, RED);
+        computeCoeffs(triArr + t, g, GREEN);
+        computeCoeffs(triArr + t, b, BLUE);
         for(int i = 0; i < 3; i++) {
-            array<double, 3> vColor = {0,0,0};
-            for(int j = 0; j < 3; j++) {
-                vColor[0] += matrix[i][j] * r[j] / (scale * area);
-                vColor[1] += matrix[i][j] * g[j] / (scale * area);
-                vColor[2] += matrix[i][j] * b[j] / (scale * area);
-            }
-            colors.push_back(vColor);
+            colors.push_back({r[i]/scale, g[i]/scale, b[i]/scale});
         }
     }
     return colors;
-    /*
-    vector<array<double, 3>> colors;
-    colors.push_back({1,0,0});
-    colors.push_back({1,0,0});
-    colors.push_back({0.5,0,0});
-    
-    colors.push_back({0,1,0});
-    colors.push_back({1,1,1});
-    colors.push_back({0,1,0});
-    
-    colors.push_back({0,0,1});
-    colors.push_back({0,0,1});
-    colors.push_back({0,0,0});
-
-    colors.push_back({0,0,0});
-    colors.push_back({0,0,0});
-    colors.push_back({1,1,1});
-    return colors;
-    */
 }
-
-/*
-vector<Point> LinearApprox::testPoints() {
-    vector<Point> res;
-    for(int i = 0; i < 3; i++) {
-        for(int j = 0; j < 2; j++) {
-            res.push_back(Point(i, j));
-        }
-    }
-    return res;
-}
-
-vector<array<int, 3>> LinearApprox::testFaces() {
-    vector<array<int, 3>> faces;
-    faces.push_back({0,1,2});
-    faces.push_back({1,2,3});
-    faces.push_back({2,3,4});
-    faces.push_back({3,4,5});
-    return faces;
-}
-*/

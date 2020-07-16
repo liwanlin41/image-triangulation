@@ -49,10 +49,10 @@ class LinearApprox : public Approx {
 		void computeEdgeEnergies(vector<array<double, 3>> *edgeEnergies);
 
 		vector<array<double, 3>> getColors();
-        /*
-        vector<Point> testPoints();
-        vector<array<int, 3>> testFaces();
-        */
+
+		// compute the coefficients on triangle tri and store in c,
+		// aligned with coefficients of tri
+		void computeCoeffs(Triangle *tri, double *c, ColorChannel channel = GRAY);
 };
 
 #endif
