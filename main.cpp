@@ -30,17 +30,17 @@ double adaptorF_custom_accessVector2Value(const Point& p, unsigned int ind) {
 // to aid in mesh registration, put constant triangle indexing here
 const array<int, 3> triInds = {0,1,2};
 const vector<array<int, 3>> singleTriangle = {triInds};
+const array<double, 3> white = {1,1,1};
+const vector<array<double, 3>> backgroundColor = {white, white};
 
-void registerMesh(Approx *approx, bool first) {
+void registerMesh(Approx *approx) {
     if(approx->getApproxType() == constant) {
         auto triangulation = polyscope::registerSurfaceMesh2D("Triangulation", approx->getVertices(), approx->getFaces());
         auto colors = triangulation->addFaceColorQuantity("approximate colors", approx->getColors());
-	    if(first) {
-		    // allow colors by default
-    	    colors->setEnabled(true);
-    	    // set material to flat to get more accurate rgb values
-    	    triangulation->setMaterial("flat");
-	    }
+		// allow colors by default
+  	    colors->setEnabled(true);
+   	    // set material to flat to get more accurate rgb values
+   	    triangulation->setMaterial("flat");
     } else if (approx->getApproxType() == linear) {
         //vector<Point> pts = ((LinearApprox*) approx)->testPoints();
         vector<Point> pts = approx->getVertices();
@@ -57,11 +57,14 @@ void registerMesh(Approx *approx, bool first) {
             }
             auto triangle = polyscope::registerSurfaceMesh2D(to_string(t), thisTriangle, singleTriangle);
             auto colorPtr = triangle->addVertexColorQuantity("linear approx", vertexColors);
-            if(first) {
-                colorPtr->setEnabled(true);
-                triangle->setMaterial("flat");
-            }
+            colorPtr->setEnabled(true);
+            triangle->setMaterial("flat");
         }
+        // create a background box so that the rendering centers
+        auto bounding = polyscope::registerSurfaceMesh2D("bounding box", approx->boundingBox(), approx->boundingFaces());
+        auto background = bounding->addFaceColorQuantity("background", backgroundColor);
+        background->setEnabled(true);
+        bounding->setMaterial("flat");
     }
 }
 
@@ -101,8 +104,19 @@ int main(int argc, char* argv[]) {
 
     CImg<unsigned char> image(imgPath);
 
+    int degree;
+    cout << "Degree of approximation [0/1]: ";
+    cin >> degree;
+    if(cin.fail() || degree < 0 || degree > 1) {
+        cin.clear();
+        degree = 0;
+        cout << "defaulting to constant approximation" << endl;
+    }
+
+    ApproxType approxtype = (degree == 0) ? constant : linear;
+
     // wrapper for running approximation
-    Simulator sim(imgPath, &image, linear);
+    Simulator sim(imgPath, &image, approxtype);
 
     // set default values
     int maxIter = 100;
@@ -116,18 +130,12 @@ int main(int argc, char* argv[]) {
         polyscope::view::resetCameraToHomeView();
         polyscope::resetScreenshotIndex();
         // screenshot
+        polyscope::screenshot(false);
         polyscope::screenshot("../outputs/initial.tga", false);
     };
 
-    // allow adjustments to frame before taking initial screenshot
-    bool first = true;
     // lambda for making a single step of gradient flow
     auto step = [&]() {
-        if(first) {
-            polyscope::screenshot(false);
-            polyscope::screenshot("../outputs/initial.tga", false);
-            first = false;
-        }
        if(sim.step(maxIter, eps)) {
             polyscope::screenshot(false);
        } else {

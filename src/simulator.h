@@ -35,8 +35,8 @@ double adaptorF_custom_accessVector2Value(const Point& p, unsigned int ind) {
 // rendering functions that are currently implemented in main file
 
 // render mesh with colors
-// first indicates whether this is the first registration of the mes
-void registerMesh(Approx *approx, bool first = false);
+// first indicates whether this is the first registration of the mesh
+void registerMesh(Approx *approx);
 void updateMesh(Approx *approx);
 
 class Simulator {

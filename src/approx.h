@@ -99,6 +99,11 @@ class Approx {
         // the colors will be ordered triangle 0 vertex 0, triangle 0 vertex 1, etc.
         virtual vector<array<double, 3>> getColors() = 0;
 
+		// for triangulations where each triangle is rendered separately, compute bounding box
+		// for display purposes
+		vector<Point> boundingBox();
+		vector<array<int, 3>> boundingFaces();
+
 		// run one full step of the procedure while tracking energy values
 		// return stepsize used in this step
 		// stringent determines whether any energy increase is tolerated,

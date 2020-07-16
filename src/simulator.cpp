@@ -130,7 +130,7 @@ void Simulator::initialize() {
     energyVec.clear();
     cout << "creating mesh\n";
     //approx->registerMesh();
-    registerMesh(approx, true);
+    registerMesh(approx);
     // setup gradient descent
     cout << "finding energy..." << endl;
     newEnergy = approx->computeEnergy();
