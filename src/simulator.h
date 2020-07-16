@@ -12,6 +12,7 @@
 #include "polyscope/view.h"
 */
 #include "constant.h"
+#include "linear.h"
 
 /**
  * run gradient flow and subdivisions on a triangular mesh approximation

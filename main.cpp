@@ -10,7 +10,6 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 
-#include "src/constant.h"
 #include "src/simulator.h"
 
 using namespace cimg_library;
@@ -28,6 +27,10 @@ double adaptorF_custom_accessVector2Value(const Point& p, unsigned int ind) {
     return -1.;
 }
 
+// to aid in mesh registration, put constant triangle indexing here
+const array<int, 3> triInds = {0,1,2};
+const vector<array<int, 3>> singleTriangle = {triInds};
+
 void registerMesh(Approx *approx, bool first) {
     if(approx->getApproxType() == constant) {
         auto triangulation = polyscope::registerSurfaceMesh2D("Triangulation", approx->getVertices(), approx->getFaces());
@@ -38,6 +41,27 @@ void registerMesh(Approx *approx, bool first) {
     	    // set material to flat to get more accurate rgb values
     	    triangulation->setMaterial("flat");
 	    }
+    } else if (approx->getApproxType() == linear) {
+        //vector<Point> pts = ((LinearApprox*) approx)->testPoints();
+        vector<Point> pts = approx->getVertices();
+        vector<array<int, 3>> faces = approx->getFaces();
+        //vector<array<int, 3>> faces = ((LinearApprox*) approx)->testFaces();
+        vector<array<double, 3>> colors = approx->getColors();
+        // register a separate mesh for each triangle
+        for(int t = 0; t < faces.size(); t++) {
+            vector<Point> thisTriangle; // hold vertices of faces.at(t)
+            vector<array<double, 3>> vertexColors;
+            for(int i = 0; i < 3; i++) {
+                thisTriangle.push_back(pts.at(faces.at(t).at(i)));
+                vertexColors.push_back(colors.at(3*t+i));
+            }
+            auto triangle = polyscope::registerSurfaceMesh2D(to_string(t), thisTriangle, singleTriangle);
+            auto colorPtr = triangle->addVertexColorQuantity("linear approx", vertexColors);
+            if(first) {
+                colorPtr->setEnabled(true);
+                triangle->setMaterial("flat");
+            }
+        }
     }
 }
 
@@ -46,6 +70,21 @@ void updateMesh(Approx *approx) {
         auto triangulation = polyscope::getSurfaceMesh("Triangulation");
         triangulation->updateVertexPositions2D(approx->getVertices());
         triangulation->addFaceColorQuantity("approximate colors", approx->getColors());
+    } else if(approx->getApproxType() == linear) {
+        vector<Point> pts = approx->getVertices();
+        vector<array<int, 3>> faces = approx->getFaces();
+        vector<array<double, 3>> colors = approx->getColors();
+        for(int t = 0; t < faces.size(); t++) {
+            vector<Point> thisTriangle;
+            vector<array<double, 3>> vertexColors;
+            for(int i = 0; i < 3; i++) {
+                thisTriangle.push_back(pts.at(faces.at(t).at(i)));
+                vertexColors.push_back(colors.at(3*t+i));
+            }
+            auto triangle = polyscope::getSurfaceMesh(to_string(t));
+            triangle->updateVertexPositions2D(thisTriangle);
+            triangle->addVertexColorQuantity("linear approx", vertexColors);
+        }
     }
 }
 
@@ -63,7 +102,7 @@ int main(int argc, char* argv[]) {
     CImg<unsigned char> image(imgPath);
 
     // wrapper for running approximation
-    Simulator sim(imgPath, &image, constant);
+    Simulator sim(imgPath, &image, linear);
 
     // set default values
     int maxIter = 100;

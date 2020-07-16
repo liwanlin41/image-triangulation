@@ -3,6 +3,8 @@
 Simulator::Simulator(const char *imgPath, CImg<unsigned char> *img, ApproxType approxtype) {
     if(approxtype == constant) {
         approx = new ConstantApprox(img, 0.05);
+    } else if (approxtype == linear) {
+        approx = new LinearApprox(img, 0.05);
     }
 
     // determine initialization method
