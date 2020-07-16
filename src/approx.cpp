@@ -288,6 +288,7 @@ void Approx::updateMesh(vector<Point> *newPoints, vector<array<int, 3>> *newFace
 	// reallocate space
 	int oldNumPoints = numPoints;
 	numPoints += newPoints->size();
+	int oldNumTri = numTri;
 	numTri += newFaces->size() - discardedFaces->size();
 	cudaMallocManaged(&points, numPoints * sizeof(Point));
 	cudaMallocManaged(&triArr, numTri * sizeof(Triangle));
@@ -337,7 +338,7 @@ void Approx::updateMesh(vector<Point> *newPoints, vector<array<int, 3>> *newFace
 	gradY.clear();
 
     // re-allocate space for specific instance
-    reallocateSpace();
+    reallocateSpace(oldNumTri);
 }
 
 double Approx::getStep() {

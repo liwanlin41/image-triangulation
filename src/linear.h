@@ -20,6 +20,10 @@ class Approx;
 class LinearApprox : public Approx {
 	private:
 		static const ApproxType APPROXTYPE = linear;
+        static const double matrix[3][3]; // matrix multiplier to obtain coefficients
+
+        double **coefficients; // numTri x 3 array where the ijth entry is the coeff of phi_j on T_i
+        double **basisIntegral; // numTri x 3, ijth entry is integral f phi_j dA on T_i
 
 	public:
 		// create an approximation instance on img with given stepsize and sampling rate
@@ -28,7 +32,7 @@ class LinearApprox : public Approx {
 		~LinearApprox();
 		ApproxType getApproxType();
 
-		void reallocateSpace();
+		void reallocateSpace(int oldNumTri);
 
 		void initialize(int pixelRate);
 		void initialize(vector<Point> &points, vector<array<int,3>> &faces);

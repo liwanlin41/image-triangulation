@@ -30,7 +30,7 @@ class ConstantApprox : public Approx {
 		~ConstantApprox();
 		ApproxType getApproxType();
 
-		void reallocateSpace();
+		void reallocateSpace(int oldNumTri);
 
 		void initialize(int pixelRate);
 		void initialize(vector<Point> &points, vector<array<int,3>> &faces);

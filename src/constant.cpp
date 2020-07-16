@@ -9,7 +9,7 @@ ApproxType ConstantApprox::getApproxType() {
 	return APPROXTYPE;
 }
 
-void ConstantApprox::reallocateSpace() {
+void ConstantApprox::reallocateSpace(int oldNumTri) {
 	delete[] imageInt;
 	delete[] grays;
 	imageInt = new double[numTri];

@@ -1,30 +1,58 @@
 #include "linear.h"
 
-LinearApprox::LinearApprox(CImg<unsigned char> *img, double step, double ds) : Approx(img, step, ds) {
+const double LinearApprox::matrix[3][3] = {{9,-3,-3}, {-3,9,-3}, {-3,-3,9}};
 
+LinearApprox::LinearApprox(CImg<unsigned char> *img, double step, double ds) : Approx(img, step, ds) {
 }
 
 LinearApprox::~LinearApprox() {
     // TODO
+    for(int i = 0; i < numTri; i++) {
+        delete[] coefficients[i];
+        delete[] basisIntegral[i];
+    }
+    delete[] coefficients;
+    delete[] basisIntegral;
 }
 
 ApproxType LinearApprox::getApproxType() {
     return APPROXTYPE;
 }
 
-void LinearApprox::reallocateSpace() {
-
+void LinearApprox::reallocateSpace(int oldNumTri) {
+    for(int i = 0; i < oldNumTri; i++) {
+        delete[] coefficients[i];
+        delete[] basisIntegral[i];
+    }
+    delete[] coefficients;
+    delete[] basisIntegral;
+    coefficients = new double *[numTri];
+    basisIntegral = new double *[numTri];
+    for(int i = 0; i < numTri; i++) {
+        coefficients[i] = new double[3];
+        basisIntegral[i] = new double[3];
+    }
 }
 
 void LinearApprox::initialize(int pixelRate) {
     Approx::initialize(APPROXTYPE, pixelRate);
-    // TODO: space
+    coefficients = new double *[numTri];
+    basisIntegral = new double *[numTri];
+    for(int i = 0; i < numTri; i++) {
+        coefficients[i] = new double[3];
+        basisIntegral[i] = new double[3];
+    }
     updateApprox();
 }
 
 void LinearApprox::initialize(vector<Point> &pts, vector<array<int, 3>> &faces) {
     Approx::initialize(APPROXTYPE, pts, faces);
-    // TODO: space
+    coefficients = new double *[numTri];
+    basisIntegral = new double *[numTri];
+    for(int i = 0; i < numTri; i++) {
+        coefficients[i] = new double[3];
+        basisIntegral[i] = new double[3];
+    }
     updateApprox();
 }
 

@@ -59,7 +59,8 @@ class Approx {
         virtual ApproxType getApproxType() = 0;
 
         // free and reassign space that is not handled in approx 
-        virtual void reallocateSpace() = 0;
+		// pass in old number of triangles for 2D arrays
+        virtual void reallocateSpace(int oldNumTri) = 0;
 
         // create starting approximation
         virtual void initialize(int pixelRate) = 0;
