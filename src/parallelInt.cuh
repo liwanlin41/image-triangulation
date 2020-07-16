@@ -58,6 +58,7 @@ class ParallelIntegrator {
         // compute integral of (f-g)^2 dA over triangle abc where
         // approximation is coeff[0] * a + coeff[1] * b + coeff[2] * c
         double linearEnergyApprox(Point *a, Point *b, Point *c, double *coeffs, double ds);
+        double linearEnergyApprox(Triangle *tri, double *coeffs, double ds);
 
         // compute exact line integral (v dot n) * f phi ds over triangle tri
         // where FEM basis phi is dependent on approx
@@ -69,13 +70,11 @@ class ParallelIntegrator {
         double lineIntApprox(Triangle *tri, int pt, bool isX, double ds);
 
         // compute double integral f phi dA over triangle triArr[t] where FEM basis phi depends on approx
-        double doubleIntEval(Triangle *tri, double ds, ColorChannel channel = GRAY);
+        double doubleIntEval(Triangle *tri, double ds, int basisInd = 0, ColorChannel channel = GRAY);
         // compute by exact integral
         double doubleIntExact(Triangle *tri, ColorChannel channel);
         // approximate by grid with side length ds
-        double doubleIntApprox(Triangle *tri, double ds, ColorChannel channel);
-
-        double doubleIntApprox(Point *a, Point *b, Point *c, double ds, ColorChannel channel, int basisIndex);
+        double doubleIntApprox(Triangle *tri, double ds, int basisInd, ColorChannel channel);
 };
 
 #endif

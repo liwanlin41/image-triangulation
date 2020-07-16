@@ -317,6 +317,8 @@ double ParallelIntegrator::doubleIntExact(Triangle *tri, ColorChannel channel) {
 			break;
 		}
 		case linear: // TODO: fill out
+			cout << "Exact integrals on non-constant approximations are not supported. Please change your approximation type." << endl;
+			exit(EXIT_FAILURE);
 			break;
 		case quadratic: // TODO: fill out
 			break;
@@ -365,7 +367,7 @@ __global__ void linearDoubleIntSample(Pixel *pixArr, int maxX, int maxY, Point *
 	}
 }
 
-double ParallelIntegrator::doubleIntApprox(Triangle *tri, double ds, ColorChannel channel) {
+double ParallelIntegrator::doubleIntApprox(Triangle *tri, double ds, int basisInd, ColorChannel channel) {
 	int i = tri->midVertex();
 	tri->copyVertices(curTri+((3-i)%3), curTri+((4-i)%3), curTri+((5-i)%3));
 	// compute number of samples
@@ -378,6 +380,7 @@ double ParallelIntegrator::doubleIntApprox(Triangle *tri, double ds, ColorChanne
 			break;
 		}
 		case linear:
+			linearDoubleIntSample<<<numBlocks, threads2D>>>(pixArr, maxX, maxY, curTri, curTri+1, curTri+2, arr, dA, samples, channel, (basisInd+3-i)%3);
 			break;
 		case quadratic:
 			break;
@@ -386,11 +389,11 @@ double ParallelIntegrator::doubleIntApprox(Triangle *tri, double ds, ColorChanne
 	return answer;
 }
 
-double ParallelIntegrator::doubleIntEval(Triangle *tri, double ds, ColorChannel channel) {
+double ParallelIntegrator::doubleIntEval(Triangle *tri, double ds, int basisInd, ColorChannel channel) {
 	if(computeExact) {
 		return doubleIntExact(tri, channel);
 	}
-	return doubleIntApprox(tri, ds, channel);
+	return doubleIntApprox(tri, ds, basisInd, channel);
 }
 
 // kernel function for linearEnergyApprox
@@ -418,6 +421,23 @@ __global__ void approxLinearEnergySample(Pixel *pixArr, int maxX, int maxY, Poin
 		double areaContrib = (u + v == samples - 1) ? dA : 2 * dA;
 		results[ind] = diff * diff * areaContrib;
 	}
+}
+
+double ParallelIntegrator::linearEnergyApprox(Triangle *tri, double *coeffs, double ds) {
+	int i = tri->midVertex(); // vertex opposite middle side
+	// make sure curTri and coeffs are properly aligned;
+	// ensure midVertex is copied into location curTri
+	int cycle[] = {(3-i)%3, (4-i)%3, (5-i)%3};
+	tri->copyVertices(curTri + cycle[0], curTri + cycle[1], curTri + cycle[2]);
+	// compute number of samples needed, using median number per side
+	int samples = ceil(curTri[1].distance(curTri[2])/ds);
+	// unfortunately half of these threads will not be doing useful work; no good fix, sqrt is too slow for triangular indexing
+	dim3 numBlocks((samples + threadsX - 1) / threadsX, (samples + threadsY - 1) / threadsY);
+	double dA = tri->getArea() / (samples * samples);
+	approxLinearEnergySample<<<numBlocks, threads2D>>>(pixArr, maxX, maxY, curTri, curTri + 1, curTri + 2, 
+		coeffs[cycle[0]], coeffs[cycle[1]], coeffs[cycle[2]], arr, dA, samples);
+	double answer = -100 * log(tri->getArea()) + sumArray(samples * (samples + 1) / 2);
+	return answer;
 }
 
 double ParallelIntegrator::linearEnergyApprox(Point *a, Point *b, Point *c, double *coeffs, double ds) {

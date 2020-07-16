@@ -59,6 +59,9 @@ double LinearApprox::computeEnergy() {
     double totalEnergy = 0;
     for(int t = 0; t < numTri; t++) {
         array<int, 3> vertices = faces.at(t);
+        double energy1 = integrator.linearEnergyApprox(points + vertices[0], points + vertices[1], points + vertices[2], coefficients[t], ds);
+        double energy2 = integrator.linearEnergyApprox(triArr + t, coefficients[t], ds);
+        assert(energy1 == energy2);
         totalEnergy += integrator.linearEnergyApprox(points + vertices[0], points + vertices[1], points + vertices[2],
             coefficients[t], ds);
     }
@@ -70,22 +73,21 @@ void LinearApprox::computeGrad() {
 }
 
 void LinearApprox::updateApprox() {
-    /*
     for(int t = 0; t < numTri; t++) {
-		// compute image dA and store it for reference on next iteration
-		double val = integrator.doubleIntEval(triArr+t, ds);
-		imageInt[t] = val;
+		// compute image phi_i dA and store it for reference on next iteration
+        for(int i = 0; i < 3; i++) {
+            basisIntegral[t][i] = integrator.doubleIntEval(triArr + t, ds, i);
+        }
 		double area = triArr[t].getArea();
-		// take average value
-		double approxVal = val / area;
-		// handle degeneracy
-		if (isnan(approxVal)) {
-			assert(area < TOLERANCE);
-			approxVal = 255; // TODO: something better than this
-		}
-		grays[t] = min(255.0, approxVal); // prevent blowup in case of poor approximation
+        // extract coefficients
+        for(int i = 0; i < 3; i++) {
+            double coeff = 0;
+            for(int j = 0; j < 3; j++) {
+                coeff += matrix[i][j] * basisIntegral[t][j];
+            }
+            coefficients[t][i] = min(255.0, coeff / area); // prevent blowup
+        }
 	}
-    */
 }
 
 void LinearApprox::computeEdgeEnergies(vector<array<double, 3>> *edgeEnergies) {

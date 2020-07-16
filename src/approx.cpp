@@ -81,10 +81,6 @@ void Approx::initialize(ApproxType approxtype, int pixelRate) {
 		}
 	}
 	assert(triInd == numTri);
-	for(int t = 0; t < numTri; t++) {
-		array<int, 3> vertexInds = faces.at(t);
-		assert(Triangle::getSignedArea(points + vertexInds[0], points + vertexInds[1], points + vertexInds[2]) >= 0);
-	}
 
 	// initialize edge dictionary from faces
 	for(int i = 0; i < numTri; i++) {
@@ -141,11 +137,6 @@ void Approx::initialize(ApproxType approxtype, vector<Point> &pts, vector<array<
 			faces.at(i).at(2) = t.at(1);
 		}
 		maxLength = max(maxLength, triArr[i].maxLength());
-	}
-
-	for(int i = 0; i < numTri; i++) {
-		array<int, 3> t = faces.at(i);
-		assert(Triangle::getSignedArea(points + t[0], points + t[1], points + t[2]) >= 0);
 	}
 
 	// initialize edge dictionary from faces
@@ -336,11 +327,6 @@ void Approx::updateMesh(vector<Point> *newPoints, vector<array<int, 3>> *newFace
 			faces.at(i)[1] = t[2];
 			faces.at(i)[2] = t[1];
 		}
-	}
-
-	for(int i = 0; i < numTri; i++) {
-		array<int, 3> t = faces.at(i);
-		assert(Triangle::getSignedArea(points + t[0], points + t[1], points + t[2]) >= 0);
 	}
 
 	// update edges for next subdivision
