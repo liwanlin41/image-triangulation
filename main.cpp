@@ -31,7 +31,7 @@ double adaptorF_custom_accessVector2Value(const Point& p, unsigned int ind) {
 const array<int, 3> triInds = {0,1,2};
 const vector<array<int, 3>> singleTriangle = {triInds};
 const array<double, 3> white = {1,1,1};
-const vector<array<double, 3>> backgroundColor = {white, white};
+const vector<array<double, 3>> backgroundColor(8, white);
 
 void registerMesh(Approx *approx) {
     if(approx->getApproxType() == constant) {

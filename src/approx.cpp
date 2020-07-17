@@ -371,16 +371,22 @@ vector<array<int, 3>> Approx::getFaces() {
 
 vector<Point> Approx::boundingBox() {
 	vector<Point> corners;
+	// create border frame around image
+	corners.push_back(Point(-0.5,-0.5));
 	corners.push_back(Point(-1,-1));
+	corners.push_back(Point(maxX-0.5, -0.5));
 	corners.push_back(Point(maxX, -1));
+	corners.push_back(Point(maxX-0.5, maxY-0.5));
 	corners.push_back(Point(maxX, maxY));
+	corners.push_back(Point(-0.5, maxY-0.5));
 	corners.push_back(Point(-1, maxY));
 	return corners;
 }
 
 vector<array<int, 3>> Approx::boundingFaces() {
 	vector<array<int, 3>> boundEdges;
-	boundEdges.push_back({0,1,2});
-	boundEdges.push_back({1,2,3});
+	for(int i = 0; i < 8; i++) {
+		boundEdges.push_back({i, (i+1)%8, (i+2)%8});
+	}
 	return boundEdges;
 }
