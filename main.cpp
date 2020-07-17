@@ -42,10 +42,9 @@ void registerMesh(Approx *approx) {
    	    // set material to flat to get more accurate rgb values
    	    triangulation->setMaterial("flat");
     } else if (approx->getApproxType() == linear) {
-        //vector<Point> pts = ((LinearApprox*) approx)->testPoints();
+        cout << "registering mesh... " << flush;
         vector<Point> pts = approx->getVertices();
         vector<array<int, 3>> faces = approx->getFaces();
-        //vector<array<int, 3>> faces = ((LinearApprox*) approx)->testFaces();
         vector<array<double, 3>> colors = approx->getColors();
         // register a separate mesh for each triangle
         for(int t = 0; t < faces.size(); t++) {
@@ -65,6 +64,7 @@ void registerMesh(Approx *approx) {
         auto background = bounding->addFaceColorQuantity("background", backgroundColor);
         background->setEnabled(true);
         bounding->setMaterial("flat");
+        cout << "done" << endl;
     }
 }
 
@@ -120,7 +120,7 @@ int main(int argc, char* argv[]) {
 
     // set default values
     int maxIter = 100;
-    int subdivisions = 50;
+    int subdivisions = 20;
     double eps = 0.001;
 
     // lambda for displaying the starting triangulation

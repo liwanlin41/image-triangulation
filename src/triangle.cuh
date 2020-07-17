@@ -52,6 +52,7 @@ class Triangle {
 		
 		friend class ConstantApprox;
 		friend class LinearApprox;
+		friend class ParallelIntegrator;
 		friend class Pixel;
 };
 

@@ -66,7 +66,52 @@ double LinearApprox::computeEnergy() {
 }
 
 void LinearApprox::computeGrad() {
+    // clear gradients from last iteration
+    for(int i = 0; i < numPoints; i++) {
+        gradX[points + i] = 0;
+        gradY[points + i] = 0;
+    }
+    for(int i = 0; i < numTri; i++) {
+		for(int j = 0; j < 3; j++) {
+			double changeX, changeY;
+			gradient(i, j, &changeX, &changeY);
+			// constrain points on boundary of image
+			if(triArr[i].vertices[j]->isBorderX()) {
+				changeX = 0;
+			}
+			if(triArr[i].vertices[j]->isBorderY()) {
+				changeY = 0;
+			}
+			gradX[triArr[i].vertices[j]] += changeX;
+			gradY[triArr[i].vertices[j]] += changeY;
+            // for testing
+            break;
+		}
+        break;
+	}
+}
 
+void LinearApprox::gradient(int t, int movingPt, double *gradX, double *gradY) {
+    double area = triArr[t].getArea();
+    double gradient[2] = {0,0};
+    double dA[2] = {triArr[t].gradX(movingPt), triArr[t].gradY(movingPt)};
+
+    Point a(0,0);
+    Point b(4,0);
+    Point c(0,3);
+    Triangle tri(&a, &b, &c);
+
+    double dL[3][2] = {{0,0},{0,0},{0,0}}; // gradient of f phi_j dA; find these first
+    for(int j = 0; j < 3; j++) {
+        double boundaryChange[2]; // compute line integral contribution
+        for(int i = 0; i < 2; i++) {
+            boundaryChange[i] = integrator.lineIntEval(triArr + t, movingPt, (i == 0), ds, j);
+        }
+    }
+    if (gradX && gradY) {
+		*gradX = gradient[0];
+		*gradY = gradient[1];
+	}
 }
 
 void LinearApprox::updateApprox() {

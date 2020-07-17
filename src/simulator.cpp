@@ -128,7 +128,6 @@ void Simulator::initialize() {
     // complete restart
     elapsedTimeVec.clear();
     energyVec.clear();
-    cout << "creating mesh\n";
     //approx->registerMesh();
     registerMesh(approx);
     // setup gradient descent

@@ -222,7 +222,9 @@ double ParallelIntegrator::lineIntExact(Triangle *tri, int pt, bool isX) {
 			pixConstantLineInt<<<numBlocks, threads2D>>>(pixArr, maxX, maxY, curTri+((pt+2)%3), curTri+pt, curTri+((pt+1)%3), isX, arr);
 			break;
 		}
-		case linear: // TODO
+		case linear: 
+			cout << "Exact integration on linear approximations is not supported." << endl;
+			exit(EXIT_FAILURE);
 			break;
 		case quadratic: // TODO
 			break;
@@ -258,7 +260,36 @@ __global__ void constLineIntSample(Pixel *pixArr, int maxX, int maxY, Point *a, 
 	}
 }
 
-double ParallelIntegrator::lineIntApprox(Triangle *tri, int pt, bool isX, double ds) {
+// kernel for constant line integral approximation, by taking average of all sample points
+// phiA indicates whether the basis element at a is being integrated;
+// if false, integrate element at b (element at c is zero on this segment)
+__global__ void linearLineIntSample(Pixel *pixArr, int maxX, int maxY, Point *a, Point *b, bool reverse, bool isX, double *results, int samples, bool phiA) {
+	int k = blockIdx.x * blockDim.x + threadIdx.x; // index along a to b
+	if(k <= samples) {
+		// extract current point and containing pixel
+		double x = (a->getX() * (samples - k) + b->getX() * k) / samples;
+		double y = (a->getY() * (samples - k) + b->getY() * k) / samples;
+		int pixX = pixelRound(x, maxX);
+		int pixY = pixelRound(y, maxY);
+		// velocity components
+		double scale = ((double) samples - k) / samples; // 1 when k = 0 (evaluate at a) and 0 at b
+		double velX = (isX) ? scale : 0;
+		double velY = scale - velX;
+		// extract unit normal, manually for the sake of speed
+		double length = a->distance(*b); // length of whole segment
+		// assume going from a to b first, want normal pointing right
+		double nx = (b->getY() - a->getY()) / length;
+		double ny = (a->getX() - b->getX()) / length;
+		double vn = velX * nx + velY * ny; // value of v * n at this point
+		// flip vn if normal is actually pointing the other way (integrate from b to a)
+		if(reverse) vn *= -1;
+		// get value of phi
+		double phi = (phiA) ? scale : 1 - scale; // since phi_j is linear, corresponds to scale
+		results[k] = pixArr[pixX * maxY + pixY].getColor() * phi * vn;
+	}
+}
+
+double ParallelIntegrator::lineIntApprox(Triangle *tri, int pt, bool isX, double ds, int basisInd) {
 	// ensure pt is copied into the first slot of curTri
 	tri->copyVertices(curTri+((3-pt)%3), curTri+((4-pt)%3), curTri+((5-pt)%3));
 	// get number of samples for side pt, pt+1 and side pt, pt+2
@@ -280,6 +311,20 @@ double ParallelIntegrator::lineIntApprox(Triangle *tri, int pt, bool isX, double
 			}
 		}
 		case linear:
+			// v phi_j is nonzero only if the line contains both vertex pt and basisInd
+			if(basisInd == pt) {
+				for(int i = 0; i < 2; i++) {
+					double totalLength = curTri->distance(curTri[i+1]);
+					linearLineIntSample<<<numBlocks[i], threads1D>>>(pixArr, maxX, maxY, curTri, curTri+i+1, (i==1), isX, arr, samples[i]-1, true);
+					answer += totalLength * sumArray(samples[i]) / samples[i];
+				}
+			} else { // integrate along segment pt, basisInd
+				int offset = (basisInd - pt) % 3; // index of basisInd relative to pt
+				int i = (offset + 1)%2; // index for this side's data in samples and numBlocks
+				double totalLength = curTri->distance(curTri[offset]);
+				linearLineIntSample<<<numBlocks[i], threads1D>>>(pixArr, maxX, maxY, curTri, curTri+offset, (offset==2), isX, arr, samples[i]-1, false);
+				answer += totalLength * sumArray(samples[i]) / samples[i];
+			}
 			break;
 		case quadratic:
 			break;
@@ -287,11 +332,11 @@ double ParallelIntegrator::lineIntApprox(Triangle *tri, int pt, bool isX, double
 	return answer;
 }
 
-double ParallelIntegrator::lineIntEval(Triangle *tri, int pt, bool isX, double ds) {
+double ParallelIntegrator::lineIntEval(Triangle *tri, int pt, bool isX, double ds, int basisInd) {
 	if(computeExact) {
 		return lineIntExact(tri, pt, isX);
 	}
-	return lineIntApprox(tri, pt, isX, ds);
+	return lineIntApprox(tri, pt, isX, ds, basisInd);
 }
 
 // kernel for exact double integral
@@ -435,5 +480,83 @@ double ParallelIntegrator::linearEnergyApprox(Triangle *tri, double *coeffs, dou
 	approxLinearEnergySample<<<numBlocks, threads2D>>>(pixArr, maxX, maxY, curTri, curTri + 1, curTri + 2,
 		coeffs[i], coeffs[(i+1)%3], coeffs[(i+2)%3], arr, dA, samples);
 	double answer = -100 * log(tri->getArea()) + sumArray(samples * (samples + 1) / 2);
+	return answer;
+}
+
+// kernel function for computing integral of 2A_T f d(phi_j) dA when point a is moving at (1,0)
+// phiU, phiV indicate d phi/du, d phi/dv and dA_x is the area gradient
+__global__ void linearImageGradientX(Pixel *pixArr, int maxX, int maxY, Point *a, Point *b, Point *c, double *results, 
+	double dA, double dA_x, int samples, const double phiU, const double phiV) {
+	int uInd = blockIdx.x * blockDim.x + threadIdx.x; // component towards b
+	int vInd = blockIdx.y * blockDim.y + threadIdx.y; // component towards c
+	double u = (double) uInd / samples;
+	double v = (double) vInd / samples;
+	int ind = (2 * samples - uInd + 1) * uInd / 2 + vInd; // 1D index in results
+	// this is because there are s points in the first column, s-1 in the next, etc. up to s - u + 1
+	if(uInd + vInd < samples) {
+		// get coordinates of this point using appropriate weights, computed using uInd, vInd for accuracy
+		double x = (a->getX() * (samples - uInd - vInd) + b->getX() * uInd + c->getX() * vInd) / samples;
+		double y = (a->getY() * (samples - uInd - vInd) + b->getY() * uInd + c->getY() * vInd) / samples;
+		// find du/dt, dv/dt at this point (scaled by 2A_T)
+		double du = y - c->getY() - 2 * u * dA_x;
+		double dv = b->getY() - y - 2 * v * dA_x;
+
+		// find containing pixel
+		int pixX = pixelRound(x, maxX);
+		int pixY = pixelRound(y, maxY);
+		double color = pixArr[pixX * maxY + pixY].getColor();
+		// account for points near edge bc having triangle contributions rather than parallelograms
+		double areaContrib = (uInd + vInd == samples - 1) ? dA : 2 * dA;
+		results[ind] = color * (phiU * du + phiV * dv) * areaContrib;
+	}
+}
+
+// same kernel function but when a is moving at (0,1)
+__global__ void linearImageGradientY(Pixel *pixArr, int maxX, int maxY, Point *a, Point *b, Point *c, double *results,
+	double dA, double dA_y, int samples, const double phiU, const double phiV) {
+	int uInd = blockIdx.x * blockDim.x + threadIdx.x; // component towards b
+	int vInd = blockIdx.y * blockDim.y + threadIdx.y; // component towards c
+	double u = (double) uInd / samples;
+	double v = (double) vInd / samples;
+	int ind = (2 * samples - uInd + 1) * uInd / 2 + vInd; // 1D index in results
+	// this is because there are s points in the first column, s-1 in the next, etc. up to s - u + 1
+	if(uInd + vInd < samples) {
+		// get coordinates of this point using appropriate weights, computed using uInd, vInd for accuracy
+		double x = (a->getX() * (samples - uInd - vInd) + b->getX() * uInd + c->getX() * vInd) / samples;
+		double y = (a->getY() * (samples - uInd - vInd) + b->getY() * uInd + c->getY() * vInd) / samples;
+		// find du/dt, dv/dt at this point (scaled by 2A_T)
+		double du = c->getX() - x - 2 * u * dA_y;
+		double dv = x - b->getX() - 2 * v * dA_y;
+
+		// find containing pixel
+		int pixX = pixelRound(x, maxX);
+		int pixY = pixelRound(y, maxY);
+		double color = pixArr[pixX * maxY + pixY].getColor();
+		// account for points near edge bc having triangle contributions rather than parallelograms
+		double areaContrib = (uInd + vInd == samples - 1) ? dA : 2 * dA;
+		results[ind] = color * (phiU * du + phiV * dv) * areaContrib;
+	}
+}
+
+double ParallelIntegrator::linearImageGradient(Triangle *tri, int pt, bool isX, double ds, int basisInd) {
+	// copy pt into curTri[0]
+	tri->copyVertices(curTri+((3-pt)%3), curTri+((4-pt)%3), curTri+((5-pt)%3));
+	// extract number of samples
+	int i = tri->midVertex();
+	int samples = ceil(((tri->vertices[(i+1)%3])->distance(*(tri->vertices[(i+2)%3])))/ds);
+	dim3 numBlocks((samples + threadsX - 1) / threadsX, (samples + threadsY - 1) / threadsY);
+	double dA = tri->getArea() / (samples * samples);
+	double dA_x = tri->gradX(pt);
+	double dA_y = tri->gradY(pt);
+	// dPhi/du, dPhi/dv where phi is relative to pt being the vertex at (0,0)
+	double phiU = (pt - basisInd) % 3 - 1;
+	double phiV = (basisInd - pt) % 3 - 1;
+	if(isX) {
+		linearImageGradientX<<<numBlocks, threads2D>>>(pixArr, maxX, maxY, curTri, curTri + 1, curTri + 2, arr, dA, dA_x, samples, phiU, phiV);
+	} else {
+		linearImageGradientY<<<numBlocks, threads2D>>>(pixArr, maxX, maxY, curTri, curTri + 1, curTri + 2, arr, dA, dA_y, samples, phiU, phiV);
+	}
+	double answer = sumArray(samples * (samples + 1) / 2);
+	answer *= 2 * tri->getArea();
 	return answer;
 }
