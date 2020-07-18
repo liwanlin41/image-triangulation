@@ -319,7 +319,7 @@ double ParallelIntegrator::lineIntApprox(Triangle *tri, int pt, bool isX, double
 					answer += totalLength * sumArray(samples[i]) / samples[i];
 				}
 			} else { // integrate along segment pt, basisInd
-				int offset = (basisInd - pt) % 3; // index of basisInd relative to pt
+				int offset = (basisInd - pt + 3) % 3; // index of basisInd relative to pt
 				int i = (offset + 1)%2; // index for this side's data in samples and numBlocks
 				double totalLength = curTri->distance(curTri[offset]);
 				linearLineIntSample<<<numBlocks[i], threads1D>>>(pixArr, maxX, maxY, curTri, curTri+offset, (offset==2), isX, arr, samples[i]-1, false);
@@ -549,14 +549,14 @@ double ParallelIntegrator::linearImageGradient(Triangle *tri, int pt, bool isX, 
 	double dA_x = tri->gradX(pt);
 	double dA_y = tri->gradY(pt);
 	// dPhi/du, dPhi/dv where phi is relative to pt being the vertex at (0,0)
-	double phiU = (pt - basisInd) % 3 - 1;
-	double phiV = (basisInd - pt) % 3 - 1;
+	double phiU = (pt - basisInd + 3) % 3 - 1;
+	double phiV = (basisInd - pt + 3) % 3 - 1;
 	if(isX) {
 		linearImageGradientX<<<numBlocks, threads2D>>>(pixArr, maxX, maxY, curTri, curTri + 1, curTri + 2, arr, dA, dA_x, samples, phiU, phiV);
 	} else {
 		linearImageGradientY<<<numBlocks, threads2D>>>(pixArr, maxX, maxY, curTri, curTri + 1, curTri + 2, arr, dA, dA_y, samples, phiU, phiV);
 	}
 	double answer = sumArray(samples * (samples + 1) / 2);
-	answer *= 2 * tri->getArea();
+	answer /= (2 * tri->getArea());
 	return answer;
 }

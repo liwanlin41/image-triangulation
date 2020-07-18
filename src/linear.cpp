@@ -103,9 +103,10 @@ void LinearApprox::gradient(int t, int movingPt, double *gradX, double *gradY) {
 
     double dL[3][2] = {{0,0},{0,0},{0,0}}; // gradient of f phi_j dA; find these first
     for(int j = 0; j < 3; j++) {
+        cout << integrator.linearImageGradient(&tri, 1, true, ds, j) << endl;
         double boundaryChange[2]; // compute line integral contribution
         for(int i = 0; i < 2; i++) {
-            boundaryChange[i] = integrator.lineIntEval(triArr + t, movingPt, (i == 0), ds, j);
+            boundaryChange[i] = integrator.lineIntEval(triArr + t, movingPt, (i == 0), ds/2, j);
         }
     }
     if (gradX && gradY) {
