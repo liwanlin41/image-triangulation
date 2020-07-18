@@ -59,7 +59,6 @@ double LinearApprox::computeEnergy() {
     double totalEnergy = 0;
     for(int t = 0; t < numTri; t++) {
         array<int, 3> vertices = faces.at(t);
-        //double energy1 = integrator.linearEnergyApprox(points + vertices[0], points + vertices[1], points + vertices[2], coefficients[t], ds);
         totalEnergy += integrator.linearEnergyApprox(triArr + t, coefficients[t], ds);
     }
     return totalEnergy;
@@ -84,10 +83,7 @@ void LinearApprox::computeGrad() {
 			}
 			gradX[triArr[i].vertices[j]] += changeX;
 			gradY[triArr[i].vertices[j]] += changeY;
-            // for testing
-            break;
 		}
-        break;
 	}
 }
 
@@ -96,19 +92,37 @@ void LinearApprox::gradient(int t, int movingPt, double *gradX, double *gradY) {
     double gradient[2] = {0,0};
     double dA[2] = {triArr[t].gradX(movingPt), triArr[t].gradY(movingPt)};
 
-    Point a(0,0);
-    Point b(4,0);
-    Point c(0,3);
-    Triangle tri(&a, &b, &c);
-
     double dL[3][2] = {{0,0},{0,0},{0,0}}; // gradient of f phi_j dA; find these first
     for(int j = 0; j < 3; j++) {
-        cout << integrator.linearImageGradient(&tri, 1, true, ds, j) << endl;
-        double boundaryChange[2]; // compute line integral contribution
         for(int i = 0; i < 2; i++) {
-            boundaryChange[i] = integrator.lineIntEval(triArr + t, movingPt, (i == 0), ds/2, j);
+            dL[j][i] = integrator.linearImageGradient(triArr + t, movingPt, (i == 0), ds, j) // area integral
+                + integrator.lineIntEval(triArr + t, movingPt, (i == 0), ds/2, j); // boundary integral
         }
     }
+
+    double dLA[3][2]; // gradient of d(L/A)
+    for(int j = 0; j < 3; j++) {
+        for(int i = 0; i < 2; i++) {
+            dLA[j][i] = (area * dL[j][i] - basisIntegral[t][j] * dA[i]) / (area * area);
+        }
+    }
+    double dc[3][2] = {{0,0}, {0,0}, {0,0}}; // gradients of coefficients
+    for(int j = 0; j < 3; j++) {
+        for(int k = 0; k < 3; k++) {
+            dc[j][0] += matrix[j][k] * dLA[k][0];
+            dc[j][1] += matrix[j][k] * dLA[k][1];
+        }
+    }
+    for(int j = 0; j < 3; j++) {
+        for(int i = 0; i < 2; i++) {
+            gradient[i] -= (dc[j][i] * basisIntegral[t][j] + coefficients[t][j] * dL[j][i]);
+        }
+    }
+    // now account for log area barrier
+    for(int i = 0; i < 2; i++) {
+        gradient[i] -= 100 * dA[i] / area;
+    }
+
     if (gradX && gradY) {
 		*gradX = gradient[0];
 		*gradY = gradient[1];
