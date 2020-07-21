@@ -45,6 +45,16 @@ void setRandomColor(Pixel* &pixArr) {
     }
 }
 
+// color (x,y) by x
+void setGradientColor(Pixel* &pixArr) {
+    cudaMallocManaged(&pixArr, dimX * dimY * sizeof(Pixel));
+    for(int i = 0; i < dimX; i++) {
+        for(int j = 0; j < dimY; j++) {
+            pixArr[i * dimY + j] = Pixel(i, j, i);
+        }
+    }
+}
+
 // evaluate the exact integral of f dA
 TEST(ExactIntegralTest, DoubleInt) {
     Pixel* pixArr;
@@ -172,6 +182,80 @@ TEST(ApproximationTest, LineInt) {
         //cout << exact << ", " << approx << endl;
         ASSERT_TRUE(abs(exact - approx) < TOLERANCE * abs(exact));
     }
+    cudaFree(pixArr);
+    cudaFree(points);
+}
+
+// test integrals for linear color approximation
+TEST(LinearIntegrationTest, DoubleIntConstant) {
+    Pixel *pixArr;
+    ParallelIntegrator integrator;
+    setSolidColor(pixArr, white);
+    long long space = dimX / ds * dimY / ds + 1;
+    integrator.initialize(pixArr, dimX, dimY, linear, space);
+    Point *points;
+    cudaMallocManaged(&points, 3 * sizeof(Point));
+    points[0] = Point(0,0);
+    points[1] = Point(4,0);
+    points[2] = Point(0,3);
+    Triangle tri(points, points + 1, points + 2);
+
+    double expected[3] = {2 * white, 2 * white, 2 * white};
+    for(int i = 0; i < 3; i++) {
+        double approx = integrator.doubleIntEval(&tri, ds, GRAY, i);
+        //cout << expected[i] << ", " << approx << endl;
+        ASSERT_TRUE(abs(expected[i] - approx) < TOLERANCE * abs(expected[i]));
+    }
+    cudaFree(pixArr);
+    cudaFree(points);
+}
+
+// test double integral with gradient coloring
+TEST(LinearIntegrationTest, DoubleIntShaded) {
+    Pixel *pixArr;
+    ParallelIntegrator integrator;
+    setGradientColor(pixArr);
+    double ds = 0.001; // higher degree of accuracy needed
+    long long space = dimX / ds * dimY / ds + 1;
+    integrator.initialize(pixArr, dimX, dimY, linear, space);
+    Point *points;
+    cudaMallocManaged(&points, 3 * sizeof(Point));
+    points[0] = Point(0,0);
+    points[1] = Point(8,0);
+    points[2] = Point(0,6);
+    Triangle tri(points, points + 1, points + 2);
+
+    double expected[3] = {16, 32, 16};
+    for(int i = 0; i < 3; i++) {
+        double approx = integrator.doubleIntEval(&tri, ds, GRAY, i);
+        //cout << expected[i] << ", " << approx << endl;
+        ASSERT_TRUE(abs(expected[i] - approx) < TOLERANCE * abs(expected[i]));
+    }
+    cudaFree(pixArr);
+    cudaFree(points);
+}
+
+TEST(LinearIntegrationTest, EnergyInt) {
+    Pixel *pixArr;
+    ParallelIntegrator integrator;
+    setGradientColor(pixArr);
+    double ds = 0.0002;
+    long long space = dimX / ds * dimY / ds + 1;
+    //long long space = 20 / ds * 10 / ds + 1;
+    integrator.initialize(pixArr, dimX, dimY, linear, space);
+    Point *points;
+    cudaMallocManaged(&points, 3 * sizeof(Point));
+    points[0] = Point(0,0);
+    points[1] = Point(12,0);
+    points[2] = Point(0,9);
+    Triangle tri(points, points + 1, points + 2);
+    
+    // coefficients to test; somewhat arbitrary
+    double coeffs[3] = {0, 2, 0.5};
+    double expected = 857.25;
+    double computed = integrator.linearEnergyApprox(&tri, coeffs, ds) + LOG_AREA_MULTIPLIER * log(tri.getArea());
+    cout << expected << ", " << computed;
+    ASSERT_TRUE(abs(expected - computed) < TOLERANCE * abs(expected));
     cudaFree(pixArr);
     cudaFree(points);
 }
