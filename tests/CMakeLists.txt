@@ -88,7 +88,7 @@ add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/googletest-src
 set_property(TARGET gtest PROPERTY CXX_STANDARD 17)
 
 # Build the tests
-set(TEST_SRCS structureTest.cpp)
+set(TEST_SRCS structureTest.cpp integratorTest.cpp)
 
 add_executable(triangulation-test "${TEST_SRCS}")
 target_include_directories(triangulation-test PUBLIC "${gtest_SOURCE_DIR}/include")
