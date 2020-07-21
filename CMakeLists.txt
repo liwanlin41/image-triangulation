@@ -4,6 +4,8 @@ project(CoarseTriangulation LANGUAGES CXX CUDA)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+#find_package(CUDA REQUIRED)
+
 # include polyscope
 add_subdirectory(deps/polyscope)
 
@@ -11,8 +13,8 @@ add_subdirectory(src)
 
 set_target_properties(src PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 
+#add_subdirectory(tests)
 add_executable(CoarseTriangulation main.cpp)
-#set_property(TARGET CoarseTriangulation PROPERTY CUDA_SEPARABLE_COMPILATION ON)
 
 # from https://stackoverflow.com/questions/38903996/
 # include png libraries

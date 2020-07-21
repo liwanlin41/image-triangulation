@@ -2,7 +2,7 @@
 build/
 installs.txt
 testing.txt
-cpp_code/build/*
+tests/build/*
 outputs/
 images/
 results/
