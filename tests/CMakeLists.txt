@@ -1,3 +1,5 @@
+# taken from polyscope CMakeLists
+
 cmake_minimum_required(VERSION 3.10)
 
 # Set up testing

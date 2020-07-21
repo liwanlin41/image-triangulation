@@ -36,7 +36,5 @@ target_link_libraries(CoarseTriangulation PUBLIC ${PNG_LIBRARY})
 target_link_libraries(CoarseTriangulation PUBLIC ${JPEG_LIBRARY})
 target_link_libraries(CoarseTriangulation PUBLIC polyscope)
 target_link_libraries(CoarseTriangulation PUBLIC src)
-#target_link_libraries(CoarseTriangulation PUBLIC ${Matlab_ROOT_DIR}/extern/bin/glnxa64/libMatlabEngine.so)
-#target_link_libraries(CoarseTriangulation PUBLIC ${Matlab_ROOT_DIR}/extern/bin/glnxa64/libMatlabDataArray.so)
 
 target_include_directories(CoarseTriangulation PUBLIC "${PROJECT_BINARY_DIR}" "${PROJECT_SOURCE_DIR}/src")
