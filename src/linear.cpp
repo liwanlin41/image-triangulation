@@ -120,7 +120,7 @@ void LinearApprox::gradient(int t, int movingPt, double *gradX, double *gradY) {
     }
     // now account for log area barrier
     for(int i = 0; i < 2; i++) {
-        gradient[i] -= 100 * dA[i] / area;
+        gradient[i] -= LOG_AREA_MULTIPLIER * dA[i] / area;
     }
 
     if (gradX && gradY) {

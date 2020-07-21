@@ -11,6 +11,9 @@ using namespace std;
 // define different supported approximation types
 enum ApproxType{constant, linear, quadratic};
 
+// multiplication factor on log area barrier
+static const double LOG_AREA_MULTIPLIER = 100;
+
 // parallelize integral computation
 
 class ParallelIntegrator {
