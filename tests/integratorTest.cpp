@@ -21,6 +21,9 @@ static const double ds = 0.01;
 // for additional testing, uncomment the cout lines
 // and check that the values of exact and approximate
 // integrals get closer as ds -> 0
+// note that for area integrals, ds cannot be too small
+// or else floating point error becomes a factor
+// (particularly for linear approximation - scales cubically)
 
 // given an uninitialized array pointer pixArr,
 // make pixArr represent a 100x100 solid square with
@@ -239,9 +242,7 @@ TEST(LinearIntegrationTest, EnergyInt) {
     Pixel *pixArr;
     ParallelIntegrator integrator;
     setGradientColor(pixArr);
-    double ds = 0.0002;
     long long space = dimX / ds * dimY / ds + 1;
-    //long long space = 20 / ds * 10 / ds + 1;
     integrator.initialize(pixArr, dimX, dimY, linear, space);
     Point *points;
     cudaMallocManaged(&points, 3 * sizeof(Point));
@@ -254,8 +255,71 @@ TEST(LinearIntegrationTest, EnergyInt) {
     double coeffs[3] = {0, 2, 0.5};
     double expected = 857.25;
     double computed = integrator.linearEnergyApprox(&tri, coeffs, ds) + LOG_AREA_MULTIPLIER * log(tri.getArea());
-    cout << expected << ", " << computed;
+    // cout << expected << ", " << computed << endl;
     ASSERT_TRUE(abs(expected - computed) < TOLERANCE * abs(expected));
+    cudaFree(pixArr);
+    cudaFree(points);
+}
+
+TEST(LinearIntegrationTest, LineInt) {
+    Pixel *pixArr;
+    ParallelIntegrator integrator;
+    setGradientColor(pixArr);
+    long long space = dimX / ds * dimY / ds + 1;
+    integrator.initialize(pixArr, dimX, dimY, linear, space);
+    Point *points;
+    cudaMallocManaged(&points, 3 * sizeof(Point));
+    points[0] = Point(0,0);
+    points[1] = Point(4,0);
+    points[2] = Point(0,3);
+    Triangle tri(points, points + 1, points + 2);
+
+    double expectedX[3] = {0,3,1};
+    // first handle x movement
+    for(int i = 0; i < 3; i++) {
+        double computed = integrator.lineIntEval(&tri, 1, true, ds, i);
+        //cout << expectedX[i] << ", " << computed << endl;
+        // add slight extra tolerance to handle expected value being 0;
+        // additionally loosen bound for small segment size
+        ASSERT_TRUE(abs(expectedX[i] - computed) < 2 * TOLERANCE * max(abs(expectedX[i]), 1.0));
+    }
+    // then y movement
+    double expectedY[3] = {-4.0/3, 0, 4.0/3};
+    for(int i = 0; i < 3; i++) {
+        double computed = integrator.lineIntEval(&tri, 1, false, ds, i);
+        //cout << expectedY[i] << ", " << computed << endl;
+        ASSERT_TRUE(abs(expectedY[i] - computed) < 2 * TOLERANCE * max(abs(expectedY[i]), 1.0));
+    }
+    cudaFree(pixArr);
+    cudaFree(points);
+}
+
+TEST(LinearIntegrationTest, ImageGradient) {
+    Pixel *pixArr;
+    ParallelIntegrator integrator;
+    setGradientColor(pixArr);
+    long long space = dimX / ds * dimY / ds + 1;
+    integrator.initialize(pixArr, dimX, dimY, linear, space);
+    Point *points;
+    cudaMallocManaged(&points, 3 * sizeof(Point));
+    points[0] = Point(0,0);
+    points[1] = Point(4,0);
+    points[2] = Point(0,3);
+    Triangle tri(points, points + 1, points + 2);
+
+    // animate points[1] in the x direction
+    double expectedX[3] = {1, -1, 0};
+    for(int i = 0; i < 3; i++) {
+        double computed = integrator.linearImageGradient(&tri, 1, true, ds, i);
+        //cout << expectedX[i] << ", " << computed << endl;
+        ASSERT_TRUE(abs(expectedX[i] - computed) < TOLERANCE * max(abs(expectedX[i]), 1.0));
+    }
+    double expectedY[3] = {4.0/3, 0, -4.0/3};
+    for(int i = 0; i < 3; i++) {
+        double computed = integrator.linearImageGradient(&tri, 1, false, ds, i);
+        //cout << expectedY[i] << ", " << computed << endl;
+        ASSERT_TRUE(abs(expectedY[i] - computed) < TOLERANCE * max(abs(expectedY[i]), 1.0));
+    }
     cudaFree(pixArr);
     cudaFree(points);
 }
