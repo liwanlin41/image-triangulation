@@ -13,7 +13,7 @@ add_subdirectory(src)
 
 set_target_properties(src PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 
-#add_subdirectory(tests)
+add_subdirectory(tests)
 add_executable(CoarseTriangulation main.cpp)
 
 # from https://stackoverflow.com/questions/38903996/

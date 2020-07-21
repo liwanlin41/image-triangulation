@@ -309,6 +309,7 @@ double ParallelIntegrator::lineIntApprox(Triangle *tri, int pt, bool isX, double
 				constLineIntSample<<<numBlocks[i], threads1D>>>(pixArr, maxX, maxY, curTri, curTri+i+1, (i==1), isX, arr, dx, samples[i]);
 				answer += sumArray(samples[i]);
 			}
+			break;
 		}
 		case linear:
 			// v phi_j is nonzero only if the line contains both vertex pt and basisInd
