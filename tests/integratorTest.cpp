@@ -261,6 +261,31 @@ TEST(LinearIntegrationTest, EnergyInt) {
     cudaFree(points);
 }
 
+TEST(LinearIntegrationTest, LowEnergy) {
+    Pixel *pixArr;
+    ParallelIntegrator integrator;
+    setGradientColor(pixArr);
+    long long space = dimX / ds * dimY / ds + 1;
+    integrator.initialize(pixArr, dimX, dimY, linear, space);
+    Point *points;
+    cudaMallocManaged(&points, 3 * sizeof(Point));
+    points[0] = Point(0,0);
+    points[1] = Point(48,0);
+    points[2] = Point(0,36);
+    Triangle tri(points, points + 1, points + 2);
+
+    // exact value
+    double coeffs[3] = {0, 48, 0};
+    // due to image discretization, the energy integral will end up
+    // resembling the integral of (x-0.5)^2 which is 1/12 on a square
+    double expected = tri.getArea() / 12;
+    double computed = integrator.linearEnergyApprox(&tri, coeffs, ds) + LOG_AREA_MULTIPLIER * log(tri.getArea());
+    // cout << expected << ", " << computed << endl;
+    ASSERT_TRUE(abs(expected - computed) < TOLERANCE * abs(expected));
+    cudaFree(pixArr);
+    cudaFree(points);
+}
+
 TEST(LinearIntegrationTest, LineInt) {
     Pixel *pixArr;
     ParallelIntegrator integrator;
