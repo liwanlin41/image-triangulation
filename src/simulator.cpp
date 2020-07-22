@@ -1,6 +1,7 @@
 #include "simulator.h"
 
 Simulator::Simulator(const char *imgPath, CImg<unsigned char> *img, ApproxType approxtype) {
+    cout << "image is " << img->width() << "x" << img->height() << endl;
     if(approxtype == constant) {
         approx = new ConstantApprox(img, 0.05);
     } else if (approxtype == linear) {

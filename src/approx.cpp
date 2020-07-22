@@ -4,7 +4,6 @@ Approx::Approx(CImg<unsigned char> *img, double step, double ds_) : originalStep
 	// create pixel array representation
 	maxX = img->width();
 	maxY = img->height();
-	cout << "image is " << maxX << "x" << maxY << endl;
 	// allocate shared space for pixel array
 	cudaMallocManaged(&pixArr, maxX * maxY * sizeof(Pixel));
 	bool isGrayscale = (img->spectrum() == 1);
