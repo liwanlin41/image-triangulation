@@ -87,9 +87,14 @@ add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/googletest-src
 
 set_property(TARGET gtest PROPERTY CXX_STANDARD 17)
 
+# include X11 for CIMg
+find_package(X11 REQUIRED)
+include_directories(${X11_INCLUDE_DIR})
+link_directories(${X11_LIBRARIES})
+
 # Build the tests
 set(TEST_SRCS structureTest.cpp integratorTest.cpp gradientTest.cpp)
 
 add_executable(triangulation-test "${TEST_SRCS}")
 target_include_directories(triangulation-test PUBLIC "${gtest_SOURCE_DIR}/include")
-target_link_libraries(triangulation-test gtest_main src)
+target_link_libraries(triangulation-test gtest_main src ${X11_LIBRARIES})
