@@ -54,10 +54,9 @@ void ConstantApprox::computeGrad() {
 	}
 	for(int i = 0; i < numTri; i++) {
 		// integral of fdA, retrieved from last updateApprox iteration
-		double imageIntegral = imageInt[i];
 		for(int j = 0; j < 3; j++) {
 			double changeX, changeY;
-			gradient(i, j, imageIntegral, &changeX, &changeY);
+			gradient(i, j, &changeX, &changeY);
 			// constrain points on boundary of image
 			if(triArr[i].vertices[j]->isBorderX()) {
 				changeX = 0;
@@ -71,11 +70,12 @@ void ConstantApprox::computeGrad() {
 	}
 }
 
-void ConstantApprox::gradient(int t, int movingPt, double imageIntegral, double *gradX, double *gradY) {
+void ConstantApprox::gradient(int t, int movingPt, double *gradX, double *gradY) {
 	// to save time, only compute integrals if triangle is non-degenerate;
 	// degenerate triangle has 0 energy and is locally optimal, set gradient to 0
 	double area = triArr[t].getArea();
 	double gradient[2] = {0, 0};
+	double imageIntegral = imageInt[t];
 	if (area > TOLERANCE) {
 		double dA[2] = {triArr[t].gradX(movingPt), triArr[t].gradY(movingPt)};
 		double boundaryChange[2];

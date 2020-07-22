@@ -40,9 +40,8 @@ class ConstantApprox : public Approx {
 		double computeEnergy();
 
 		// store gradient values in gradX, gradY of energy over triangle triArr[t]
-		// of the point in t with index movingPt; imInt = integral of image * dA
-		// over triangle to avoid computing multiple times
-		void gradient(int t, int movingPt, double imInt, double *gradX, double *gradY);
+		// of the point in t with index movingPt
+		void gradient(int t, int movingPt, double *gradX, double *gradY);
 
 		void computeEdgeEnergies(vector<array<double, 3>> *edgeEnergies);
 
