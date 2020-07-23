@@ -129,6 +129,7 @@ void Simulator::initialize() {
     // complete restart
     elapsedTimeVec.clear();
     energyVec.clear();
+    errorVec.clear();
     //approx->registerMesh();
     registerMesh(approx);
     // setup gradient descent
@@ -140,7 +141,9 @@ void Simulator::initialize() {
     iterCount = 0;
     totalIters = 0;
     elapsedTimeVec.push_back(totalStep); // initial values
-    energyVec.push_back(newEnergy - approx->regularizationEnergy());
+    energyVec.push_back(newEnergy);
+    // get approximation error only
+    errorVec.push_back(newEnergy - approx->regularizationEnergy());
     // center mesh
     /*
     polyscope::view::resetCameraToHomeView();
@@ -157,8 +160,8 @@ void Simulator::step(double eps) {
     totalStep += approx->step(prevEnergy, newEnergy, (totalIters >= 10) && (iterCount >= 5));
     // data collection
     elapsedTimeVec.push_back(totalStep);
-    // push back only the approximation error
-    energyVec.push_back(newEnergy - approx->regularizationEnergy());
+    energyVec.push_back(newEnergy);
+    errorVec.push_back(newEnergy - approx->regularizationEnergy());
     iterCount++;
     totalIters++;
     if(abs(prevEnergy - newEnergy) > eps * prevEnergy) {
@@ -197,7 +200,8 @@ void Simulator::retriangulate(int num) {
     totalIters++;
     newEnergy = approx->computeEnergy();
     elapsedTimeVec.push_back(totalStep);
-    energyVec.push_back(newEnergy - approx->regularizationEnergy());
+    energyVec.push_back(newEnergy);
+    errorVec.push_back(newEnergy - approx->regularizationEnergy());
     cout << "energy after subdivision: " << newEnergy << endl;
     //polyscope::screenshot(false);
 }
@@ -210,20 +214,25 @@ void Simulator::cleanup() {
     matlab::data::TypedArray<int> iters = factory.createArray<int>({1, (unsigned long) totalIters + 1});
     matlab::data::TypedArray<double> elapsedTime = factory.createArray<double>({1, (unsigned long) totalIters + 1});
     matlab::data::TypedArray<double> energy = factory.createArray<double>({1, (unsigned long) totalIters + 1});
+    matlab::data::TypedArray<double> approxError = factory.createArray<double>({1, (unsigned long) totalIters + 1});
     if(elapsedTimeVec.size() == 0) return; // nothing was done
     for(int i = 0; i <= totalIters; i++) {
         iters[i] = i;
         elapsedTime[i] = elapsedTimeVec.at(i);
         energy[i] = energyVec.at(i);
+        approxError[i] = errorVec.at(i);
     }
     matlabPtr->setVariable(u"x", iters);
     matlabPtr->setVariable(u"t", elapsedTime);
     matlabPtr->setVariable(u"E", energy);
+    matlabPtr->setVariable(u"ae", approxError);
     // create and save matlab plots
     matlabPtr->eval(u"f=figure('visible', 'off'); plot(x, t); title('Elapsed Time')");
     matlabPtr->eval(u"exportgraphics(f, '../outputs/data_time.png')");
-    matlabPtr->eval(u"g=figure('visible', 'off'); plot(x, E); axis([0 inf 0 inf]); title('Approximation Error')");
+    matlabPtr->eval(u"g=figure('visible', 'off'); plot(x, E); axis([0 inf 0 inf]); title('Total Energy')");
     matlabPtr->eval(u"exportgraphics(g, '../outputs/data_energy.png')");
+    matlabPtr->eval(u"h=figure('visible', 'off'); plot(x, ae); axis([0 inf 0 inf]); title('Approximation Error')");
+    matlabPtr->eval(u"exportgraphics(h, '../outputs/data_error.png')");
 
     // convert screenshot sequences to video
     system("ffmpeg -hide_banner -loglevel warning -framerate 2 -i screenshot_%06d.tga -vcodec mpeg4 ../outputs/video_output.mp4");

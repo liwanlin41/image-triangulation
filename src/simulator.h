@@ -60,6 +60,7 @@ class Simulator {
         int totalIters = 0; // total iterations
         vector<double> elapsedTimeVec; // hold cumulative step size
         vector<double> energyVec; // hold energy per iteration
+        vector<double> errorVec; // hold approximation error per iteration
         double totalStep = 0; // running total step
 
         // for controlling convergence 
