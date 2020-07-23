@@ -164,6 +164,14 @@ void Approx::initialize(ApproxType approxtype, vector<Point> &pts, vector<array<
 	integrator.initialize(pixArr, maxX, maxY, approxtype, resultSlots);
 }
 
+double Approx::regularizationEnergy() {
+	double energy = 0;
+	for(int t = 0; t < numPoints; t++) {
+		energy -= LOG_AREA_MULTIPLIER * log(triArr[t].getArea());
+	}
+	return energy;
+}
+
 bool Approx::gradUpdate() {
     // gradient descent update for each point
 	for(int i = 0; i < numPoints; i++) {

@@ -140,7 +140,7 @@ void Simulator::initialize() {
     iterCount = 0;
     totalIters = 0;
     elapsedTimeVec.push_back(totalStep); // initial values
-    energyVec.push_back(newEnergy);
+    energyVec.push_back(newEnergy - approx->regularizationEnergy());
     // center mesh
     /*
     polyscope::view::resetCameraToHomeView();
@@ -157,7 +157,8 @@ void Simulator::step(double eps) {
     totalStep += approx->step(prevEnergy, newEnergy, (totalIters >= 10) && (iterCount >= 5));
     // data collection
     elapsedTimeVec.push_back(totalStep);
-    energyVec.push_back(newEnergy);
+    // push back only the approximation error
+    energyVec.push_back(newEnergy - approx->regularizationEnergy());
     iterCount++;
     totalIters++;
     if(abs(prevEnergy - newEnergy) > eps * prevEnergy) {
@@ -196,7 +197,7 @@ void Simulator::retriangulate(int num) {
     totalIters++;
     newEnergy = approx->computeEnergy();
     elapsedTimeVec.push_back(totalStep);
-    energyVec.push_back(newEnergy);
+    energyVec.push_back(newEnergy - approx->regularizationEnergy());
     cout << "energy after subdivision: " << newEnergy << endl;
     //polyscope::screenshot(false);
 }
@@ -209,6 +210,7 @@ void Simulator::cleanup() {
     matlab::data::TypedArray<int> iters = factory.createArray<int>({1, (unsigned long) totalIters + 1});
     matlab::data::TypedArray<double> elapsedTime = factory.createArray<double>({1, (unsigned long) totalIters + 1});
     matlab::data::TypedArray<double> energy = factory.createArray<double>({1, (unsigned long) totalIters + 1});
+    if(elapsedTimeVec.size() == 0) return; // nothing was done
     for(int i = 0; i <= totalIters; i++) {
         iters[i] = i;
         elapsedTime[i] = elapsedTimeVec.at(i);

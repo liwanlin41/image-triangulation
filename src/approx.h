@@ -66,8 +66,10 @@ class Approx {
         virtual void initialize(int pixelRate) = 0;
         virtual void initialize(vector<Point> &points, vector<array<int, 3>> &triangleInd) = 0;
 
-		// compute energy of triangulation at this point in time
+		// compute total energy of triangulation at this point in time
 		virtual double computeEnergy() = 0;
+		// compute energy of tuning parameters, i.e. negative log area barrier
+		double regularizationEnergy();
 		// compute gradient at this instant, updating gradX and gradY
 		virtual void computeGrad() = 0;
 		// move points according to gradient values and return true
