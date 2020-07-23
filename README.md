@@ -12,20 +12,12 @@ On Linux, compiling can be done by
 ```
 mkdir build
 cd build
-cmake ../
-cmake --build .
+cmake ..
+make
 ```
 
-If any modifications are made to files in `src` or to `main.cpp` after that, running `make` in the `build` directory will recompile the main file.
-
-In order to compile the test folders on a Linux system, the prerequisite `libgtest-dev` is needed. Move to the `src` folder and run the following:
-```
-g++ -c *.cpp
-mv *.o ../tests
-g++ -Wall -g -pthread *.o FILENAME -lgtest_main -lgtest -lpthread -o OUTPUT
-```
-where FILENAME, OUTPUT are replaced by the desired names.
+This will compile the main file as well as the tests, which can be found in the `bin` directory of the build.
 
 ## Running Triangulations
 
-Put an image (for the sake of example, `image.jpg`) to be triangulated in the `images` directory. Then from the `build` directory, run ```./CoarseTriangulation image.jpg DENSITY``` where the second argument `DENSITY` is a positive number between 0 and 1 indicating the density of the triangulation. This will output the initial TRIM triangulation, the final coarse triangulation, and a video of the intermediate steps all placed in the `outputs` directory.
+Put an image (for the sake of example, `image.jpg`) to be triangulated in the `images` directory. Then from the `build` directory, run ```./CoarseTriangulation image.jpg``` This will output a screenshot of the initial triangulation, the final coarse triangulation, a video of all intermediate steps, and graphs of the energy function and total step over time. All these can be found in the `outputs` directory. Note that running the program multiple times will overwrite these files, which may require root access.
