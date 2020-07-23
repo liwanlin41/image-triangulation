@@ -130,7 +130,7 @@ __global__ void pixConstantEnergyInt(Pixel *pixArr, int maxX, int maxY, Triangle
 double ParallelIntegrator::constantEnergyExact(Triangle *tri, double color) {
 	dim3 numBlocks((maxX + threadsX - 1) / threadsX, (maxY + threadsY - 1) / threadsY);
 	pixConstantEnergyInt<<<numBlocks, threads2D>>>(pixArr, maxX, maxY, *tri, color, arr);
-	double answer = -LOG_AREA_MULTIPLIER * log(tri->getArea() - AREA_THRESHOLD) + sumArray(maxX * maxY);
+	double answer = -LOG_AREA_MULTIPLIER * log(max(0.0,tri->getArea() - AREA_THRESHOLD)) + sumArray(maxX * maxY);
 	return answer;
 }
 
@@ -168,7 +168,7 @@ double ParallelIntegrator::constantEnergyApprox(Triangle *tri, double color, dou
 	dim3 numBlocks((samples + threadsX - 1) / threadsX, (samples + threadsY - 1) / threadsY);
 	double dA = tri->getArea() / (samples * samples);
 	approxConstantEnergySample<<<numBlocks, threads2D>>>(pixArr, maxX, maxY, curTri, curTri + 1, curTri + 2, color, arr, dA, samples);
-	double answer = -LOG_AREA_MULTIPLIER * log(tri->getArea() - AREA_THRESHOLD) + sumArray(samples * (samples + 1) / 2);
+	double answer = -LOG_AREA_MULTIPLIER * log(max(0.0,tri->getArea() - AREA_THRESHOLD)) + sumArray(samples * (samples + 1) / 2);
 	return answer;
 }
 
@@ -480,7 +480,7 @@ double ParallelIntegrator::linearEnergyApprox(Triangle *tri, double *coeffs, dou
 	double dA = tri->getArea() / (samples * samples);
 	approxLinearEnergySample<<<numBlocks, threads2D>>>(pixArr, maxX, maxY, curTri, curTri + 1, curTri + 2,
 		coeffs[i], coeffs[(i+1)%3], coeffs[(i+2)%3], arr, dA, samples);
-	double answer = -LOG_AREA_MULTIPLIER * log(tri->getArea() - AREA_THRESHOLD) + sumArray(samples * (samples + 1) / 2);
+	double answer = -LOG_AREA_MULTIPLIER * log(max(0.0,tri->getArea() - AREA_THRESHOLD)) + sumArray(samples * (samples + 1) / 2);
 	return answer;
 }
 
