@@ -179,7 +179,7 @@ bool Approx::gradUpdate() {
 	}
 	// check validity of result
 	for(int i = 0; i < numTri; i++) {
-		if(triArr[i].getSignedArea() < 0) {
+		if(triArr[i].getSignedArea() < AREA_THRESHOLD) {
 			return false;
 		}
 	}
