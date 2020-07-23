@@ -206,6 +206,10 @@ void Simulator::retriangulate(int num) {
     //polyscope::screenshot(false);
 }
 
+void Simulator::revealEdges(bool display) {
+    showEdges(approx, display);
+}
+
 void Simulator::cleanup() {
     /*
     polyscope::screenshot("../outputs/triangulation.tga", false);

@@ -13,6 +13,8 @@ enum ApproxType{constant, linear, quadratic};
 
 // multiplication factor on log area barrier
 static const double LOG_AREA_MULTIPLIER = 100;
+// do not tolerate triangles with area less than this
+static const double AREA_THRESHOLD = 0.1;
 
 // parallelize integral computation
 

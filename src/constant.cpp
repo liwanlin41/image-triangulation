@@ -87,7 +87,7 @@ void ConstantApprox::gradient(int t, int movingPt, double *gradX, double *gradY)
 		for(int j = 0; j < 2; j++) {
 			gradient[j] = (2 * area * imageIntegral * boundaryChange[j]
 				- imageIntegral * imageIntegral * dA[j]) / (-area * area)
-				- LOG_AREA_MULTIPLIER * dA[j] / area; // add in log barrier gradient
+				- LOG_AREA_MULTIPLIER * dA[j] / (area - AREA_THRESHOLD); // add in log barrier gradient
 		}
 	}
 	// check for null pointers

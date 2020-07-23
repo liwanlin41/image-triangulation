@@ -112,12 +112,12 @@ TEST(GradientTest, ConstantBug) {
     pts[0].move(eps * vx, eps * vy);
     double futureColor = integrator.doubleIntEval(&tri, ds) / tri.getArea();
     double futureEnergy = integrator.constantEnergyEval(&tri, futureColor, ds)
-        - (integrator.constantEnergyEval(&tri, 0, ds) + LOG_AREA_MULTIPLIER * log(tri.getArea()));
+        - (integrator.constantEnergyEval(&tri, 0, ds) + LOG_AREA_MULTIPLIER * log(tri.getArea() - AREA_THRESHOLD));
         
     pts[0].move(-2 * eps * vx, -2 * eps * vy);
     double pastColor = integrator.doubleIntEval(&tri, ds) / tri.getArea();
     double pastEnergy = integrator.constantEnergyEval(&tri, pastColor, ds)
-        - (integrator.constantEnergyEval(&tri, 0, ds) + LOG_AREA_MULTIPLIER * log(tri.getArea()));
+        - (integrator.constantEnergyEval(&tri, 0, ds) + LOG_AREA_MULTIPLIER * log(tri.getArea() - AREA_THRESHOLD));
 
     double finiteApprox = (futureEnergy - pastEnergy) / (2 * eps);
     if (!approxEqual(finiteApprox, gradApprox, 0.1)) {
@@ -174,12 +174,12 @@ TEST(GradientTest, ConstantCase) {
         pts[0].move(eps * vx, eps * vy);
         double futureColor = integrator.doubleIntEval(&tri, ds) / tri.getArea();
         double futureEnergy = integrator.constantEnergyEval(&tri, futureColor, ds)
-            - (integrator.constantEnergyEval(&tri, 0, ds) + LOG_AREA_MULTIPLIER * log(tri.getArea()));
+            - (integrator.constantEnergyEval(&tri, 0, ds) + LOG_AREA_MULTIPLIER * log(tri.getArea() - AREA_THRESHOLD));
         
         pts[0].move(-2 * eps * vx, -2 * eps * vy);
         double pastColor = integrator.doubleIntEval(&tri, ds) / tri.getArea();
         double pastEnergy = integrator.constantEnergyEval(&tri, pastColor, ds)
-            - (integrator.constantEnergyEval(&tri, 0, ds) + LOG_AREA_MULTIPLIER * log(tri.getArea()));
+            - (integrator.constantEnergyEval(&tri, 0, ds) + LOG_AREA_MULTIPLIER * log(tri.getArea() - AREA_THRESHOLD));
 
         double finiteApprox = (futureEnergy - pastEnergy) / (2 * eps);
         if (!approxEqual(finiteApprox, gradApprox)) {
@@ -244,13 +244,13 @@ TEST(GradientTest, LinearBug1) {
     double fCoeff[3]; // future coefficients
     approx.computeCoeffs(&tri, fCoeff);
     double futureEnergy = integrator.linearEnergyApprox(&tri, fCoeff, ds)
-        - (integrator.constantEnergyEval(&tri, 0, ds) + LOG_AREA_MULTIPLIER * log(tri.getArea()));
+        - (integrator.constantEnergyEval(&tri, 0, ds) + LOG_AREA_MULTIPLIER * log(tri.getArea() - AREA_THRESHOLD));
         
     pts[0].move(-2 * eps * vx, -2 * eps * vy);
     double pCoeff[3]; // past coefficients
     approx.computeCoeffs(&tri, pCoeff);
     double pastEnergy = integrator.linearEnergyApprox(&tri, pCoeff, ds)
-        - (integrator.constantEnergyEval(&tri, 0, ds) + LOG_AREA_MULTIPLIER * log(tri.getArea()));
+        - (integrator.constantEnergyEval(&tri, 0, ds) + LOG_AREA_MULTIPLIER * log(tri.getArea() - AREA_THRESHOLD));
 
     double finiteApprox = (futureEnergy - pastEnergy) / (2 * eps);
     EXPECT_TRUE(approxEqual(finiteApprox, gradApprox, 0.1));
@@ -308,13 +308,13 @@ TEST(GradientTest, LinearBug2) {
     double fCoeff[3]; // future coefficients
     approx.computeCoeffs(&tri, fCoeff);
     double futureEnergy = integrator.linearEnergyApprox(&tri, fCoeff, ds)
-        - (integrator.constantEnergyEval(&tri, 0, ds) + LOG_AREA_MULTIPLIER * log(tri.getArea()));
+        - (integrator.constantEnergyEval(&tri, 0, ds) + LOG_AREA_MULTIPLIER * log(tri.getArea() - AREA_THRESHOLD));
         
     pts[0].move(-2 * eps * vx, -2 * eps * vy);
     double pCoeff[3]; // past coefficients
     approx.computeCoeffs(&tri, pCoeff);
     double pastEnergy = integrator.linearEnergyApprox(&tri, pCoeff, ds)
-        - (integrator.constantEnergyEval(&tri, 0, ds) + LOG_AREA_MULTIPLIER * log(tri.getArea()));
+        - (integrator.constantEnergyEval(&tri, 0, ds) + LOG_AREA_MULTIPLIER * log(tri.getArea() - AREA_THRESHOLD));
 
     double finiteApprox = (futureEnergy - pastEnergy) / (2 * eps);
     EXPECT_TRUE(approxEqual(finiteApprox, gradApprox, 0.2));
@@ -384,13 +384,13 @@ TEST(GradientTest, LinearCase) {
         double fCoeff[3]; // future coefficients
         approx.computeCoeffs(&tri, fCoeff);
         double futureEnergy = integrator.linearEnergyApprox(&tri, fCoeff, ds)
-            - (integrator.constantEnergyEval(&tri, 0, ds) + LOG_AREA_MULTIPLIER * log(tri.getArea()));
+            - (integrator.constantEnergyEval(&tri, 0, ds) + LOG_AREA_MULTIPLIER * log(tri.getArea() - AREA_THRESHOLD));
         
         pts[0].move(-2 * eps * vx, -2 * eps * vy);
         double pCoeff[3]; // past coefficients
         approx.computeCoeffs(&tri, pCoeff);
         double pastEnergy = integrator.linearEnergyApprox(&tri, pCoeff, ds)
-            - (integrator.constantEnergyEval(&tri, 0, ds) + LOG_AREA_MULTIPLIER * log(tri.getArea()));
+            - (integrator.constantEnergyEval(&tri, 0, ds) + LOG_AREA_MULTIPLIER * log(tri.getArea() - AREA_THRESHOLD));
 
         double finiteApprox = (futureEnergy - pastEnergy) / (2 * eps);
         /*

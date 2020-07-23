@@ -167,7 +167,7 @@ void Approx::initialize(ApproxType approxtype, vector<Point> &pts, vector<array<
 double Approx::regularizationEnergy() {
 	double energy = 0;
 	for(int t = 0; t < numPoints; t++) {
-		energy -= LOG_AREA_MULTIPLIER * log(triArr[t].getArea());
+		energy -= LOG_AREA_MULTIPLIER * log(triArr[t].getArea() - AREA_THRESHOLD);
 	}
 	return energy;
 }

@@ -91,6 +91,21 @@ void updateMesh(Approx *approx) {
     }
 }
 
+// if show, display all edges of mesh
+// else hide all edges
+void showEdges(Approx *approx, bool show) {
+    double edgeWidth = (show) ? 1 : 0;
+    if(approx->getApproxType() == linear) {
+        int numFaces = approx->getFaces().size();
+        for(int t = 0; t < numFaces; t++) {
+            auto triangle = polyscope::getSurfaceMesh(to_string(t));
+            triangle->setEdgeWidth(edgeWidth);
+        }
+    } else if(approx->getApproxType() == constant) {
+        polyscope::getSurfaceMesh("Triangulation")->setEdgeWidth(edgeWidth);
+    }
+}
+
 // eventually input will be the path to an image file?
 int main(int argc, char* argv[]) {
     // default image path and density
@@ -163,6 +178,9 @@ int main(int argc, char* argv[]) {
         "But you're really trying me here.", "MORE", "Okay, have it your way..", "More Triangles"};
     int numPresses = 0;
     string angryButton = "More Triangles";
+
+    bool displayEdges = true;
+
     auto callback = [&]() {
         ImGui::InputInt("max iterations", &maxIter); 
         ImGui::InputInt("# edges to divide", &subdivisions);
@@ -171,7 +189,7 @@ int main(int argc, char* argv[]) {
         if (ImGui::Button("Start")) {
             initialize();
         }
-
+        ImGui::SameLine();
         // step by step
         if (ImGui::Button("Step")) {
             step();
@@ -191,6 +209,11 @@ int main(int argc, char* argv[]) {
                 angryButton.append("!");
             }
             numPresses++;
+        }
+
+        if(ImGui::Button("Show Edges")) {
+            sim.revealEdges(displayEdges);
+            displayEdges = !displayEdges;
         }
     };
 

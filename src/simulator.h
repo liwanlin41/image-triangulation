@@ -38,6 +38,7 @@ double adaptorF_custom_accessVector2Value(const Point& p, unsigned int ind) {
 // first indicates whether this is the first registration of the mesh
 void registerMesh(Approx *approx);
 void updateMesh(Approx *approx);
+void showEdges(Approx *approx, bool show);
 
 class Simulator {
     private:
@@ -85,6 +86,9 @@ class Simulator {
 
         // handle retriangulation of num edges
         void retriangulate(int num);
+
+        // show all edges if display, otherwise hide edges
+        void revealEdges(bool display);
         
         // handle output
         void cleanup();

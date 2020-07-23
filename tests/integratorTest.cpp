@@ -96,7 +96,7 @@ TEST(ExactIntegralTest, EnergyInt) {
     double area = tri.getArea();
     ASSERT_EQ(25, area);
     int color = 10; // approximation color to test
-    ASSERT_EQ(area * color * color - LOG_AREA_MULTIPLIER * log(area), integrator.constantEnergyExact(&tri, color));
+    ASSERT_EQ(area * color * color - LOG_AREA_MULTIPLIER * log(area - AREA_THRESHOLD), integrator.constantEnergyExact(&tri, color));
     cudaFree(pixArr);
     cudaFree(points);
 }
@@ -254,7 +254,7 @@ TEST(LinearIntegrationTest, EnergyInt) {
     // coefficients to test; somewhat arbitrary
     double coeffs[3] = {0, 2, 0.5};
     double expected = 857.25;
-    double computed = integrator.linearEnergyApprox(&tri, coeffs, ds) + LOG_AREA_MULTIPLIER * log(tri.getArea());
+    double computed = integrator.linearEnergyApprox(&tri, coeffs, ds) + LOG_AREA_MULTIPLIER * log(tri.getArea() - AREA_THRESHOLD);
     // cout << expected << ", " << computed << endl;
     ASSERT_TRUE(abs(expected - computed) < TOLERANCE * abs(expected));
     cudaFree(pixArr);
@@ -279,7 +279,7 @@ TEST(LinearIntegrationTest, LowEnergy) {
     // due to image discretization, the energy integral will end up
     // resembling the integral of (x-0.5)^2 which is 1/12 on a square
     double expected = tri.getArea() / 12;
-    double computed = integrator.linearEnergyApprox(&tri, coeffs, ds) + LOG_AREA_MULTIPLIER * log(tri.getArea());
+    double computed = integrator.linearEnergyApprox(&tri, coeffs, ds) + LOG_AREA_MULTIPLIER * log(tri.getArea() - AREA_THRESHOLD);
     // cout << expected << ", " << computed << endl;
     ASSERT_TRUE(abs(expected - computed) < TOLERANCE * abs(expected));
     cudaFree(pixArr);

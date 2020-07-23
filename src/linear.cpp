@@ -118,9 +118,19 @@ void LinearApprox::gradient(int t, int movingPt, double *gradX, double *gradY) {
             gradient[i] -= (dc[j][i] * basisIntegral[t][j] + coefficients[t][j] * dL[j][i]);
         }
     }
+
+    // in case of small area, only use log barrier gradient
+    // to move away from small area
+    for(int i = 0; i < 2; i++) {
+        if(isnan(gradient[i])) {
+            assert(area < 0.5);
+            gradient[i] = 0;
+        }
+    }
+
     // now account for log area barrier
     for(int i = 0; i < 2; i++) {
-        gradient[i] -= LOG_AREA_MULTIPLIER * dA[i] / area;
+        gradient[i] -= LOG_AREA_MULTIPLIER * dA[i] / (area - AREA_THRESHOLD);
     }
 
     if (gradX && gradY) {
