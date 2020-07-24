@@ -164,7 +164,7 @@ void Simulator::step(double eps) {
     errorVec.push_back(newEnergy - approx->regularizationEnergy());
     iterCount++;
     totalIters++;
-    if(abs(prevEnergy - newEnergy) > eps * prevEnergy) {
+    if(abs(prevEnergy - newEnergy) > eps * abs(prevEnergy)) {
         numSmallChanges = 0;
     } else {
         numSmallChanges++;
