@@ -316,6 +316,9 @@ double ParallelIntegrator::lineIntApprox(Triangle *tri, int pt, bool isX, double
 			if(basisInd == pt) {
 				for(int i = 0; i < 2; i++) {
 					double totalLength = curTri->distance(curTri[i+1]);
+					// in case num samples is too small; ensure at least 2 points are sampled
+					// (also prevent zero division error)
+					samples[i] = max(samples[i], 2);
 					linearLineIntSample<<<numBlocks[i], threads1D>>>(pixArr, maxX, maxY, curTri, curTri+i+1, (i==1), isX, arr, samples[i]-1, true);
 					answer += totalLength * sumArray(samples[i]) / samples[i];
 				}
@@ -323,6 +326,8 @@ double ParallelIntegrator::lineIntApprox(Triangle *tri, int pt, bool isX, double
 				int offset = (basisInd - pt + 3) % 3; // index of basisInd relative to pt
 				int i = (offset + 1)%2; // index for this side's data in samples and numBlocks
 				double totalLength = curTri->distance(curTri[offset]);
+				// ensure at least 2 points are sampled
+				samples[i] = max(samples[i], 2);
 				linearLineIntSample<<<numBlocks[i], threads1D>>>(pixArr, maxX, maxY, curTri, curTri+offset, (offset==2), isX, arr, samples[i]-1, false);
 				answer += totalLength * sumArray(samples[i]) / samples[i];
 			}

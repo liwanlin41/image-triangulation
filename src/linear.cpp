@@ -96,7 +96,7 @@ void LinearApprox::gradient(int t, int movingPt, double *gradX, double *gradY) {
     for(int j = 0; j < 3; j++) {
         for(int i = 0; i < 2; i++) {
             dL[j][i] = integrator.linearImageGradient(triArr + t, movingPt, (i == 0), ds, j) // area integral
-                + integrator.lineIntEval(triArr + t, movingPt, (i == 0), ds/2, j); // boundary integral
+                + integrator.lineIntEval(triArr + t, movingPt, (i == 0), ds/10, j); // boundary integral
         }
     }
 
@@ -123,7 +123,7 @@ void LinearApprox::gradient(int t, int movingPt, double *gradX, double *gradY) {
     // to move away from small area
     for(int i = 0; i < 2; i++) {
         if(isnan(gradient[i])) {
-            assert(area < 0.5);
+            assert(area < 2 * AREA_THRESHOLD);
             gradient[i] = 0;
         }
     }
