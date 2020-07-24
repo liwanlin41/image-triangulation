@@ -178,12 +178,16 @@ bool Approx::gradUpdate() {
 		points[i].move(-stepSize * gradX.at(points+i), -stepSize * gradY.at(points+i));
 	}
 	// check validity of result
-	for(int i = 0; i < numTri; i++) {
-		if(triArr[i].getSignedArea() < AREA_THRESHOLD) {
-			return false;
+	bool inverted = false;
+	for(int t = 0; t < numTri; t++) {
+		if(triArr[t].getSignedArea() < AREA_THRESHOLD) {
+			if(!zeroed) {
+				tinyTriangles.insert(t);
+			}
+			inverted = true;
 		}
 	}
-	return true;
+	return (!inverted);
 }
 
 void Approx::undo() {
@@ -191,9 +195,36 @@ void Approx::undo() {
 		points[i].move(stepSize * gradX.at(points+i), stepSize * gradY.at(points+i));
 	}
 	stepSize /= 2;
+	if(!zeroed) { // still searching for small triangles
+		if(stepSize < MIN_STEP) { // freeze these triangles
+			for(int t : tinyTriangles) {
+				for(int p : faces.at(t)) {
+					gradX[points + p] = 0;
+					gradY[points + p] = 0;
+				}
+			}
+			// try to increase the area of these triangles
+			// using log barrier gradient
+			for(int t : tinyTriangles) {
+				double area = triArr[t].getArea();
+				for(int i = 0; i < 3; i++) {
+					double dA[2] = {triArr[t].gradX(i), triArr[t].gradY(i)};
+					gradX[points + faces.at(t).at(i)] -= LOG_AREA_MULTIPLIER * dA[0] / (area - AREA_THRESHOLD);
+					gradY[points + faces.at(t).at(i)] -= LOG_AREA_MULTIPLIER * dA[1] / (area - AREA_THRESHOLD);
+				}
+			}
+			stepSize = originalStep;
+			zeroed = true; // no need to check for small triangles anymore
+		} else {
+			tinyTriangles.clear();
+		}
+	}
 }
 
 double Approx::step(double &prevEnergy, double &newEnergy, bool stringent) {
+	// reset status of tiny triangles
+	tinyTriangles.clear();
+	zeroed = false;
 	double usedStep;
 	computeGrad();
     while(!gradUpdate()) {
@@ -355,6 +386,7 @@ void Approx::updateMesh(vector<Point> *newPoints, vector<array<int, 3>> *newFace
 	}
 	gradX.clear();
 	gradY.clear();
+	tinyTriangles.clear();
 
     // re-allocate space for specific instance
     reallocateSpace(oldNumTri);
@@ -374,6 +406,15 @@ vector<Point> Approx::getVertices() {
 
 vector<array<int, 3>> Approx::getFaces() {
 	return faces;
+}
+
+set<int> Approx::getTinyTriangles() {
+	if(tinyTriangles.size() > 0) {
+		for(int t : tinyTriangles) {
+			cout << t << ": " << triArr[t];
+		}
+	}
+	return tinyTriangles;
 }
 
 vector<Point> Approx::boundingBox() {

@@ -39,6 +39,8 @@ double adaptorF_custom_accessVector2Value(const Point& p, unsigned int ind) {
 void registerMesh(Approx *approx);
 void updateMesh(Approx *approx);
 void showEdges(Approx *approx, bool show);
+// highlight triangle t in red if on
+void highlight(ApproxType approx, int t, bool on = true);
 
 class Simulator {
     private:
@@ -63,6 +65,9 @@ class Simulator {
         vector<double> energyVec; // hold energy per iteration
         vector<double> errorVec; // hold approximation error per iteration
         double totalStep = 0; // running total step
+        // in the linear case, track which triangles are currently highlighted
+        // TODO: support constant case as well
+        set<int> highlightedTriangles; 
 
         // for controlling convergence 
         int numSmallChanges = 0;

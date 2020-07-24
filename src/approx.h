@@ -26,6 +26,7 @@ using namespace cimg_library;
 
 class Approx {
 	protected:
+		static constexpr double MIN_STEP = 1e-07; // minimum acceptable step size
 		int maxX, maxY; // dimensions of image
 		double stepSize; // size of gradient descent step
 		double originalStep; // starting step size
@@ -42,6 +43,9 @@ class Approx {
 
 		map<array<int, 2>, vector<int>> edgeBelonging; // map edge to indices of triangles containing edge
 		// edge represented by sorted indices of points
+
+		set<int> tinyTriangles; // triangles at risk of inverting
+		bool zeroed = false; // whether gradients of tiny triangles have already been zeroed
 
         // initialize triangulation and integrator
 		// initialize the triangulation on this approximation using a coarse grid,
@@ -100,6 +104,8 @@ class Approx {
         // return colors in a 1D array; note for linear approximation
         // the colors will be ordered triangle 0 vertex 0, triangle 0 vertex 1, etc.
         virtual vector<array<double, 3>> getColors() = 0;
+		// return set of indices of triangles at risk of inverting
+		set<int> getTinyTriangles();
 
 		// for triangulations where each triangle is rendered separately, compute bounding box
 		// for display purposes

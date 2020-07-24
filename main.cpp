@@ -99,10 +99,22 @@ void showEdges(Approx *approx, bool show) {
         int numFaces = approx->getFaces().size();
         for(int t = 0; t < numFaces; t++) {
             auto triangle = polyscope::getSurfaceMesh(to_string(t));
+            // default edge showing in black
+            triangle->setEdgeColor({0,0,0});
             triangle->setEdgeWidth(edgeWidth);
         }
     } else if(approx->getApproxType() == constant) {
         polyscope::getSurfaceMesh("Triangulation")->setEdgeWidth(edgeWidth);
+    }
+}
+
+// in the linear case, highlight the edges of the t th triangle
+void highlight(ApproxType approx, int t, bool on) {
+    double edgeWidth = (on) ? 2 : 0;
+    if (approx == linear) {
+        auto triangle = polyscope::getSurfaceMesh(to_string(t));
+        triangle->setEdgeColor({1,0,0}); // highlight in red
+        triangle->setEdgeWidth(edgeWidth);
     }
 }
 
