@@ -41,6 +41,6 @@ __device__ bool Point::operator!=(const Point &other) const {
 }
 
 ostream& operator<<(ostream& os, const Point &p) {
-	os << setprecision(10) << "(" << p.x << ", " << p.y << ")";
+	os << "(" << p.x << ", " << p.y << ")";
 	return os;
 }
