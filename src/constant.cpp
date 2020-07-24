@@ -46,22 +46,6 @@ double ConstantApprox::computeEnergy() {
     return totalEnergy;
 }
 
-void ConstantApprox::computeGrad() {
-	// clear gradients from last iteration
-	for(int i = 0; i < numPoints; i++) {
-		gradX[points + i] = 0;
-		gradY[points + i] = 0;
-	}
-	for(int i = 0; i < numTri; i++) {
-		for(int j = 0; j < 3; j++) {
-			double changeX, changeY;
-			gradient(i, j, &changeX, &changeY);
-			gradX[triArr[i].vertices[j]] += changeX;
-			gradY[triArr[i].vertices[j]] += changeY;
-		}
-	}
-}
-
 void ConstantApprox::gradient(int t, int movingPt, double *gradX, double *gradY) {
 	// to save time, only compute integrals if triangle is non-degenerate;
 	// degenerate triangle has 0 energy and is locally optimal, set gradient to 0

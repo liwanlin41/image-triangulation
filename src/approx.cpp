@@ -181,6 +181,22 @@ void Approx::regularizationGrad(int t, int i, double &gradX, double &gradY) {
 	if(points[faces.at(t).at(i)].isBorderY()) gradY = 0;
 }
 
+void Approx::computeGrad() {
+	// clear gradients from last iteration
+	for(int i = 0; i < numPoints; i++) {
+		gradX[points + i] = 0;
+		gradY[points + i] = 0;
+	}
+	for(int i = 0; i < numTri; i++) {
+		for(int j = 0; j < 3; j++) {
+			double changeX, changeY;
+			gradient(i, j, &changeX, &changeY);
+			gradX[triArr[i].vertices[j]] += changeX;
+			gradY[triArr[i].vertices[j]] += changeY;
+		}
+	}
+}
+
 bool Approx::gradUpdate() {
     // gradient descent update for each point
 	for(int i = 0; i < numPoints; i++) {

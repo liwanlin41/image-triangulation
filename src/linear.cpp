@@ -64,22 +64,6 @@ double LinearApprox::computeEnergy() {
     return totalEnergy;
 }
 
-void LinearApprox::computeGrad() {
-    // clear gradients from last iteration
-    for(int i = 0; i < numPoints; i++) {
-        gradX[points + i] = 0;
-        gradY[points + i] = 0;
-    }
-    for(int i = 0; i < numTri; i++) {
-		for(int j = 0; j < 3; j++) {
-			double changeX, changeY;
-			gradient(i, j, &changeX, &changeY);
-			gradX[triArr[i].vertices[j]] += changeX;
-			gradY[triArr[i].vertices[j]] += changeY;
-		}
-	}
-}
-
 void LinearApprox::gradient(int t, int movingPt, double *gradX, double *gradY) {
     double area = triArr[t].getArea();
     double gradient[2] = {0,0};

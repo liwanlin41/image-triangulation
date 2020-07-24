@@ -50,8 +50,7 @@ class Triangle {
 
 		friend ostream& operator<<(ostream& os, const Triangle &t);
 		
-		friend class ConstantApprox;
-		friend class LinearApprox;
+		friend class Approx;
 		friend class ParallelIntegrator;
 		friend class Pixel;
 };

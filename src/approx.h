@@ -79,7 +79,10 @@ class Approx {
 		// if point is on x or y boundaries of image
 		void regularizationGrad(int t, int i, double &gradX, double &gradY);
 		// compute gradient at this instant, updating gradX and gradY
-		virtual void computeGrad() = 0;
+		void computeGrad();
+		// store gradient values in gradX, gradY of energy over triangle triArr[t]
+		// of the point in t with index movingPt
+		virtual void gradient(int t, int movingPt, double *gradX, double *gradY) = 0;
 		// move points according to gradient values and return true
 		// if movement was successful, i.e. no triangle inverts under the process
 		bool gradUpdate();
