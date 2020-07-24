@@ -170,15 +170,19 @@ void Simulator::step(double eps) {
         numSmallChanges++;
     }
     // handle display
+    /*
     for(int t : highlightedTriangles) { // de-highlight old triangles
         highlight(approx->getApproxType(), t, false);
     }
+    */
     updateMesh(approx);
     // get new triangles to highlight
+    /*
     highlightedTriangles = approx->getTinyTriangles();
     for(int t : highlightedTriangles) {
         highlight(approx->getApproxType(), t, true);
     }
+    */
     //approx->updateMesh();
     //polyscope::screenshot(false);
 }

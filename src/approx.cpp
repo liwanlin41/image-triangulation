@@ -265,6 +265,10 @@ double Approx::step(double &prevEnergy, double &newEnergy, bool stringent) {
         	} while (!gradUpdate());
         	updateApprox();
 			newEnergy = computeEnergy();
+			// prevent infinite loop
+			if(stepSize < ABSOLUTE_MIN) {
+				break;
+			}
 		} while(stringent && newEnergy > prevEnergy);
 		usedStep = stepSize;
     } else {
@@ -433,12 +437,14 @@ vector<array<int, 3>> Approx::getFaces() {
 }
 
 set<int> Approx::getTinyTriangles() {
+	/*
 	if(tinyTriangles.size() > 0) {
 		cout << "small triangles: " << endl;
 		for(int t : tinyTriangles) {
-			cout << t << ": " << triArr[t];
+			cout << triArr[t];
 		}
 	}
+	*/
 	return tinyTriangles;
 }
 

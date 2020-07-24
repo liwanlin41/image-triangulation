@@ -110,15 +110,16 @@ void showEdges(Approx *approx, bool show) {
 
 // in the linear case, highlight the edges of the t th triangle
 void highlight(ApproxType approx, int t, bool on) {
+    /*
     double edgeWidth = (on) ? 2 : 0;
     if (approx == linear) {
         auto triangle = polyscope::getSurfaceMesh(to_string(t));
         triangle->setEdgeColor({1,0,0}); // highlight in red
         triangle->setEdgeWidth(edgeWidth);
     }
+    */
 }
 
-// eventually input will be the path to an image file?
 int main(int argc, char* argv[]) {
     // default image path and density
     const char *imgPath = "../images/flower.jpg";

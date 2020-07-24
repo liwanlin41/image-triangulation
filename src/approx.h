@@ -26,7 +26,8 @@ using namespace cimg_library;
 
 class Approx {
 	protected:
-		static constexpr double MIN_STEP = 1e-07; // minimum acceptable step size
+		static constexpr double MIN_STEP = 1e-07; // minimum acceptable step size for avoiding triangle inversions
+		static constexpr double ABSOLUTE_MIN = 1e-24; // absolute minimum step size for ensuring energy decrease
 		int maxX, maxY; // dimensions of image
 		double stepSize; // size of gradient descent step
 		double originalStep; // starting step size
@@ -57,7 +58,7 @@ class Approx {
 
 	public:
 		// create an approximation instance on img with given stepsize and sampling rate
-		Approx(CImg<unsigned char> *img, double step, double ds = 0.1);
+		Approx(CImg<unsigned char> *img, double step, double ds = 0.00625);
 		// deallocate all the shared space
 		virtual ~Approx() = 0;
         virtual ApproxType getApproxType() = 0;
