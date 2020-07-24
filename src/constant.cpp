@@ -53,17 +53,9 @@ void ConstantApprox::computeGrad() {
 		gradY[points + i] = 0;
 	}
 	for(int i = 0; i < numTri; i++) {
-		// integral of fdA, retrieved from last updateApprox iteration
 		for(int j = 0; j < 3; j++) {
 			double changeX, changeY;
 			gradient(i, j, &changeX, &changeY);
-			// constrain points on boundary of image
-			if(triArr[i].vertices[j]->isBorderX()) {
-				changeX = 0;
-			}
-			if(triArr[i].vertices[j]->isBorderY()) {
-				changeY = 0;
-			}
 			gradX[triArr[i].vertices[j]] += changeX;
 			gradY[triArr[i].vertices[j]] += changeY;
 		}
@@ -86,10 +78,10 @@ void ConstantApprox::gradient(int t, int movingPt, double *gradX, double *gradY)
 		}
 		for(int j = 0; j < 2; j++) {
 			gradient[j] = (2 * area * imageIntegral * boundaryChange[j]
-				- imageIntegral * imageIntegral * dA[j]) / (-area * area)
-				- LOG_AREA_MULTIPLIER * dA[j] / (area - AREA_THRESHOLD); // add in log barrier gradient
+				- imageIntegral * imageIntegral * dA[j]) / (-area * area);
 		}
 	}
+	regularizationGrad(t, movingPt, gradient[0], gradient[1]);
 	// check for null pointers
 	if (gradX && gradY) {
 		*gradX = gradient[0];

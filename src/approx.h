@@ -74,6 +74,10 @@ class Approx {
 		virtual double computeEnergy() = 0;
 		// compute energy of tuning parameters, i.e. negative log area barrier
 		double regularizationEnergy();
+		// add gradient of regularization energy of i th point of
+		// triArr[t] to gradX, gradY; sets these to 0 appropriately
+		// if point is on x or y boundaries of image
+		void regularizationGrad(int t, int i, double &gradX, double &gradY);
 		// compute gradient at this instant, updating gradX and gradY
 		virtual void computeGrad() = 0;
 		// move points according to gradient values and return true

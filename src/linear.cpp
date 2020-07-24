@@ -74,13 +74,6 @@ void LinearApprox::computeGrad() {
 		for(int j = 0; j < 3; j++) {
 			double changeX, changeY;
 			gradient(i, j, &changeX, &changeY);
-			// constrain points on boundary of image
-			if(triArr[i].vertices[j]->isBorderX()) {
-				changeX = 0;
-			}
-			if(triArr[i].vertices[j]->isBorderY()) {
-				changeY = 0;
-			}
 			gradX[triArr[i].vertices[j]] += changeX;
 			gradY[triArr[i].vertices[j]] += changeY;
 		}
@@ -128,10 +121,8 @@ void LinearApprox::gradient(int t, int movingPt, double *gradX, double *gradY) {
         }
     }
 
-    // now account for log area barrier
-    for(int i = 0; i < 2; i++) {
-        gradient[i] -= LOG_AREA_MULTIPLIER * dA[i] / (area - AREA_THRESHOLD);
-    }
+    // account for image boundary and log area barrier 
+    regularizationGrad(t, movingPt, gradient[0], gradient[1]);
 
     if (gradX && gradY) {
 		*gradX = gradient[0];

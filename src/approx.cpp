@@ -172,6 +172,15 @@ double Approx::regularizationEnergy() {
 	return energy;
 }
 
+void Approx::regularizationGrad(int t, int i, double &gradX, double &gradY) {
+	double area = triArr[t].getArea();
+	double dA[2] = {triArr[t].gradX(i), triArr[t].gradY(i)};
+	gradX -= LOG_AREA_MULTIPLIER * dA[0] / (area - AREA_THRESHOLD);
+	gradY -= LOG_AREA_MULTIPLIER * dA[1] / (area - AREA_THRESHOLD);
+	if(points[faces.at(t).at(i)].isBorderX()) gradX = 0;
+	if(points[faces.at(t).at(i)].isBorderY()) gradY = 0;
+}
+
 bool Approx::gradUpdate() {
     // gradient descent update for each point
 	for(int i = 0; i < numPoints; i++) {
@@ -208,9 +217,8 @@ void Approx::undo() {
 			for(int t : tinyTriangles) {
 				double area = triArr[t].getArea();
 				for(int i = 0; i < 3; i++) {
-					double dA[2] = {triArr[t].gradX(i), triArr[t].gradY(i)};
-					gradX[points + faces.at(t).at(i)] -= LOG_AREA_MULTIPLIER * dA[0] / (area - AREA_THRESHOLD);
-					gradY[points + faces.at(t).at(i)] -= LOG_AREA_MULTIPLIER * dA[1] / (area - AREA_THRESHOLD);
+					// set gradX[t[i]], gradY[t[i]] 
+					regularizationGrad(t, i, gradX[points + faces.at(t).at(i)], gradY[points + faces.at(t).at(i)]);
 				}
 			}
 			stepSize = originalStep;
@@ -410,6 +418,7 @@ vector<array<int, 3>> Approx::getFaces() {
 
 set<int> Approx::getTinyTriangles() {
 	if(tinyTriangles.size() > 0) {
+		cout << "small triangles: " << endl;
 		for(int t : tinyTriangles) {
 			cout << t << ": " << triArr[t];
 		}
