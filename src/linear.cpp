@@ -153,7 +153,7 @@ void LinearApprox::computeEdgeEnergies(vector<array<double, 3>> *edgeEnergies) {
 		// compute current total energy over these triangles
 		double curEnergy = 0;
 		for(int t : triangles) {
-			curEnergy += integrator.linearEnergyApprox(triArr+t, coefficients[t], ds);
+			curEnergy += integrator.linearEnergyApprox(triArr+t, coefficients[t], ds) + regularizationEnergy(triArr + t);
 		}
 		// find new point that may be added to mesh
 		Point endpoint0 = points[edge[0]];
@@ -182,7 +182,8 @@ void LinearApprox::computeEdgeEnergies(vector<array<double, 3>> *edgeEnergies) {
             double coeffs2[3];
             computeCoeffs(&t1, coeffs1);
             computeCoeffs(&t2, coeffs2);
-			newEnergy += integrator.linearEnergyApprox(&t1, coeffs1, ds) + integrator.linearEnergyApprox(&t2, coeffs2, ds);
+			newEnergy += integrator.linearEnergyApprox(&t1, coeffs1, ds) + integrator.linearEnergyApprox(&t2, coeffs2, ds)
+                + 2 * regularizationEnergy(&t1);
 		}
 		// change in energy due to subdivision
 		edgeEnergies->push_back({(double) edge[0], (double) edge[1], newEnergy - curEnergy});

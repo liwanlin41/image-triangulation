@@ -47,6 +47,8 @@ class Simulator {
         static constexpr double DENSITY_DEFAULT = 0.05; // experimentally a decent starting density
         static const int DX_DEFAULT = 50; // sampling default
 
+        static constexpr double STARTING_STEP = 0.00625; // starting step size
+
         std::unique_ptr<MATLABEngine> matlabPtr;
         matlab::data::ArrayFactory factory;
 
@@ -58,6 +60,7 @@ class Simulator {
 
         // for rendering
         double prevEnergy = 0;
+        double approxErr = 0;
         double newEnergy = 0;
         int iterCount = 0;
         int totalIters = 0; // total iterations

@@ -3,9 +3,9 @@
 Simulator::Simulator(const char *imgPath, CImg<unsigned char> *img, ApproxType approxtype) {
     cout << "image is " << img->width() << "x" << img->height() << endl;
     if(approxtype == constant) {
-        approx = new ConstantApprox(img, 0.05);
+        approx = new ConstantApprox(img, STARTING_STEP);
     } else if (approxtype == linear) {
-        approx = new LinearApprox(img, 0.05);
+        approx = new LinearApprox(img, STARTING_STEP);
     }
 
     // determine initialization method
@@ -157,11 +157,11 @@ void Simulator::initialize() {
 void Simulator::step(double eps) {
     cout << "iteration " << iterCount << " (" << totalIters << " total)" << endl;
     // allow a fixed number of energy increases to avoid getting stuck
-    totalStep += approx->step(prevEnergy, newEnergy, (totalIters >= 10) && (iterCount >= 5));
+    totalStep += approx->step(prevEnergy, newEnergy, approxErr, (totalIters >= 10) && (iterCount >= 5));
     // data collection
     elapsedTimeVec.push_back(totalStep);
+    errorVec.push_back(approxErr);
     energyVec.push_back(newEnergy);
-    errorVec.push_back(newEnergy - approx->regularizationEnergy());
     iterCount++;
     totalIters++;
     if(abs(prevEnergy - newEnergy) > eps * abs(prevEnergy)) {
@@ -210,10 +210,11 @@ void Simulator::retriangulate(int num) {
     iterCount = 0;
     numSmallChanges = 0;
     totalIters++;
-    newEnergy = approx->computeEnergy();
+    approxErr = approx->computeEnergy();
+    newEnergy = approxErr + approx->regularizationEnergy();
     elapsedTimeVec.push_back(totalStep);
     energyVec.push_back(newEnergy);
-    errorVec.push_back(newEnergy - approx->regularizationEnergy());
+    errorVec.push_back(approxErr);
     cout << "energy after subdivision: " << newEnergy << endl;
     //polyscope::screenshot(false);
 }

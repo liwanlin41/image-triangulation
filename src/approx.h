@@ -58,7 +58,7 @@ class Approx {
 
 	public:
 		// create an approximation instance on img with given stepsize and sampling rate
-		Approx(CImg<unsigned char> *img, double step, double ds = 0.00625);
+		Approx(CImg<unsigned char> *img, double step, double ds = 0.1);
 		// deallocate all the shared space
 		virtual ~Approx() = 0;
         virtual ApproxType getApproxType() = 0;
@@ -71,10 +71,12 @@ class Approx {
         virtual void initialize(int pixelRate) = 0;
         virtual void initialize(vector<Point> &points, vector<array<int, 3>> &triangleInd) = 0;
 
-		// compute total energy of triangulation at this point in time
+		// compute approximation energy of triangulation at this point in time
 		virtual double computeEnergy() = 0;
 		// compute energy of tuning parameters, i.e. negative log area barrier
 		double regularizationEnergy();
+		// compute regularization energy over tri
+		double regularizationEnergy(Triangle *tri);
 		// add gradient of regularization energy of i th point of
 		// triArr[t] to gradX, gradY; sets these to 0 appropriately
 		// if point is on x or y boundaries of image
@@ -120,11 +122,12 @@ class Approx {
 		vector<Point> boundingBox();
 		vector<array<int, 3>> boundingFaces();
 
-		// run one full step of the procedure while tracking energy values
+		// run one full step of the procedure while tracking energy values;
+		// approxErr is new approximation energy after this step
 		// return stepsize used in this step
 		// stringent determines whether any energy increase is tolerated,
 		// defaults true (no tolerance)
-		double step(double &prevEnergy, double &newEnergy, bool stringent = true);
+		double step(double &prevEnergy, double &newEnergy, double &approxErr, bool stringent = true);
 		// run the entire procedure for either maxIter iterations or
 		// until change in energy is at most eps
 		void run(int maxIter = 100, double eps = 0.001);

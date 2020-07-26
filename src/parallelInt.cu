@@ -130,7 +130,7 @@ __global__ void pixConstantEnergyInt(Pixel *pixArr, int maxX, int maxY, Triangle
 double ParallelIntegrator::constantEnergyExact(Triangle *tri, double color) {
 	dim3 numBlocks((maxX + threadsX - 1) / threadsX, (maxY + threadsY - 1) / threadsY);
 	pixConstantEnergyInt<<<numBlocks, threads2D>>>(pixArr, maxX, maxY, *tri, color, arr);
-	double answer = -LOG_AREA_MULTIPLIER * log(max(0.0,tri->getArea() - AREA_THRESHOLD)) + sumArray(maxX * maxY);
+	double answer = sumArray(maxX * maxY);
 	return answer;
 }
 
@@ -168,7 +168,7 @@ double ParallelIntegrator::constantEnergyApprox(Triangle *tri, double color, dou
 	dim3 numBlocks((samples + threadsX - 1) / threadsX, (samples + threadsY - 1) / threadsY);
 	double dA = tri->getArea() / (samples * samples);
 	approxConstantEnergySample<<<numBlocks, threads2D>>>(pixArr, maxX, maxY, curTri, curTri + 1, curTri + 2, color, arr, dA, samples);
-	double answer = -LOG_AREA_MULTIPLIER * log(max(0.0,tri->getArea() - AREA_THRESHOLD)) + sumArray(samples * (samples + 1) / 2);
+	double answer = sumArray(samples * (samples + 1) / 2);
 	return answer;
 }
 
@@ -400,8 +400,6 @@ __global__ void linearDoubleIntSample(Pixel *pixArr, int maxX, int maxY, Point *
 	int u = blockIdx.x * blockDim.x + threadIdx.x; // component towards b
 	int v = blockIdx.y * blockDim.y + threadIdx.y; // component towards c
 	int ind = (2 * samples - u + 1) * u / 2 + v; // 1D index in results
-	double scaledU = (double) u / samples;
-	double scaledV = (double) v / samples;
 	if(u + v < samples) {
 		double x = (a->getX() * (samples - u - v) + b->getX() * u + c->getX() * v) / samples;
 		double y = (a->getY() * (samples - u - v) + b->getY() * u + c->getY() * v) / samples;
@@ -411,9 +409,9 @@ __global__ void linearDoubleIntSample(Pixel *pixArr, int maxX, int maxY, Point *
 		double areaContrib = (u+v == samples - 1) ? dA : 2 * dA;
 		// get FEM basis value at this point
 		double phi;
-		if(basisInd == 0) phi = 1 - scaledU - scaledV;
-		if(basisInd == 1) phi = scaledU;
-		if(basisInd == 2) phi = scaledV;
+		if(basisInd == 0) phi = (double) (samples - u - v) / samples;
+		if(basisInd == 1) phi = (double) u / samples;
+		if(basisInd == 2) phi = (double) v / samples;
 		results[ind] = pixArr[pixX * maxY + pixY].getColor(channel) * areaContrib * phi;
 	}
 }
@@ -453,8 +451,6 @@ double ParallelIntegrator::doubleIntEval(Triangle *tri, double ds, ColorChannel 
 __global__ void approxLinearEnergySample(Pixel *pixArr, int maxX, int maxY, Point *a, Point *b, Point *c, double k0, double k1, double k2, double *results, double dA, int samples) {
 	int u = blockIdx.x * blockDim.x + threadIdx.x; // component towards b
 	int v = blockIdx.y * blockDim.y + threadIdx.y; // component towards c
-	double scaledU = (double) u / samples;
-	double scaledV = (double) v / samples;
 	int ind = (2 * samples - u + 1) * u / 2 + v; // 1D index in results
 	// this is because there are s points in the first column, s-1 in the next, etc. up to s - u + 1
 	if(u + v < samples) {
@@ -465,8 +461,7 @@ __global__ void approxLinearEnergySample(Pixel *pixArr, int maxX, int maxY, Poin
 		int pixX = pixelRound(x, maxX);
 		int pixY = pixelRound(y, maxY);
 		// find color at this point using standard transform
-		double color = k0 * (1 -scaledU -scaledV) + k1 * scaledU + k2 * scaledV;
-		double diff = color - pixArr[pixX * maxY + pixY].getColor();
+		double diff = (k0 * (samples - u - v) + k1 * u + k2 * v) / samples - pixArr[pixX * maxY + pixY].getColor();
 		// account for points near edge bc having triangle contributions rather than parallelograms,
 		// written for fast access and minimal branching
 		double areaContrib = (u + v == samples - 1) ? dA : 2 * dA;
@@ -485,7 +480,7 @@ double ParallelIntegrator::linearEnergyApprox(Triangle *tri, double *coeffs, dou
 	double dA = tri->getArea() / (samples * samples);
 	approxLinearEnergySample<<<numBlocks, threads2D>>>(pixArr, maxX, maxY, curTri, curTri + 1, curTri + 2,
 		coeffs[i], coeffs[(i+1)%3], coeffs[(i+2)%3], arr, dA, samples);
-	double answer = -LOG_AREA_MULTIPLIER * log(max(0.0,tri->getArea() - AREA_THRESHOLD)) + sumArray(samples * (samples + 1) / 2);
+	double answer = sumArray(samples * (samples + 1) / 2);
 	return answer;
 }
 

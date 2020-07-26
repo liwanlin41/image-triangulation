@@ -167,9 +167,13 @@ void Approx::initialize(ApproxType approxtype, vector<Point> &pts, vector<array<
 double Approx::regularizationEnergy() {
 	double energy = 0;
 	for(int t = 0; t < numPoints; t++) {
-		energy -= LOG_AREA_MULTIPLIER * log(triArr[t].getArea() - AREA_THRESHOLD);
+		energy -= LOG_AREA_MULTIPLIER * log(max(0.0, triArr[t].getArea() - AREA_THRESHOLD));
 	}
 	return energy;
+}
+
+double Approx::regularizationEnergy(Triangle *tri) {
+	return -LOG_AREA_MULTIPLIER * log(max(0.0, tri->getArea() - AREA_THRESHOLD));
 }
 
 void Approx::regularizationGrad(int t, int i, double &gradX, double &gradY) {
@@ -245,7 +249,7 @@ void Approx::undo() {
 	}
 }
 
-double Approx::step(double &prevEnergy, double &newEnergy, bool stringent) {
+double Approx::step(double &prevEnergy, double &newEnergy, double &approxErr, bool stringent) {
 	// reset status of tiny triangles
 	tinyTriangles.clear();
 	zeroed = false;
@@ -256,7 +260,8 @@ double Approx::step(double &prevEnergy, double &newEnergy, bool stringent) {
 	}
 	updateApprox();
     prevEnergy = newEnergy;
-	newEnergy = computeEnergy();
+	approxErr = computeEnergy();
+	newEnergy = approxErr + regularizationEnergy();
     // TODO: tune this
 	if(newEnergy > prevEnergy) { // overshot optimum?
 		do {
@@ -264,7 +269,8 @@ double Approx::step(double &prevEnergy, double &newEnergy, bool stringent) {
             	undo();
         	} while (!gradUpdate());
         	updateApprox();
-			newEnergy = computeEnergy();
+			approxErr = computeEnergy();
+			newEnergy = approxErr + regularizationEnergy();
 			// prevent infinite loop
 			if(stepSize < ABSOLUTE_MIN) {
 				break;
@@ -282,13 +288,14 @@ double Approx::step(double &prevEnergy, double &newEnergy, bool stringent) {
 
 void Approx::run(int maxIter, double eps) {
 	// track change in energy for stopping point
-	double newEnergy = computeEnergy();
+	double approxErr = computeEnergy();
+	double newEnergy = approxErr + regularizationEnergy();
 	// initialize to something higher than newEnergy
 	double prevEnergy = newEnergy + 100 * eps;
 	int iterCount = 0;
 	while(iterCount < maxIter && abs(prevEnergy - newEnergy) > eps) {
 		cout << "iteration " << iterCount << endl;
-		step(prevEnergy, newEnergy);
+		step(prevEnergy, newEnergy, approxErr);
 		iterCount++;
 	}
 }
