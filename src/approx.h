@@ -46,7 +46,8 @@ class Approx {
 		// edge represented by sorted indices of points
 
 		set<int> tinyTriangles; // triangles at risk of inverting
-		bool zeroed = false; // whether gradients of tiny triangles have already been zeroed
+		bool zeroed = false; // whether image gradients of tiny triangles have already been zeroed
+		bool areaThrottled = false; // whether total gradients of tiny triangles have been zeroed
 
         // initialize triangulation and integrator
 		// initialize the triangulation on this approximation using a coarse grid,

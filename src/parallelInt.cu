@@ -428,9 +428,11 @@ double ParallelIntegrator::doubleIntApprox(Triangle *tri, double ds, ColorChanne
 			constDoubleIntSample<<<numBlocks, threads2D>>>(pixArr, maxX, maxY, curTri, curTri+1, curTri+2, arr, dA, samples, channel);
 			break;
 		}
-		case linear:
-			linearDoubleIntSample<<<numBlocks, threads2D>>>(pixArr, maxX, maxY, curTri, curTri+1, curTri+2, arr, dA, samples, channel, (basisInd+3-i)%3);
+		case linear: {
+			int relativeBasis = (basisInd + 3 - i) % 3;
+			linearDoubleIntSample<<<numBlocks, threads2D>>>(pixArr, maxX, maxY, curTri, curTri+1, curTri+2, arr, dA, samples, channel, relativeBasis);
 			break;
+		}
 		case quadratic:
 			break;
 	}

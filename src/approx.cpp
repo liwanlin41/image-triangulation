@@ -210,7 +210,7 @@ bool Approx::gradUpdate() {
 	bool inverted = false;
 	for(int t = 0; t < numTri; t++) {
 		if(triArr[t].getSignedArea() < AREA_THRESHOLD) {
-			if(!zeroed) {
+			if(!zeroed || !areaThrottled) {
 				tinyTriangles.insert(t);
 			}
 			inverted = true;
@@ -246,6 +246,20 @@ void Approx::undo() {
 		} else {
 			tinyTriangles.clear();
 		}
+	} else if(!areaThrottled) { // small triangles have been determined
+		if(stepSize < MIN_STEP) {
+			// now even the log gradients are too large, so zero them out
+			for(int t : tinyTriangles) {
+				for(int p : faces.at(t)) {
+					gradX[points + p] = 0;
+					gradY[points + p] = 0;
+				}
+			}
+			stepSize = originalStep;
+			areaThrottled = true;
+		} else {
+			tinyTriangles.clear();
+		}
 	}
 }
 
@@ -253,6 +267,7 @@ double Approx::step(double &prevEnergy, double &newEnergy, double &approxErr, bo
 	// reset status of tiny triangles
 	tinyTriangles.clear();
 	zeroed = false;
+	areaThrottled = false;
 	double usedStep;
 	computeGrad();
     while(!gradUpdate()) {
