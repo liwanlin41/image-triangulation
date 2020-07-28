@@ -368,7 +368,6 @@ void Approx::subdivide(int n) {
 		}
 		curIndex++;
 	}
-	cout << "subdivisions extracted" << endl;
 
 	stepSize = originalStep;
 	updateMesh(&newPoints, &newTriangles, &trianglesToRemove);

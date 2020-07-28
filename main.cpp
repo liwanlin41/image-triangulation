@@ -93,7 +93,7 @@ void updateMesh(Approx *approx) {
 
 // if show, display all edges of mesh
 // else hide all edges
-void showEdges(Approx *approx, bool show) {
+void showEdges(Approx *approx, bool &show) {
     double edgeWidth = (show) ? 1 : 0;
     if(approx->getApproxType() == linear) {
         int numFaces = approx->getFaces().size();
@@ -106,6 +106,7 @@ void showEdges(Approx *approx, bool show) {
     } else if(approx->getApproxType() == constant) {
         polyscope::getSurfaceMesh("Triangulation")->setEdgeWidth(edgeWidth);
     }
+    show = !show;
 }
 
 // in the linear case, highlight the edges of the t th triangle
@@ -192,6 +193,7 @@ int main(int argc, char* argv[]) {
     int numPresses = 0;
     string angryButton = "More Triangles";
 
+    bool started = false; // whether process has been started and meshes registered
     bool displayEdges = true;
 
     auto callback = [&]() {
@@ -201,20 +203,21 @@ int main(int argc, char* argv[]) {
 
         if (ImGui::Button("Start")) {
             initialize();
+            started = true;
         }
         ImGui::SameLine();
         // step by step
-        if (ImGui::Button("Step")) {
+        if (ImGui::Button("Step") && started) {
             step();
         }
         ImGui::SameLine();
         // run the triangulation
-        if (ImGui::Button("Gradient Flow")) {
+        if (ImGui::Button("Gradient Flow") && started) {
             runGradient();
         }
 
         // allow retriangulation
-        if (ImGui::Button(angryButton.c_str())) {
+        if (ImGui::Button(angryButton.c_str()) && started) {
             retriangulate();
             if(numPresses >= 3 && numPresses < 3 + angryButtonVec.size()) {
                 angryButton = angryButtonVec.at(numPresses - 3);
@@ -224,9 +227,8 @@ int main(int argc, char* argv[]) {
             numPresses++;
         }
 
-        if(ImGui::Button("Show Edges")) {
+        if(ImGui::Button("Show Edges") && started) {
             sim.revealEdges(displayEdges);
-            displayEdges = !displayEdges;
         }
     };
 
@@ -234,7 +236,16 @@ int main(int argc, char* argv[]) {
     polyscope::view::style = polyscope::view::NavigateStyle::Planar;
     polyscope::state::userCallback = callback;
     polyscope::show();
-    polyscope::screenshot("../outputs/triangulation.tga", false);
+    if(started) {
+        // take screenshot of just the triangulated image
+        displayEdges = false;
+        sim.revealEdges(displayEdges);
+        polyscope::screenshot("../outputs/triangulation.tga", false);
+        // take screenshot with edges shown
+        displayEdges = true;
+        sim.revealEdges(displayEdges);
+        polyscope::screenshot("../outputs/meshed.tga", false);
+    }
 
     sim.cleanup();
 	return 0;
