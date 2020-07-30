@@ -244,7 +244,7 @@ int main(int argc, char* argv[]) {
         // take screenshot with edges shown
         displayEdges = true;
         sim.revealEdges(displayEdges);
-        polyscope::screenshot("../outputs/meshed.tga", false);
+        polyscope::screenshot("../outputs/edges.tga", false);
     }
 
     sim.cleanup();

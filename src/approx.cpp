@@ -297,7 +297,7 @@ double Approx::step(double &prevEnergy, double &newEnergy, double &approxErr, bo
 		stepSize *= 2; // prevent complete vanishing to zero
 	}
     cout << "new energy: " << newEnergy << endl;
-	cout << "Step size: " << usedStep << endl;
+	cout << "step size: " << usedStep << endl;
 	return usedStep;
 }
 
@@ -318,7 +318,6 @@ void Approx::run(int maxIter, double eps) {
 void Approx::subdivide(int n) {
 	vector<array<double, 3>> edgeEnergies;
 	computeEdgeEnergies(&edgeEnergies);
-	cout << "done computing energies" << endl;
 	// sort by energies
 	sort(edgeEnergies.begin(), edgeEnergies.end(), [](const array<double, 3> a, const array<double, 3> b) {
 		return a[2] < b[2];
@@ -368,6 +367,8 @@ void Approx::subdivide(int n) {
 		}
 		curIndex++;
 	}
+
+	cout << "subdivisions extracted" << endl;
 
 	stepSize = originalStep;
 	updateMesh(&newPoints, &newTriangles, &trianglesToRemove);
