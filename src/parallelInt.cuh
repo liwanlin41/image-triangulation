@@ -86,9 +86,8 @@ class ParallelIntegrator {
         void doubleIntApprox(Triangle *tri, double ds, double *result, ColorChannel channel);
 
         // compute integral f d phi_j dA over tri when pt is moving
-        double linearImageGradient(Triangle *tri, int pt, bool isX, double ds, int basisInd);
         // store result in result[j]
-        //void linearImageGradient(Triangle *tri, int pt, bool isX, double ds, double *result);
+        void linearImageGradient(Triangle *tri, int pt, bool isX, double ds, double *result);
 };
 
 #endif

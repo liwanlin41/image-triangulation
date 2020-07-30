@@ -339,16 +339,18 @@ TEST(LinearIntegrationTest, ImageGradient) {
 
     // animate points[1] in the x direction
     double expectedX[3] = {1, -1, 0};
+    double computedX[3];
+    integrator.linearImageGradient(&tri, 1, true, ds, computedX);
     for(int i = 0; i < 3; i++) {
-        double computed = integrator.linearImageGradient(&tri, 1, true, ds, i);
         //cout << expectedX[i] << ", " << computed << endl;
-        ASSERT_TRUE(abs(expectedX[i] - computed) < TOLERANCE * max(abs(expectedX[i]), 1.0));
+        ASSERT_TRUE(abs(expectedX[i] - computedX[i]) < TOLERANCE * max(abs(expectedX[i]), 1.0));
     }
     double expectedY[3] = {4.0/3, 0, -4.0/3};
+    double computedY[3];
+    integrator.linearImageGradient(&tri, 1, false, ds, computedY);
     for(int i = 0; i < 3; i++) {
-        double computed = integrator.linearImageGradient(&tri, 1, false, ds, i);
         //cout << expectedY[i] << ", " << computed << endl;
-        ASSERT_TRUE(abs(expectedY[i] - computed) < TOLERANCE * max(abs(expectedY[i]), 1.0));
+        ASSERT_TRUE(abs(expectedY[i] - computedY[i]) < TOLERANCE * max(abs(expectedY[i]), 1.0));
     }
     cudaFree(pixArr);
     cudaFree(points);

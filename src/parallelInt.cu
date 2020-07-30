@@ -1,5 +1,9 @@
 #include "parallelInt.cuh"
 
+// linear basis element derivatives
+__device__ static const double phiU[3] = {-1, 1, 0};
+__device__ static const double phiV[3] = {-1, 0, 1};
+
 ParallelIntegrator::ParallelIntegrator() {
 	threads2D = dim3(threadsX, threadsY);
 }
@@ -502,62 +506,58 @@ double ParallelIntegrator::linearEnergyApprox(Triangle *tri, double *coeffs, dou
 	return answer;
 }
 
-// kernel function for computing integral of 2A_T f d(phi_j) dA when point a is moving at (1,0)
+// kernel function for computing integral of 2A_T f d(phi_j) dA when pts[0] is moving at (1,0)
 // phiU, phiV indicate d phi/du, d phi/dv and dA_x is the area gradient
-__global__ void linearImageGradientX(Pixel *pixArr, int maxX, int maxY, Point *a, Point *b, Point *c, double *results, 
-	double dA, double dA_x, int samples, const double phiU, const double phiV) {
-	int uInd = blockIdx.x * blockDim.x + threadIdx.x; // component towards b
-	int vInd = blockIdx.y * blockDim.y + threadIdx.y; // component towards c
+__global__ void linearImageGradientX(Pixel *pixArr, int maxX, int maxY, Point *pts, double **results, double dA, double dA_x, int samples) {
+	int uInd = blockIdx.x * blockDim.x + threadIdx.x; // component towards pts[1]
+	int vInd = blockIdx.y * blockDim.y + threadIdx.y; // component towards pts[2]
 	double u = (double) uInd / samples;
 	double v = (double) vInd / samples;
 	int ind = (2 * samples - uInd + 1) * uInd / 2 + vInd; // 1D index in results
-	// this is because there are s points in the first column, s-1 in the next, etc. up to s - u + 1
 	if(uInd + vInd < samples) {
-		// get coordinates of this point using appropriate weights, computed using uInd, vInd for accuracy
-		double x = (a->getX() * (samples - uInd - vInd) + b->getX() * uInd + c->getX() * vInd) / samples;
-		double y = (a->getY() * (samples - uInd - vInd) + b->getY() * uInd + c->getY() * vInd) / samples;
-		// find du/dt, dv/dt at this point (scaled by 2A_T)
-		double du = y - c->getY() - 2 * u * dA_x;
-		double dv = b->getY() - y - 2 * v * dA_x;
-
-		// find containing pixel
-		int pixX = pixelRound(x, maxX);
-		int pixY = pixelRound(y, maxY);
-		double color = pixArr[pixX * maxY + pixY].getColor();
-		// account for points near edge bc having triangle contributions rather than parallelograms
-		double areaContrib = (uInd + vInd == samples - 1) ? dA : 2 * dA;
-		results[ind] = color * (phiU * du + phiV * dv) * areaContrib;
+		// get coordinates of this point using appropriate weights
+		double x = (pts[0].getX() * (samples - uInd - vInd) + pts[1].getX() * uInd + pts[2].getX() * vInd) / samples;
+		double y = (pts[0].getY() * (samples - uInd - vInd) + pts[1].getY() * uInd + pts[2].getY() * vInd) / samples;
+		// compute du/dt, dv/dt at this point (scaled by 2A_T)
+		double du = y - pts[2].getY() - 2 * u * dA_x;
+		double dv = pts[1].getY() - y - 2 * v * dA_x;
+		// find color of containing pixel
+		double color = pixArr[pixelRound(x, maxX) * maxY + pixelRound(y, maxY)].getColor();
+		// account for points near opposite edge having triangle contributions rather than parallelograms
+		double fdA = (uInd + vInd == samples - 1) ? color * dA : 2 * color * dA;
+		// compute all three basis element contributions
+		results[0][ind] = fdA * (phiU[0] * du + phiV[0] * dv);
+		results[1][ind] = fdA * (phiU[1] * du + phiV[1] * dv);
+		results[2][ind] = fdA * (phiU[2] * du + phiV[2] * dv);
 	}
 }
 
-// same kernel function but when a is moving at (0,1)
-__global__ void linearImageGradientY(Pixel *pixArr, int maxX, int maxY, Point *a, Point *b, Point *c, double *results,
-	double dA, double dA_y, int samples, const double phiU, const double phiV) {
-	int uInd = blockIdx.x * blockDim.x + threadIdx.x; // component towards b
-	int vInd = blockIdx.y * blockDim.y + threadIdx.y; // component towards c
+// same kernel function but when pts[0] is moving at (0,1)
+__global__ void linearImageGradientY(Pixel *pixArr, int maxX, int maxY, Point *pts, double **results, double dA, double dA_y, int samples) {
+	int uInd = blockIdx.x * blockDim.x + threadIdx.x; // component towards pts[1]
+	int vInd = blockIdx.y * blockDim.y + threadIdx.y; // component towards pts[2]
 	double u = (double) uInd / samples;
 	double v = (double) vInd / samples;
 	int ind = (2 * samples - uInd + 1) * uInd / 2 + vInd; // 1D index in results
-	// this is because there are s points in the first column, s-1 in the next, etc. up to s - u + 1
 	if(uInd + vInd < samples) {
-		// get coordinates of this point using appropriate weights, computed using uInd, vInd for accuracy
-		double x = (a->getX() * (samples - uInd - vInd) + b->getX() * uInd + c->getX() * vInd) / samples;
-		double y = (a->getY() * (samples - uInd - vInd) + b->getY() * uInd + c->getY() * vInd) / samples;
+		// get coordinates of this point using appropriate weights
+		double x = (pts[0].getX() * (samples - uInd - vInd) + pts[1].getX() * uInd + pts[2].getX() * vInd) / samples;
+		double y = (pts[0].getY() * (samples - uInd - vInd) + pts[1].getY() * uInd + pts[2].getY() * vInd) / samples;
 		// find du/dt, dv/dt at this point (scaled by 2A_T)
-		double du = c->getX() - x - 2 * u * dA_y;
-		double dv = x - b->getX() - 2 * v * dA_y;
-
-		// find containing pixel
-		int pixX = pixelRound(x, maxX);
-		int pixY = pixelRound(y, maxY);
-		double color = pixArr[pixX * maxY + pixY].getColor();
-		// account for points near edge bc having triangle contributions rather than parallelograms
-		double areaContrib = (uInd + vInd == samples - 1) ? dA : 2 * dA;
-		results[ind] = color * (phiU * du + phiV * dv) * areaContrib;
+		double du = pts[2].getX() - x - 2 * u * dA_y;
+		double dv = x - pts[1].getX() - 2 * v * dA_y;
+		// find color of containing pixel
+		double color = pixArr[pixelRound(x, maxX) * maxY + pixelRound(y, maxY)].getColor();
+		// account for points near opposite edge having triangle contributions rather than parallelograms
+		double fdA = (uInd + vInd == samples - 1) ? color * dA : 2 * color * dA;
+		// compute all three basis element contributions
+		results[0][ind] = fdA * (phiU[0] * du + phiV[0] * dv);
+		results[1][ind] = fdA * (phiU[1] * du + phiV[1] * dv);
+		results[2][ind] = fdA * (phiU[2] * du + phiV[2] * dv);
 	}
 }
 
-double ParallelIntegrator::linearImageGradient(Triangle *tri, int pt, bool isX, double ds, int basisInd) {
+void ParallelIntegrator::linearImageGradient(Triangle *tri, int pt, bool isX, double ds, double *result) {
 	// copy pt into curTri[0]
 	tri->copyVertices(curTri+((3-pt)%3), curTri+((4-pt)%3), curTri+((5-pt)%3));
 	// extract number of samples
@@ -567,15 +567,13 @@ double ParallelIntegrator::linearImageGradient(Triangle *tri, int pt, bool isX, 
 	double dA = tri->getArea() / (samples * samples);
 	double dA_x = tri->gradX(pt);
 	double dA_y = tri->gradY(pt);
-	// dPhi/du, dPhi/dv where phi is relative to pt being the vertex at (0,0)
-	double phiU = (pt - basisInd + 3) % 3 - 1;
-	double phiV = (basisInd - pt + 3) % 3 - 1;
 	if(isX) {
-		linearImageGradientX<<<numBlocks, threads2D>>>(pixArr, maxX, maxY, curTri, curTri + 1, curTri + 2, arr[0], dA, dA_x, samples, phiU, phiV);
+		linearImageGradientX<<<numBlocks, threads2D>>>(pixArr, maxX, maxY, curTri, arr, dA, dA_x, samples);
 	} else {
-		linearImageGradientY<<<numBlocks, threads2D>>>(pixArr, maxX, maxY, curTri, curTri + 1, curTri + 2, arr[0], dA, dA_y, samples, phiU, phiV);
+		linearImageGradientY<<<numBlocks, threads2D>>>(pixArr, maxX, maxY, curTri, arr, dA, dA_y, samples);
 	}
-	double answer = sumArray(samples * (samples + 1) / 2);
-	answer /= (2 * tri->getArea());
-	return answer;
+	for(int j = 0; j < approx; j++) {
+		int relativeBasis = (j - pt + approx) % approx; // align curTri with ordering of basis elements
+		result[j] = sumArray(samples * (samples + 1) / 2, relativeBasis) / (2 * tri->getArea());
+	}
 }

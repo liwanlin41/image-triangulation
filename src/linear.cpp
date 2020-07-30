@@ -69,6 +69,14 @@ void LinearApprox::gradient(int t, int movingPt, double *gradX, double *gradY) {
     double gradient[2] = {0,0};
     double dA[2] = {triArr[t].gradX(movingPt), triArr[t].gradY(movingPt)};
 
+    double dL[2][3]; // gradient of f phi_j dA; first row in x direction, second in y
+    for(int i = 0; i < 2; i++) {
+        integrator.linearImageGradient(triArr + t, movingPt, (i == 0), ds, dL[i]); // area integral
+        for(int j = 0; j < 3; j++) {
+            dL[i][j] += integrator.lineIntEval(triArr + t, movingPt, (i == 0), ds/2, j); // boundary integral
+        }
+    }
+    /*
     double dL[3][2] = {{0,0},{0,0},{0,0}}; // gradient of f phi_j dA; find these first
     for(int j = 0; j < 3; j++) {
         for(int i = 0; i < 2; i++) {
@@ -76,13 +84,31 @@ void LinearApprox::gradient(int t, int movingPt, double *gradX, double *gradY) {
                 + integrator.lineIntEval(triArr + t, movingPt, (i == 0), ds/2, j); // boundary integral
         }
     }
+    */
 
+   double dLA[2][3]; // gradient of d(L/A)
+   for(int i = 0; i < 2; i++) {
+       for(int j = 0; j < 3; j++) {
+           dLA[i][j] = (area * dL[i][j] - basisIntegral[t][j] * dA[i]) / (area * area);
+       }
+   }
+
+    /*
     double dLA[3][2]; // gradient of d(L/A)
     for(int j = 0; j < 3; j++) {
         for(int i = 0; i < 2; i++) {
             dLA[j][i] = (area * dL[j][i] - basisIntegral[t][j] * dA[i]) / (area * area);
         }
     }
+    */
+    double dc[2][3] = {{0,0,0},{0,0,0}}; // gradients of coefficients
+    for(int j = 0; j < 3; j++) {
+        for(int k = 0; k < 3; k++) {
+            dc[0][j] += matrix[j][k] * dLA[0][k];
+            dc[1][j] += matrix[j][k] * dLA[1][k];
+        }
+    }
+    /*
     double dc[3][2] = {{0,0}, {0,0}, {0,0}}; // gradients of coefficients
     for(int j = 0; j < 3; j++) {
         for(int k = 0; k < 3; k++) {
@@ -90,11 +116,19 @@ void LinearApprox::gradient(int t, int movingPt, double *gradX, double *gradY) {
             dc[j][1] += matrix[j][k] * dLA[k][1];
         }
     }
+    */
+   for(int i = 0; i < 2; i++) {
+       for(int j = 0; j < 3; j++) {
+            gradient[i] -= (dc[i][j] * basisIntegral[t][j] + coefficients[t][j] * dL[i][j]);
+       }
+   }
+   /*
     for(int j = 0; j < 3; j++) {
         for(int i = 0; i < 2; i++) {
             gradient[i] -= (dc[j][i] * basisIntegral[t][j] + coefficients[t][j] * dL[j][i]);
         }
     }
+    */
 
     // in case of small area, only use log barrier gradient
     // to move away from small area

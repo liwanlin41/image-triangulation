@@ -152,3 +152,42 @@ GPU activities:   45.41%  4.62908s     91224  50.744us  6.8800us  1.0706ms  cons
      API calls:   86.86%  9.77674s    134664  72.601us  2.1020us  8.3767ms  cudaDeviceSynchronize
 
 Conclusion: overall time grows with number of triangles; average call times decrease (because each triangle is smaller and thus requires fewer samples)
+
+FEM BASIS RESTRUCTURING:
+linear apple.jpeg, TRIM 0.05 runs for 84 iterations in 74.9461s, final energy 6.43552e+06
+constant runs for 29 iterations in 4.14554s final energy 9.59771e+06
+
+GPU activities:   41.70%  33.1988s    645120  51.461us  12.576us  1.0731ms  linearLineIntSample
+                  17.59%  14.0065s   2475332  5.6580us  2.5920us  1.0218ms  sumBlock
+                  13.79%  10.9783s    337920  32.487us  9.6310us  1.3751ms  linearDoubleIntSample
+                  12.76%  10.1616s    241920  42.004us  12.288us  1.0619ms  linearImageGradientY
+                  12.75%  10.1494s    241920  41.953us  12.415us  1.0473ms  linearImageGradientX
+                   1.42%  1.12673s     31040  36.299us  10.144us  1.0268ms  approxLinearEnergySample
+
+linear 93 iterations final energy 6.50833e+06
+GPU activities:   45.02%  36.9388s    714240  51.717us  12.544us  1.2540ms  linearLineIntSample
+                  18.66%  15.3086s   2706292  5.6560us  2.6230us  2.8428ms  sumBlock
+                  13.87%  11.3830s    267840  42.499us  12.351us  1.4040ms  linearImageGradientX
+                  13.82%  11.3417s    267840  42.344us  12.319us  1.2077ms  linearImageGradientY
+                   7.24%  5.93701s    120320  49.343us  12.992us  1.5556ms  linearDoubleIntSample
+                   1.40%  1.14894s     30080  38.196us  10.175us  1.1451ms  approxLinearEnergySample
+     API calls:   83.87%  80.1159s   1640960  48.822us  1.2540us  5.7657ms  cudaDeviceSynchronize
+
+after modifying line integral: linear 70 iterations energy 6.26076e+06
+GPU activities:   27.70%  12.7203s    537600  23.661us  7.0080us  1.5195ms  linearLineIntSample
+                  23.14%  10.6246s   2012577  5.2790us  2.5920us  1.0224ms  sumBlock
+                  18.14%  8.33162s    201600  41.327us  12.352us  1.4166ms  linearImageGradientX
+                  18.06%  8.29218s    201600  41.131us  12.320us  1.2718ms  linearImageGradientY
+                  10.74%  4.93224s     99200  49.720us  13.024us  1.8576ms  linearDoubleIntSample
+                   2.22%  1.02028s     31040  32.869us  10.144us  1.3181ms  approxLinearEnergySample
+     API calls:   79.20%  43.0133s   1269440  33.883us  1.1990us  2.0991ms  cudaDeviceSynchronize
+
+after modifying gradient integral: linear 70 iterations energy 6.49494e+06
+GPU activities:   35.21%  13.0951s    537600  24.358us  7.0400us  1.2063ms  linearLineIntSample
+                  27.72%  10.3083s   1948577  5.2900us  2.6240us  1.0310ms  sumBlock
+                  11.64%  4.32852s     67200  64.412us  14.848us  1.4090ms  linearImageGradientX
+                  11.61%  4.31857s     67200  64.264us  14.816us  1.4318ms  linearImageGradientY
+                  11.58%  4.30510s     91200  47.204us  12.960us  1.8430ms  linearDoubleIntSample
+                   2.25%  835.76ms     23040  36.274us  10.112us  1.2442ms  approxLinearEnergySample
+     API calls:   77.11%  35.4108s   1237440  28.616us  1.2650us  9.4897ms  cudaDeviceSynchronize
+
