@@ -105,7 +105,9 @@ void Approx::initialize(ApproxType approxtype, int pixelRate) {
 	// maximum possible number of samples per triangle is loosely upper bounded by 2 * maxDivisions^2
 	// assumming edge lengths are bounded above by maxDivisions * 2
 	long long resultSlots = max(2 * maxDivisions * maxDivisions, (long long) maxX * maxY); // at least num pixels
-	integrator.initialize(pixArr, maxX, maxY, approxtype, resultSlots);
+	if(!integrator.initialize(pixArr, maxX, maxY, approxtype, resultSlots)) {
+		exit(EXIT_FAILURE);
+	}
 }
 
 void Approx::initialize(ApproxType approxtype, vector<Point> &pts, vector<array<int, 3>> &inds) {
@@ -161,7 +163,9 @@ void Approx::initialize(ApproxType approxtype, vector<Point> &pts, vector<array<
 	// maximum possible number of samples per triangle is loosely upper bounded by 2 * maxDivisions^2
 	// assumming edge lengths are bounded above by maxDivisions * 2
 	long long resultSlots = max(2 * maxDivisions * maxDivisions, (long long) maxX * maxY); // at least num pixels
-	integrator.initialize(pixArr, maxX, maxY, approxtype, resultSlots);
+	if(!integrator.initialize(pixArr, maxX, maxY, approxtype, resultSlots)) {
+		exit(EXIT_FAILURE);
+	}
 }
 
 double Approx::regularizationEnergy() {
