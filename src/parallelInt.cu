@@ -5,8 +5,18 @@ ParallelIntegrator::ParallelIntegrator() {
 }
 
 bool ParallelIntegrator::initialize(Pixel *pix, int xMax, int yMax, ApproxType a, long long space, bool exact) {
+	// steal references for easy access later
+	pixArr = pix;
+	approx = a;
+	maxX = xMax;
+	maxY = yMax;
+	computeExact = exact;
+	initialized = true;
 	// allocate working computation space
-	cudaMallocManaged(&arr, space * sizeof(double));
+	cudaMallocManaged(&arr, approx * sizeof(double *));
+	for(int i = 0; i < approx; i++) {
+		cudaMallocManaged(&(arr[i]), space * sizeof(double));
+	}
 	// less space needed for helper because it is only used for summing arr
 	long long helperSpace = ceil(space / 512.0);
 	cudaMallocManaged(&helper, helperSpace * sizeof(double));
@@ -22,19 +32,18 @@ bool ParallelIntegrator::initialize(Pixel *pix, int xMax, int yMax, ApproxType a
 		printf("CUDA error: %s\n", cudaGetErrorString(error));
 		return false;
 	}
-	// steal references for easy access later
-	pixArr = pix;
-	approx = a;
-	maxX = xMax;
-	maxY = yMax;
-	computeExact = exact;
 	return true;
 }
 
 ParallelIntegrator::~ParallelIntegrator() {
-	cudaFree(arr);
-	cudaFree(helper);
-	cudaFree(curTri);
+	if(initialized) {
+		for(int i = 0; i < approx; i++) {
+			cudaFree(arr[i]);
+		}
+		cudaFree(arr);
+		cudaFree(helper);
+		cudaFree(curTri);
+	}
 }
 
 __device__ void warpReduce(volatile double *sdata, unsigned int tid) {
@@ -92,15 +101,15 @@ __global__ void sumBlock(double *arr, int size, double *result) {
 	}
 }
 
-double ParallelIntegrator::sumArray(int size) {
+double ParallelIntegrator::sumArray(int size, int i) {
 	int curSize = size; // current length of array to sum
 	int numBlocks = (size + 2 * threads1D - 1) / (2 * threads1D);
 	bool ansArr = true; // whether results are currently held in arr
 	while(curSize > 1) {
 		if(ansArr) {
-			sumBlock<<<numBlocks, threads1D>>>(arr, curSize, helper);
+			sumBlock<<<numBlocks, threads1D>>>(arr[i], curSize, helper);
 		} else {
-			sumBlock<<<numBlocks, threads1D>>>(helper, curSize, arr);
+			sumBlock<<<numBlocks, threads1D>>>(helper, curSize, arr[i]);
 		}
 		curSize = numBlocks;
 		numBlocks = (numBlocks + 2 * threads1D - 1) / (2 * threads1D);
@@ -109,7 +118,7 @@ double ParallelIntegrator::sumArray(int size) {
 	// at this point the array has been summed
 	cudaDeviceSynchronize();
 	if(ansArr) { // arr should hold the results
-		return arr[0];
+		return arr[i][0];
 	}
 	return helper[0];
 }
@@ -129,7 +138,7 @@ __global__ void pixConstantEnergyInt(Pixel *pixArr, int maxX, int maxY, Triangle
 
 double ParallelIntegrator::constantEnergyExact(Triangle *tri, double color) {
 	dim3 numBlocks((maxX + threadsX - 1) / threadsX, (maxY + threadsY - 1) / threadsY);
-	pixConstantEnergyInt<<<numBlocks, threads2D>>>(pixArr, maxX, maxY, *tri, color, arr);
+	pixConstantEnergyInt<<<numBlocks, threads2D>>>(pixArr, maxX, maxY, *tri, color, arr[0]);
 	double answer = sumArray(maxX * maxY);
 	return answer;
 }
@@ -167,7 +176,7 @@ double ParallelIntegrator::constantEnergyApprox(Triangle *tri, double color, dou
 	// unfortunately half of these threads will not be doing useful work; no good fix, sqrt is too slow for triangular indexing
 	dim3 numBlocks((samples + threadsX - 1) / threadsX, (samples + threadsY - 1) / threadsY);
 	double dA = tri->getArea() / (samples * samples);
-	approxConstantEnergySample<<<numBlocks, threads2D>>>(pixArr, maxX, maxY, curTri, curTri + 1, curTri + 2, color, arr, dA, samples);
+	approxConstantEnergySample<<<numBlocks, threads2D>>>(pixArr, maxX, maxY, curTri, curTri + 1, curTri + 2, color, arr[0], dA, samples);
 	double answer = sumArray(samples * (samples + 1) / 2);
 	return answer;
 }
@@ -219,7 +228,7 @@ double ParallelIntegrator::lineIntExact(Triangle *tri, int pt, bool isX) {
 	// compute integral in parallel based on function to integrate
 	switch (approx) {
 		case constant: {
-			pixConstantLineInt<<<numBlocks, threads2D>>>(pixArr, maxX, maxY, curTri+((pt+2)%3), curTri+pt, curTri+((pt+1)%3), isX, arr);
+			pixConstantLineInt<<<numBlocks, threads2D>>>(pixArr, maxX, maxY, curTri+((pt+2)%3), curTri+pt, curTri+((pt+1)%3), isX, arr[0]);
 			break;
 		}
 		case linear: 
@@ -306,7 +315,7 @@ double ParallelIntegrator::lineIntApprox(Triangle *tri, int pt, bool isX, double
 				double totalLength = curTri->distance(curTri[i+1]);
 				// actual dx being used
 				double dx = totalLength / samples[i];
-				constLineIntSample<<<numBlocks[i], threads1D>>>(pixArr, maxX, maxY, curTri, curTri+i+1, (i==1), isX, arr, dx, samples[i]);
+				constLineIntSample<<<numBlocks[i], threads1D>>>(pixArr, maxX, maxY, curTri, curTri+i+1, (i==1), isX, arr[0], dx, samples[i]);
 				answer += sumArray(samples[i]);
 			}
 			break;
@@ -319,7 +328,7 @@ double ParallelIntegrator::lineIntApprox(Triangle *tri, int pt, bool isX, double
 					// in case num samples is too small; ensure at least 2 points are sampled
 					// (also prevent zero division error)
 					samples[i] = max(samples[i], 2);
-					linearLineIntSample<<<numBlocks[i], threads1D>>>(pixArr, maxX, maxY, curTri, curTri+i+1, (i==1), isX, arr, samples[i]-1, true);
+					linearLineIntSample<<<numBlocks[i], threads1D>>>(pixArr, maxX, maxY, curTri, curTri+i+1, (i==1), isX, arr[0], samples[i]-1, true);
 					answer += totalLength * sumArray(samples[i]) / samples[i];
 				}
 			} else { // integrate along segment pt, basisInd
@@ -328,7 +337,7 @@ double ParallelIntegrator::lineIntApprox(Triangle *tri, int pt, bool isX, double
 				double totalLength = curTri->distance(curTri[offset]);
 				// ensure at least 2 points are sampled
 				samples[i] = max(samples[i], 2);
-				linearLineIntSample<<<numBlocks[i], threads1D>>>(pixArr, maxX, maxY, curTri, curTri+offset, (offset==2), isX, arr, samples[i]-1, false);
+				linearLineIntSample<<<numBlocks[i], threads1D>>>(pixArr, maxX, maxY, curTri, curTri+offset, (offset==2), isX, arr[0], samples[i]-1, false);
 				answer += totalLength * sumArray(samples[i]) / samples[i];
 			}
 			break;
@@ -364,7 +373,7 @@ double ParallelIntegrator::doubleIntExact(Triangle *tri, ColorChannel channel) {
 	// compute integral in parallel based on function to integrate
 	switch (approx) {
 		case constant: {
-			pixConstantDoubleInt<<<numBlocks, threads2D>>>(pixArr, maxX, maxY, *tri, arr, channel);
+			pixConstantDoubleInt<<<numBlocks, threads2D>>>(pixArr, maxX, maxY, *tri, arr[0], channel);
 			break;
 		}
 		case linear: // TODO: fill out
@@ -425,12 +434,12 @@ double ParallelIntegrator::doubleIntApprox(Triangle *tri, double ds, ColorChanne
 	double dA = tri->getArea() / (samples * samples);
 	switch(approx) {
 		case constant: {
-			constDoubleIntSample<<<numBlocks, threads2D>>>(pixArr, maxX, maxY, curTri, curTri+1, curTri+2, arr, dA, samples, channel);
+			constDoubleIntSample<<<numBlocks, threads2D>>>(pixArr, maxX, maxY, curTri, curTri+1, curTri+2, arr[0], dA, samples, channel);
 			break;
 		}
 		case linear: {
 			int relativeBasis = (basisInd + 3 - i) % 3;
-			linearDoubleIntSample<<<numBlocks, threads2D>>>(pixArr, maxX, maxY, curTri, curTri+1, curTri+2, arr, dA, samples, channel, relativeBasis);
+			linearDoubleIntSample<<<numBlocks, threads2D>>>(pixArr, maxX, maxY, curTri, curTri+1, curTri+2, arr[0], dA, samples, channel, relativeBasis);
 			break;
 		}
 		case quadratic:
@@ -481,7 +490,7 @@ double ParallelIntegrator::linearEnergyApprox(Triangle *tri, double *coeffs, dou
 	dim3 numBlocks((samples + threadsX - 1) / threadsX, (samples + threadsY - 1) / threadsY);
 	double dA = tri->getArea() / (samples * samples);
 	approxLinearEnergySample<<<numBlocks, threads2D>>>(pixArr, maxX, maxY, curTri, curTri + 1, curTri + 2,
-		coeffs[i], coeffs[(i+1)%3], coeffs[(i+2)%3], arr, dA, samples);
+		coeffs[i], coeffs[(i+1)%3], coeffs[(i+2)%3], arr[0], dA, samples);
 	double answer = sumArray(samples * (samples + 1) / 2);
 	return answer;
 }
@@ -555,9 +564,9 @@ double ParallelIntegrator::linearImageGradient(Triangle *tri, int pt, bool isX, 
 	double phiU = (pt - basisInd + 3) % 3 - 1;
 	double phiV = (basisInd - pt + 3) % 3 - 1;
 	if(isX) {
-		linearImageGradientX<<<numBlocks, threads2D>>>(pixArr, maxX, maxY, curTri, curTri + 1, curTri + 2, arr, dA, dA_x, samples, phiU, phiV);
+		linearImageGradientX<<<numBlocks, threads2D>>>(pixArr, maxX, maxY, curTri, curTri + 1, curTri + 2, arr[0], dA, dA_x, samples, phiU, phiV);
 	} else {
-		linearImageGradientY<<<numBlocks, threads2D>>>(pixArr, maxX, maxY, curTri, curTri + 1, curTri + 2, arr, dA, dA_y, samples, phiU, phiV);
+		linearImageGradientY<<<numBlocks, threads2D>>>(pixArr, maxX, maxY, curTri, curTri + 1, curTri + 2, arr[0], dA, dA_y, samples, phiU, phiV);
 	}
 	double answer = sumArray(samples * (samples + 1) / 2);
 	answer /= (2 * tri->getArea());

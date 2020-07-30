@@ -9,7 +9,8 @@
 using namespace std;
 
 // define different supported approximation types
-enum ApproxType{constant, linear, quadratic};
+// with values the number of FEM basis elements
+enum ApproxType{constant = 1, linear = 3, quadratic = 6};
 
 // multiplication factor on log area barrier
 static const double LOG_AREA_MULTIPLIER = 100;
@@ -25,8 +26,12 @@ class ParallelIntegrator {
         static const int threadsY = 16;
         static const int threads1D = 1024; // NOTE: changing this will require changes in sumBlock
         dim3 threads2D;
-        // two large arrays to do computations
-        double *arr;
+
+        bool initialized = false; // for sake of memory freeing, determine whether integrator is initialized
+
+        // large array to hold parallel computations per basis element
+        double **arr;
+        // large array to hold partial sum computations
         double *helper;
         ApproxType approx; // type of approximation to do
         Pixel *pixArr; // reference to the image being approximated
@@ -35,12 +40,12 @@ class ParallelIntegrator {
         // true if computations are exact rather than approximate
         bool computeExact;
 
-        // sum the first size values of arr
-        double sumArray(int size);
+        // sum the first size values of arr[i]
+        double sumArray(int size, int i = 0);
 
     public:
         ParallelIntegrator();
-        // initialize parallel integrator
+        // initialize parallel integrator, where pixel array pix is already initialized in shared memory
         // space indicates the amount of computation space needed
         // default to using approximate integrals
         // return true if successful
@@ -73,15 +78,31 @@ class ParallelIntegrator {
         // approximate line integral using one sample every ds length
         double lineIntApprox(Triangle *tri, int pt, bool isX, double ds, int basisInd);
 
-        // compute double integral f phi dA over triangle triArr[t] where FEM basis phi depends on approx
+        // compute line integral (v dot n) * f phi ds over tri
+        // for all basis elements; consider when point with index pt in tri is moving
+        // at velocity (1,0) if isX and (0,1) if !isX; store ith basis integral in result[i]
+        /*
+        void lineIntEval(Triangle *tri, int pt, bool isX, double ds, double *result = NULL);
+        void lineIntApprox(Triangle *tri, int pt, bool isX, double ds, double *result);
+        */
+
+        // compute double integral f phi dA over tri where FEM basis phi depends on approx
         double doubleIntEval(Triangle *tri, double ds, ColorChannel channel = GRAY, int basisInd = 0);
         // compute by exact integral
         double doubleIntExact(Triangle *tri, ColorChannel channel);
         // approximate by grid with side length ds
         double doubleIntApprox(Triangle *tri, double ds, ColorChannel channel, int basisInd);
 
+        // compute double integral of f phi dA over triArr[t], storing ith result in result[i]
+        /*
+        void doubleIntEval(Triangle *tri, double ds, ColorChannel channel = GRAY, double *result = NULL);
+        void doubleIntApprox(Triangle *tri, double ds, ColorChannel channel, double *result);
+        */
+
         // compute integral f d phi_j dA over tri when pt is moving
         double linearImageGradient(Triangle *tri, int pt, bool isX, double ds, int basisInd);
+        // store result in result[j]
+        //void linearImageGradient(Triangle *tri, int pt, bool isX, double ds, double *result);
 };
 
 #endif
