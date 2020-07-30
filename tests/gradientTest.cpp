@@ -9,7 +9,7 @@
 using namespace std;
 using namespace cimg_library;
 
-static const int TEST_ITERATIONS = 1000;
+static const int TEST_ITERATIONS = 10;
 static const double eps = 0.001; // central finite difference step
 static const double TOLERANCE = 0.02; // approximation ratio
 
@@ -110,12 +110,16 @@ TEST(GradientTest, ConstantBug) {
     // Therefore compute energy as int (f-g)^2 dA - int f^2 dA
     // to account for the actual gradient we need to check
     pts[0].move(eps * vx, eps * vy);
-    double futureColor = integrator.doubleIntEval(&tri, ds) / tri.getArea();
+    double futureColor;
+    integrator.doubleIntEval(&tri, ds, &futureColor);
+    futureColor /= tri.getArea();
     double futureEnergy = integrator.constantEnergyEval(&tri, futureColor, ds)
         - integrator.constantEnergyEval(&tri, 0, ds) - LOG_AREA_MULTIPLIER * log(max(0.0, tri.getArea() - AREA_THRESHOLD));
         
     pts[0].move(-2 * eps * vx, -2 * eps * vy);
-    double pastColor = integrator.doubleIntEval(&tri, ds) / tri.getArea();
+    double pastColor;
+    integrator.doubleIntEval(&tri, ds, &pastColor);
+    pastColor /= tri.getArea();
     double pastEnergy = integrator.constantEnergyEval(&tri, pastColor, ds)
         - integrator.constantEnergyEval(&tri, 0, ds) - LOG_AREA_MULTIPLIER * log(max(0.0, tri.getArea() - AREA_THRESHOLD));
 
@@ -172,12 +176,16 @@ TEST(GradientTest, ConstantCase) {
         // Therefore compute energy as int (f-g)^2 dA - int f^2 dA
         // to account for the actual gradient we need to check
         pts[0].move(eps * vx, eps * vy);
-        double futureColor = integrator.doubleIntEval(&tri, ds) / tri.getArea();
+        double futureColor;
+        integrator.doubleIntEval(&tri, ds, &futureColor);
+        futureColor /= tri.getArea();
         double futureEnergy = integrator.constantEnergyEval(&tri, futureColor, ds)
             - integrator.constantEnergyEval(&tri, 0, ds) - LOG_AREA_MULTIPLIER * log(max(0.0, tri.getArea() - AREA_THRESHOLD));
         
         pts[0].move(-2 * eps * vx, -2 * eps * vy);
-        double pastColor = integrator.doubleIntEval(&tri, ds) / tri.getArea();
+        double pastColor;
+        integrator.doubleIntEval(&tri, ds, &pastColor);
+        pastColor /= tri.getArea();
         double pastEnergy = integrator.constantEnergyEval(&tri, pastColor, ds)
             - integrator.constantEnergyEval(&tri, 0, ds) - LOG_AREA_MULTIPLIER * log(max(0.0, tri.getArea() - AREA_THRESHOLD));
 
@@ -258,15 +266,18 @@ TEST(GradientTest, LinearBug1) {
     cudaFree(pixArr);
 }
 
-// same here; decreasing ds from 0.01 to 0.003 passes test
+// same here; decreasing ds from 0.01 to 0.004 passes test
 TEST(GradientTest, LinearBug2) {
     CImg<unsigned char> image = gradientColor();
     Pixel *pixArr;
     convertToPixel(pixArr, &image);
     ParallelIntegrator integrator; // external integrator
-    double ds = 0.003;
+    double ds = 0.004;
     long long space = dimX / ds * dimY / ds + 1;
-    integrator.initialize(pixArr, dimX, dimY, linear, space);
+    if(!integrator.initialize(pixArr, dimX, dimY, linear, space)) {
+        cout << "something went wrong" << endl;
+        exit(EXIT_FAILURE);
+    } 
     Point *pts;
     cudaMallocManaged(&pts, 3 * sizeof(Point));
     Triangle tri(pts, pts + 1, pts + 2);
@@ -317,6 +328,7 @@ TEST(GradientTest, LinearBug2) {
         - integrator.constantEnergyEval(&tri, 0, ds) - LOG_AREA_MULTIPLIER * log(max(0.0, tri.getArea() - AREA_THRESHOLD));
 
     double finiteApprox = (futureEnergy - pastEnergy) / (2 * eps);
+    //cout << finiteApprox << ", " << gradApprox << endl;
     EXPECT_TRUE(approxEqual(finiteApprox, gradApprox, 0.2));
     cudaFree(pts);
     cudaFree(pixArr);

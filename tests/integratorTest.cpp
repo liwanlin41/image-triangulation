@@ -136,7 +136,8 @@ TEST(ApproximationTest, DoubleInt) {
     Triangle tri(points, points + 1, points + 2);
 
     double exact = integrator.doubleIntExact(&tri, GRAY);
-    double approx = integrator.doubleIntApprox(&tri, ds, GRAY, 0);
+    double approx;
+    integrator.doubleIntApprox(&tri, ds, &approx, GRAY);
     // cout << exact << ", " << approx << endl;
     ASSERT_TRUE(abs(exact - approx) < TOLERANCE * abs(exact));
     cudaFree(pixArr);
@@ -156,7 +157,9 @@ TEST(ApproximationTest, EnergyInt) {
     points[2] = Point(2,4);
     Triangle tri(points, points + 1, points + 2);
 
-    const int color = integrator.doubleIntEval(&tri, ds, GRAY) / tri.getArea();
+    double color;
+    integrator.doubleIntEval(&tri, ds, &color);
+    color /= tri.getArea();
     double exact = integrator.constantEnergyExact(&tri, color);
     double approx = integrator.constantEnergyApprox(&tri, color, ds);
     // cout << exact << ", " << approx << endl;
@@ -204,10 +207,11 @@ TEST(LinearIntegrationTest, DoubleIntConstant) {
     Triangle tri(points, points + 1, points + 2);
 
     double expected[3] = {2 * white, 2 * white, 2 * white};
+    double approx[3];
+    integrator.doubleIntEval(&tri, ds, approx);
     for(int i = 0; i < 3; i++) {
-        double approx = integrator.doubleIntEval(&tri, ds, GRAY, i);
         //cout << expected[i] << ", " << approx << endl;
-        ASSERT_TRUE(abs(expected[i] - approx) < TOLERANCE * abs(expected[i]));
+        ASSERT_TRUE(abs(expected[i] - approx[i]) < TOLERANCE * abs(expected[i]));
     }
     cudaFree(pixArr);
     cudaFree(points);
@@ -229,10 +233,11 @@ TEST(LinearIntegrationTest, DoubleIntShaded) {
     Triangle tri(points, points + 1, points + 2);
 
     double expected[3] = {16, 32, 16};
+    double approx[3];
+    integrator.doubleIntEval(&tri, ds, approx);
     for(int i = 0; i < 3; i++) {
-        double approx = integrator.doubleIntEval(&tri, ds, GRAY, i);
         //cout << expected[i] << ", " << approx << endl;
-        ASSERT_TRUE(abs(expected[i] - approx) < TOLERANCE * abs(expected[i]));
+        ASSERT_TRUE(abs(expected[i] - approx[i]) < TOLERANCE * abs(expected[i]));
     }
     cudaFree(pixArr);
     cudaFree(points);

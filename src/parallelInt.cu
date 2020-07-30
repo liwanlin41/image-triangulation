@@ -405,30 +405,35 @@ __global__ void constDoubleIntSample(Pixel *pixArr, int maxX, int maxY, Point *a
 	}
 }
 
-__global__ void linearDoubleIntSample(Pixel *pixArr, int maxX, int maxY, Point *a, Point *b, Point *c, double *results, double dA, int samples, ColorChannel channel, int basisInd) {
-	int u = blockIdx.x * blockDim.x + threadIdx.x; // component towards b
-	int v = blockIdx.y * blockDim.y + threadIdx.y; // component towards c
-	int ind = (2 * samples - u + 1) * u / 2 + v; // 1D index in results
+// compute integral f phi_j dA by barycentric sampling
+// using pts[0] as vertex point; store values in results[j]
+__global__ void linearDoubleIntSample(Pixel *pixArr, int maxX, int maxY, Point *pts, double **results, double dA, int samples, ColorChannel channel) {
+	int u = blockIdx.x * blockDim.x + threadIdx.x; // component towards pts[1]
+	int v = blockIdx.y * blockDim.y + threadIdx.y; // component towards pts[2]
+	int ind = (2 * samples - u + 1) * u / 2 + v; // 1D index in results[j]
 	if(u + v < samples) {
-		double x = (a->getX() * (samples - u - v) + b->getX() * u + c->getX() * v) / samples;
-		double y = (a->getY() * (samples - u - v) + b->getY() * u + c->getY() * v) / samples;
-		// find containing pixel
-		int pixX = pixelRound(x, maxX);
-		int pixY = pixelRound(y, maxY);
-		double areaContrib = (u+v == samples - 1) ? dA : 2 * dA;
-		// get FEM basis value at this point
-		double phi;
-		if(basisInd == 0) phi = (double) (samples - u - v) / samples;
-		if(basisInd == 1) phi = (double) u / samples;
-		if(basisInd == 2) phi = (double) v / samples;
-		results[ind] = pixArr[pixX * maxY + pixY].getColor(channel) * areaContrib * phi;
+		// extract coordinates at this sample point
+		double x = (pts[0].getX() * (samples - u - v) + pts[1].getX() * u + pts[2].getX() * v) / samples;
+		double y = (pts[0].getY() * (samples - u - v) + pts[1].getY() * u + pts[2].getY() * v) / samples;
+		// get color of containing pixel
+		double color = pixArr[pixelRound(x, maxX) * maxY + pixelRound(y, maxY)].getColor(channel);
+		// scale fdA by 1/samples to avoid multiple divisions in FEM basis computation later
+		double fdA = dA * color / samples;
+		// area element is a parallelogram except for triangular contributions at the opposite edge
+		// when u + v == samples - 1
+		if(u + v < samples - 1) fdA *= 2;
+		// second factor is (scaled) FEM basis value at this point
+		results[0][ind] = fdA * (samples - u - v);
+		results[1][ind] = fdA * u;
+		results[2][ind] = fdA * v;
 	}
 }
 
-double ParallelIntegrator::doubleIntApprox(Triangle *tri, double ds, ColorChannel channel, int basisInd) {
+void ParallelIntegrator::doubleIntApprox(Triangle *tri, double ds, double *result, ColorChannel channel) {
+	// extract number of samples
 	int i = tri->midVertex();
+	// copy middle vertex into curTri[0]
 	tri->copyVertices(curTri+((3-i)%3), curTri+((4-i)%3), curTri+((5-i)%3));
-	// compute number of samples
 	int samples = ceil(curTri[1].distance(curTri[2])/ds);
 	dim3 numBlocks((samples + threadsX - 1) / threadsX, (samples + threadsY - 1) / threadsY);
 	double dA = tri->getArea() / (samples * samples);
@@ -438,22 +443,24 @@ double ParallelIntegrator::doubleIntApprox(Triangle *tri, double ds, ColorChanne
 			break;
 		}
 		case linear: {
-			int relativeBasis = (basisInd + 3 - i) % 3;
-			linearDoubleIntSample<<<numBlocks, threads2D>>>(pixArr, maxX, maxY, curTri, curTri+1, curTri+2, arr[0], dA, samples, channel, relativeBasis);
+			linearDoubleIntSample<<<numBlocks, threads2D>>>(pixArr, maxX, maxY, curTri, arr, dA, samples, channel);
 			break;
 		}
-		case quadratic:
-			break;
 	}
-	double answer = sumArray(samples * (samples + 1) / 2);
-	return answer;
+	// store results into result in order aligning with tri
+	// (result[j] is integral of phi_j, which is 1 on tri.vertices[j] and 0 on the other vertices)
+	for(int j = 0; j < approx; j++) {
+		int relativeBasis = (j + approx - i) % approx; // with reference to vertices of curTri; when j == i, this is 0
+		result[j] = sumArray(samples * (samples + 1) / 2, relativeBasis);
+	}
 }
 
-double ParallelIntegrator::doubleIntEval(Triangle *tri, double ds, ColorChannel channel, int basisInd) {
+void ParallelIntegrator::doubleIntEval(Triangle *tri, double ds, double *result, ColorChannel channel) {
 	if(computeExact) {
-		return doubleIntExact(tri, channel);
+		*result = doubleIntExact(tri, channel);
+	} else {
+		doubleIntApprox(tri, ds, result, channel);
 	}
-	return doubleIntApprox(tri, ds, channel, basisInd);
 }
 
 // kernel function for linearEnergyApprox

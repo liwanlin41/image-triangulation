@@ -76,7 +76,8 @@ void ConstantApprox::gradient(int t, int movingPt, double *gradX, double *gradY)
 void ConstantApprox::updateApprox() {
 	for(int t = 0; t < numTri; t++) {
 		// compute image dA and store it for reference on next iteration
-		double val = integrator.doubleIntEval(triArr+t, ds);
+		double val;
+		integrator.doubleIntEval(triArr + t, ds, &val);
 		imageInt[t] = val;
 		double area = triArr[t].getArea();
 		// take average value
@@ -122,8 +123,11 @@ void ConstantApprox::computeEdgeEnergies(vector<array<double, 3>> *edgeEnergies)
 			// equal area of both triangles
 			double area = triArr[t].getArea() / 2;
 			// get energy on subdivided triangles
-			double color1 = integrator.doubleIntEval(&t1, ds) / area;
-			double color2 = integrator.doubleIntEval(&t2, ds) / area;
+			double color1, color2;
+			integrator.doubleIntEval(&t1, ds, &color1);
+			integrator.doubleIntEval(&t2, ds, &color2);
+			color1 /= area;
+			color2 /= area;
 			newEnergy += integrator.constantEnergyEval(&t1, color1, ds) + integrator.constantEnergyEval(&t2, color2, ds)
 				+ 2 * regularizationEnergy(&t1); // regularization energies on t1, t2 are the same
 		}
@@ -138,9 +142,13 @@ vector<array<double,3>> ConstantApprox::getColors() {
 		// scale to fit polyscope colors 
 		int scale = 255;
 		double area = triArr[t].getArea();
-		double r = integrator.doubleIntEval(triArr+t, ds, RED) / (scale * area);
-		double g = integrator.doubleIntEval(triArr+t, ds, GREEN) / (scale * area);
-		double b = integrator.doubleIntEval(triArr+t, ds, BLUE) / (scale * area);
+		double r, g, b;
+		integrator.doubleIntEval(triArr+t, ds, &r, RED);
+		integrator.doubleIntEval(triArr+t, ds, &g, GREEN);
+		integrator.doubleIntEval(triArr+t, ds, &b, BLUE);
+		r /= (scale * area);
+		g /= (scale * area);
+		b /= (scale * area);
 		fullColors.push_back({r, g, b});
 	}
 	return fullColors;

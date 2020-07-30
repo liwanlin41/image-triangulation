@@ -95,7 +95,7 @@ Pixel::Pixel(int x_, int y_, int r, int g, int b) : x(x_), y(y_) {
 	colors[3] = getLuminance(r, g, b);
 }
 
-int Pixel::getColor(ColorChannel channel) {
+double Pixel::getColor(ColorChannel channel) {
 	return colors[channel];
 }
 

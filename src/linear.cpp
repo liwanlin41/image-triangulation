@@ -117,9 +117,7 @@ void LinearApprox::gradient(int t, int movingPt, double *gradX, double *gradY) {
 void LinearApprox::updateApprox() {
     for(int t = 0; t < numTri; t++) {
 		// compute image phi_i dA and store it for reference on next iteration
-        for(int i = 0; i < 3; i++) {
-            basisIntegral[t][i] = integrator.doubleIntEval(triArr + t, ds, GRAY, i);
-        }
+        integrator.doubleIntEval(triArr + t, ds, basisIntegral[t]);
 		double area = triArr[t].getArea();
         // extract coefficients
         for(int i = 0; i < 3; i++) {
@@ -134,9 +132,7 @@ void LinearApprox::updateApprox() {
 
 void LinearApprox::computeCoeffs(Triangle *tri, double *coeffs, ColorChannel channel) {
     double L[3]; // integral of f phi_i dA
-    for(int i = 0; i < 3; i++) {
-        L[i] = integrator.doubleIntEval(tri, ds, channel, i);
-    }
+    integrator.doubleIntEval(tri, ds, L, channel);
     for(int i = 0; i < 3; i++) {
         double coeff = 0;
         for(int j = 0; j < 3; j++) {

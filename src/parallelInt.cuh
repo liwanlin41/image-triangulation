@@ -82,22 +82,16 @@ class ParallelIntegrator {
         // for all basis elements; consider when point with index pt in tri is moving
         // at velocity (1,0) if isX and (0,1) if !isX; store ith basis integral in result[i]
         /*
-        void lineIntEval(Triangle *tri, int pt, bool isX, double ds, double *result = NULL);
+        void lineIntEval(Triangle *tri, int pt, bool isX, double ds, double *result);
         void lineIntApprox(Triangle *tri, int pt, bool isX, double ds, double *result);
         */
 
-        // compute double integral f phi dA over tri where FEM basis phi depends on approx
-        double doubleIntEval(Triangle *tri, double ds, ColorChannel channel = GRAY, int basisInd = 0);
+        // compute double integral of f phi dA over triArr[t], storing ith result in result[i]
+        void doubleIntEval(Triangle *tri, double ds, double *result, ColorChannel channel = GRAY);
         // compute by exact integral
         double doubleIntExact(Triangle *tri, ColorChannel channel);
         // approximate by grid with side length ds
-        double doubleIntApprox(Triangle *tri, double ds, ColorChannel channel, int basisInd);
-
-        // compute double integral of f phi dA over triArr[t], storing ith result in result[i]
-        /*
-        void doubleIntEval(Triangle *tri, double ds, ColorChannel channel = GRAY, double *result = NULL);
-        void doubleIntApprox(Triangle *tri, double ds, ColorChannel channel, double *result);
-        */
+        void doubleIntApprox(Triangle *tri, double ds, double *result, ColorChannel channel);
 
         // compute integral f d phi_j dA over tri when pt is moving
         double linearImageGradient(Triangle *tri, int pt, bool isX, double ds, int basisInd);
