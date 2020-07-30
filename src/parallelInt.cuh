@@ -78,14 +78,6 @@ class ParallelIntegrator {
         // approximate line integral using one sample every ds length
         double lineIntApprox(Triangle *tri, int pt, bool isX, double ds, int basisInd);
 
-        // compute line integral (v dot n) * f phi ds over tri
-        // for all basis elements; consider when point with index pt in tri is moving
-        // at velocity (1,0) if isX and (0,1) if !isX; store ith basis integral in result[i]
-        /*
-        void lineIntEval(Triangle *tri, int pt, bool isX, double ds, double *result);
-        void lineIntApprox(Triangle *tri, int pt, bool isX, double ds, double *result);
-        */
-
         // compute double integral of f phi dA over triArr[t], storing ith result in result[i]
         void doubleIntEval(Triangle *tri, double ds, double *result, ColorChannel channel = GRAY);
         // compute by exact integral
