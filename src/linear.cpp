@@ -76,15 +76,6 @@ void LinearApprox::gradient(int t, int movingPt, double *gradX, double *gradY) {
             dL[i][j] += integrator.lineIntEval(triArr + t, movingPt, (i == 0), ds/2, j); // boundary integral
         }
     }
-    /*
-    double dL[3][2] = {{0,0},{0,0},{0,0}}; // gradient of f phi_j dA; find these first
-    for(int j = 0; j < 3; j++) {
-        for(int i = 0; i < 2; i++) {
-            dL[j][i] = integrator.linearImageGradient(triArr + t, movingPt, (i == 0), ds, j) // area integral
-                + integrator.lineIntEval(triArr + t, movingPt, (i == 0), ds/2, j); // boundary integral
-        }
-    }
-    */
 
    double dLA[2][3]; // gradient of d(L/A)
    for(int i = 0; i < 2; i++) {
@@ -93,14 +84,6 @@ void LinearApprox::gradient(int t, int movingPt, double *gradX, double *gradY) {
        }
    }
 
-    /*
-    double dLA[3][2]; // gradient of d(L/A)
-    for(int j = 0; j < 3; j++) {
-        for(int i = 0; i < 2; i++) {
-            dLA[j][i] = (area * dL[j][i] - basisIntegral[t][j] * dA[i]) / (area * area);
-        }
-    }
-    */
     double dc[2][3] = {{0,0,0},{0,0,0}}; // gradients of coefficients
     for(int j = 0; j < 3; j++) {
         for(int k = 0; k < 3; k++) {
@@ -108,27 +91,13 @@ void LinearApprox::gradient(int t, int movingPt, double *gradX, double *gradY) {
             dc[1][j] += matrix[j][k] * dLA[1][k];
         }
     }
-    /*
-    double dc[3][2] = {{0,0}, {0,0}, {0,0}}; // gradients of coefficients
-    for(int j = 0; j < 3; j++) {
-        for(int k = 0; k < 3; k++) {
-            dc[j][0] += matrix[j][k] * dLA[k][0];
-            dc[j][1] += matrix[j][k] * dLA[k][1];
-        }
-    }
-    */
+
+    // update energy gradient
    for(int i = 0; i < 2; i++) {
        for(int j = 0; j < 3; j++) {
             gradient[i] -= (dc[i][j] * basisIntegral[t][j] + coefficients[t][j] * dL[i][j]);
        }
    }
-   /*
-    for(int j = 0; j < 3; j++) {
-        for(int i = 0; i < 2; i++) {
-            gradient[i] -= (dc[j][i] * basisIntegral[t][j] + coefficients[t][j] * dL[j][i]);
-        }
-    }
-    */
 
     // in case of small area, only use log barrier gradient
     // to move away from small area
@@ -177,13 +146,14 @@ void LinearApprox::computeCoeffs(Triangle *tri, double *coeffs, ColorChannel cha
 }
 
 void LinearApprox::computeEdgeEnergies(vector<array<double, 3>> *edgeEnergies) {
+    const bool salient = true; // use saliency when picking edges to subdivide
     for(auto ii = edgeBelonging.begin(); ii != edgeBelonging.end(); ii++) {
 		array<int, 2> edge = ii->first;
 		vector<int> triangles = ii->second; // triangles containing edge
 		// compute current total energy over these triangles
 		double curEnergy = 0;
 		for(int t : triangles) {
-			curEnergy += integrator.linearEnergyApprox(triArr+t, coefficients[t], ds) + regularizationEnergy(triArr + t);
+			curEnergy += integrator.linearEnergyApprox(triArr+t, coefficients[t], ds, salient) + regularizationEnergy(triArr + t);
 		}
 		// find new point that may be added to mesh
 		Point endpoint0 = points[edge[0]];
@@ -212,7 +182,7 @@ void LinearApprox::computeEdgeEnergies(vector<array<double, 3>> *edgeEnergies) {
             double coeffs2[3];
             computeCoeffs(&t1, coeffs1);
             computeCoeffs(&t2, coeffs2);
-			newEnergy += integrator.linearEnergyApprox(&t1, coeffs1, ds) + integrator.linearEnergyApprox(&t2, coeffs2, ds)
+			newEnergy += integrator.linearEnergyApprox(&t1, coeffs1, ds, salient) + integrator.linearEnergyApprox(&t2, coeffs2, ds, salient)
                 + 2 * regularizationEnergy(&t1);
 		}
 		// change in energy due to subdivision

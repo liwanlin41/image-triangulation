@@ -99,6 +99,15 @@ double Pixel::getColor(ColorChannel channel) {
 	return colors[channel];
 }
 
+__device__ double Pixel::getSaliency() {
+	return saliency;
+}
+
+void Pixel::setSaliency(double s) {
+	assert(s >= 0);
+	saliency = s;
+}
+
 __device__ bool Pixel::containsPoint(Point &p) {
 	double px = p.getX();
 	double py = p.getY();

@@ -27,6 +27,7 @@ class Pixel {
 		int colors[4]; // represent rgb and luminance of pixel from 0 to 255
 		int x, y; // center of pixel
 		Point corners[4]; // corners of pixel in ccw order
+		double saliency = 1.0; // represent saliency value at the center of this pixel
 	public:
 		// create a grayscale pixel centered at (x, y) with luminance c
 		Pixel(int x, int y, int c);
@@ -34,6 +35,10 @@ class Pixel {
 		Pixel(int x, int y, int r, int g, int b);
 		// get color of a given channel, defaulting to grayscale
 		CUDA_HOSTDEV double getColor(ColorChannel channel = GRAY);
+		// get saliency
+		CUDA_DEV double getSaliency();
+		// set saliency value; s must be >= 0
+		void setSaliency(double s);
 		// compute the length of the intersection of Segment e
 		// with this pixel (may be 0); if x, y are given, store the coordinates
 		// of the midpoint of the segment in x, y; DOES NOT SET x, y if length is 0

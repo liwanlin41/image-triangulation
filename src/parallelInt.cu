@@ -129,20 +129,27 @@ double ParallelIntegrator::sumArray(int size, int i) {
 
 // kernel for constantEnergyEval
 // compute the energy of a single pixel on triangle triArr[t]
+// weight by saliency value of pixel if salient
+template<bool salient>
 __global__ void pixConstantEnergyInt(Pixel *pixArr, int maxX, int maxY, Triangle tri, double color, double *results) {
 	int x = blockIdx.x * blockDim.x + threadIdx.x;
 	int y = blockIdx.y * blockDim.y + threadIdx.y;
 	int ind = x * maxY + y; // index in pixArr;
 	if(x < maxX && y < maxY) {
 		double area = pixArr[ind].intersectionArea(tri);
+		if(salient) area *= pixArr[ind].getSaliency();
 		double diff = color - pixArr[ind].getColor();
 		results[ind] = diff * diff * area;
 	}
 }
 
-double ParallelIntegrator::constantEnergyExact(Triangle *tri, double color) {
+double ParallelIntegrator::constantEnergyExact(Triangle *tri, double color, bool salient) {
 	dim3 numBlocks((maxX + threadsX - 1) / threadsX, (maxY + threadsY - 1) / threadsY);
-	pixConstantEnergyInt<<<numBlocks, threads2D>>>(pixArr, maxX, maxY, *tri, color, arr[0]);
+	if(salient) {
+		pixConstantEnergyInt<true><<<numBlocks, threads2D>>>(pixArr, maxX, maxY, *tri, color, arr[0]);
+	} else {
+		pixConstantEnergyInt<false><<<numBlocks, threads2D>>>(pixArr, maxX, maxY, *tri, color, arr[0]);
+	}
 	double answer = sumArray(maxX * maxY);
 	return answer;
 }
@@ -151,6 +158,7 @@ double ParallelIntegrator::constantEnergyExact(Triangle *tri, double color) {
 // using Point a as vertex point, sample ~samples^2/2 points inside the triangle with a triangular area element of dA
 // NOTE: samples does not count endpoints along edge bc as the parallelograms rooted there lie outside the triangle
 // maxY is for converting 2D pixel index to 1D index
+template<bool salient>
 __global__ void approxConstantEnergySample(Pixel *pixArr, int maxX, int maxY, Point *a, Point *b, Point *c, double color, double *results, double dA, int samples) {
 	int u = blockIdx.x * blockDim.x + threadIdx.x; // component towards b
 	int v = blockIdx.y * blockDim.y + threadIdx.y; // component towards c
@@ -167,11 +175,12 @@ __global__ void approxConstantEnergySample(Pixel *pixArr, int maxX, int maxY, Po
 		// account for points near edge bc having triangle contributions rather than parallelograms,
 		// written for fast access and minimal branching
 		double areaContrib = (u + v == samples - 1) ? dA : 2 * dA;
+		if(salient) areaContrib *= pixArr[pixX * maxY + pixY].getSaliency();
 		results[ind] = diff * diff * areaContrib;
 	}
 }
 
-double ParallelIntegrator::constantEnergyApprox(Triangle *tri, double color, double ds) {
+double ParallelIntegrator::constantEnergyApprox(Triangle *tri, double color, double ds, bool salient) {
 	int i = tri->midVertex(); // vertex opposite middle side
 	// ensure minVertex is copied into location curTri
 	tri->copyVertices(curTri+((3-i)%3), curTri+((4-i)%3), curTri+((5-i)%3));
@@ -180,17 +189,21 @@ double ParallelIntegrator::constantEnergyApprox(Triangle *tri, double color, dou
 	// unfortunately half of these threads will not be doing useful work; no good fix, sqrt is too slow for triangular indexing
 	dim3 numBlocks((samples + threadsX - 1) / threadsX, (samples + threadsY - 1) / threadsY);
 	double dA = tri->getArea() / (samples * samples);
-	approxConstantEnergySample<<<numBlocks, threads2D>>>(pixArr, maxX, maxY, curTri, curTri + 1, curTri + 2, color, arr[0], dA, samples);
+	if(salient) {
+		approxConstantEnergySample<true><<<numBlocks, threads2D>>>(pixArr, maxX, maxY, curTri, curTri+1, curTri+2, color, arr[0], dA, samples);
+	} else {
+		approxConstantEnergySample<false><<<numBlocks, threads2D>>>(pixArr, maxX, maxY, curTri, curTri+1, curTri+2, color, arr[0], dA, samples);
+	}
 	double answer = sumArray(samples * (samples + 1) / 2);
 	return answer;
 }
 
-double ParallelIntegrator::constantEnergyEval(Triangle *tri, double color, double ds) {
+double ParallelIntegrator::constantEnergyEval(Triangle *tri, double color, double ds, bool salient) {
 	// switch integration method based on exactnes required
 	if(computeExact) {
-		return constantEnergyExact(tri, color);
+		return constantEnergyExact(tri, color, salient);
 	}
-	return constantEnergyApprox(tri, color, ds);
+	return constantEnergyApprox(tri, color, ds, salient);
 }
 
 // kernel for constant line integral exact evaluation
@@ -470,6 +483,8 @@ void ParallelIntegrator::doubleIntEval(Triangle *tri, double ds, double *result,
 // kernel function for linearEnergyApprox
 // assuming point a as vertex and matching k0, k1, k2 to a, b, c,
 // sample (f - sum k_i phi_i)^2 over the triangle
+// weighted by saliency if salient
+template<bool salient>
 __global__ void approxLinearEnergySample(Pixel *pixArr, int maxX, int maxY, Point *a, Point *b, Point *c, double k0, double k1, double k2, double *results, double dA, int samples) {
 	int u = blockIdx.x * blockDim.x + threadIdx.x; // component towards b
 	int v = blockIdx.y * blockDim.y + threadIdx.y; // component towards c
@@ -487,11 +502,14 @@ __global__ void approxLinearEnergySample(Pixel *pixArr, int maxX, int maxY, Poin
 		// account for points near edge bc having triangle contributions rather than parallelograms,
 		// written for fast access and minimal branching
 		double areaContrib = (u + v == samples - 1) ? dA : 2 * dA;
+		if(salient) {
+			areaContrib *= pixArr[pixX * maxY + pixY].getSaliency();
+		}
 		results[ind] = diff * diff * areaContrib;
 	}
 }
 
-double ParallelIntegrator::linearEnergyApprox(Triangle *tri, double *coeffs, double ds) {
+double ParallelIntegrator::linearEnergyApprox(Triangle *tri, double *coeffs, double ds, bool salient) {
 	int i = tri->midVertex(); // vertex opposite middle side
 	// curTri[0] = tri.vertices[i]
 	tri->copyVertices(curTri + ((3-i)%3), curTri + ((4-i)%3), curTri + ((5-i)%3));
@@ -500,8 +518,13 @@ double ParallelIntegrator::linearEnergyApprox(Triangle *tri, double *coeffs, dou
 	// unfortunately half of these threads will not be doing useful work; no good fix, sqrt is too slow for triangular indexing
 	dim3 numBlocks((samples + threadsX - 1) / threadsX, (samples + threadsY - 1) / threadsY);
 	double dA = tri->getArea() / (samples * samples);
-	approxLinearEnergySample<<<numBlocks, threads2D>>>(pixArr, maxX, maxY, curTri, curTri + 1, curTri + 2,
-		coeffs[i], coeffs[(i+1)%3], coeffs[(i+2)%3], arr[0], dA, samples);
+	if(salient) {
+		approxLinearEnergySample<true><<<numBlocks, threads2D>>>(pixArr, maxX, maxY, curTri, curTri + 1, curTri + 2,
+			coeffs[i], coeffs[(i+1)%3], coeffs[(i+2)%3], arr[0], dA, samples);
+	} else {
+		approxLinearEnergySample<false><<<numBlocks, threads2D>>>(pixArr, maxX, maxY, curTri, curTri + 1, curTri + 2,
+			coeffs[i], coeffs[(i+1)%3], coeffs[(i+2)%3], arr[0], dA, samples);
+	}
 	double answer = sumArray(samples * (samples + 1) / 2);
 	return answer;
 }

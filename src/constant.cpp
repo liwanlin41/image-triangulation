@@ -92,13 +92,14 @@ void ConstantApprox::updateApprox() {
 }
 
 void ConstantApprox::computeEdgeEnergies(vector<array<double, 3>> *edgeEnergies) {
+	const bool salient = true; // want saliency when picking edges to subdivide
 	for(auto ii = edgeBelonging.begin(); ii != edgeBelonging.end(); ii++) {
 		array<int, 2> edge = ii->first;
 		vector<int> triangles = ii->second; // triangles containing edge
 		// compute current total energy over these triangles
 		double curEnergy = 0;
 		for(int t : triangles) {
-			curEnergy += integrator.constantEnergyEval(triArr+t, grays[t], ds) + regularizationEnergy(triArr + t);
+			curEnergy += integrator.constantEnergyEval(triArr+t, grays[t], ds, salient) + regularizationEnergy(triArr + t);
 		}
 		// find new point that may be added to mesh
 		Point endpoint0 = points[edge[0]];
@@ -128,7 +129,7 @@ void ConstantApprox::computeEdgeEnergies(vector<array<double, 3>> *edgeEnergies)
 			integrator.doubleIntEval(&t2, ds, &color2);
 			color1 /= area;
 			color2 /= area;
-			newEnergy += integrator.constantEnergyEval(&t1, color1, ds) + integrator.constantEnergyEval(&t2, color2, ds)
+			newEnergy += integrator.constantEnergyEval(&t1, color1, ds, salient) + integrator.constantEnergyEval(&t2, color2, ds, salient)
 				+ 2 * regularizationEnergy(&t1); // regularization energies on t1, t2 are the same
 		}
 		// change in energy due to subdivision

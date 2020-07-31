@@ -96,7 +96,7 @@ TEST(ExactIntegralTest, EnergyInt) {
     double area = tri.getArea();
     ASSERT_EQ(25, area);
     int color = 10; // approximation color to test
-    ASSERT_EQ(area * color * color, integrator.constantEnergyExact(&tri, color));
+    ASSERT_EQ(area * color * color, integrator.constantEnergyExact(&tri, color, false));
     cudaFree(pixArr);
     cudaFree(points);
 }
@@ -160,8 +160,8 @@ TEST(ApproximationTest, EnergyInt) {
     double color;
     integrator.doubleIntEval(&tri, ds, &color);
     color /= tri.getArea();
-    double exact = integrator.constantEnergyExact(&tri, color);
-    double approx = integrator.constantEnergyApprox(&tri, color, ds);
+    double exact = integrator.constantEnergyExact(&tri, color, false);
+    double approx = integrator.constantEnergyApprox(&tri, color, ds, false);
     // cout << exact << ", " << approx << endl;
     ASSERT_TRUE(abs(exact - approx) < TOLERANCE * abs(exact));
     cudaFree(pixArr);
