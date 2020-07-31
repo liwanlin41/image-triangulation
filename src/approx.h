@@ -10,18 +10,17 @@
 #include "CImg.h"
 #include "cuda.h"
 #include "cuda_runtime.h"
-/*
-#include "polyscope/polyscope.h"
-#include "polyscope/surface_mesh.h"
-#include "polyscope/point_cloud.h"
-#include "polyscope/view.h"
-*/
 
 using namespace std;
 using namespace cimg_library;
 
 /**
- * base class for triangular image approximation
+ * interface for triangular image approximation
+ * To use, one of the initialize functions must be called;
+ * thereafter the run functions runs the entire gradient flow
+ * to convergence. Note that this does not support adaptive
+ * re-meshing; that requires the subdivide function to be called
+ * separately.
  */
 
 class Approx {
@@ -84,6 +83,7 @@ class Approx {
 		void regularizationGrad(int t, int i, double &gradX, double &gradY);
 		// compute gradient at this instant, updating gradX and gradY
 		void computeGrad();
+		// helper function for computeGrad;
 		// store gradient values in gradX, gradY of energy over triangle triArr[t]
 		// of the point in t with index movingPt
 		virtual void gradient(int t, int movingPt, double *gradX, double *gradY) = 0;
@@ -98,15 +98,18 @@ class Approx {
 
 		// handle adaptive retriangulation to finer mesh
 
-		// greedily subdivide the top n edges
+		/* greedily subdivide the top n edges */
 		void subdivide(int n);
+		// helper for subdivide
 		// compute energy change associated with subdividing each edge at its midpoint
 		// {i, j, e} in vector means edge (i, j) has energy e
 		virtual void computeEdgeEnergies(vector<array<double, 3>> *edgeEnergies) = 0;
+		// helper for subdivide
 		// update subdivided mesh
 		void updateMesh(vector<Point> *newPoints, vector<array<int, 3>> *newFaces, set<int> *discardedFaces);
 
-		// return data for image to be displayed
+		/* return data for image to be displayed */
+		// get stepsize
 		double getStep();
 		// get points of triangulation
 		vector<Point> getVertices();
@@ -132,13 +135,6 @@ class Approx {
 		// run the entire procedure for either maxIter iterations or
 		// until change in energy is at most eps
 		void run(int maxIter = 100, double eps = 0.001);
-
-        // for rendering mesh and colors
-        // first indicates whether this is the first registration of the mesh
-        /*
-        virtual void registerMesh(bool first = false) = 0;
-        virtual void updateMesh() = 0;
-        */
 };
 
 #endif

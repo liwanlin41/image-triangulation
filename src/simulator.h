@@ -5,34 +5,20 @@
 #include "CImg.h"
 #include "MatlabEngine.hpp"
 #include "MatlabDataArray.hpp"
-/*
-#include "polyscope/polyscope.h"
-#include "polyscope/surface_mesh.h"
-#include "polyscope/point_cloud.h"
-#include "polyscope/view.h"
-*/
 #include "constant.h"
 #include "linear.h"
 
 /**
  * run gradient flow and subdivisions on a triangular mesh approximation
+ * This is the wrapper class for triangular approximations and acts as the
+ * backend interface with the user.
  */
 
 using namespace cimg_library;
 using namespace matlab::engine;
 
-// let polyscope read values from point
-/*
-double adaptorF_custom_accessVector2Value(const Point& p, unsigned int ind) {
-    // reflect everything so that it displays correctly
-    if (ind == 0) return -p.getX(); 
-    if (ind == 1) return -p.getY();
-    throw std::logic_error("bad access");
-    return -1.;
-}
-*/
-
 // rendering functions that are currently implemented in main file
+// because I can't figure out how to make cmake cooperate with polyscope
 
 // render mesh with colors
 // first indicates whether this is the first registration of the mesh
@@ -100,7 +86,7 @@ class Simulator {
         // toggle display
         void revealEdges(bool &display);
         
-        // handle output
+        // handle output graphs (energy and elapsed time)
         void cleanup();
 };
 

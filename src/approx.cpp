@@ -1,5 +1,7 @@
 #include "approx.h"
 
+static const int maxSmallChanges = 3;
+
 Approx::Approx(CImg<unsigned char> *img, double step, double ds_) : originalStep(step), stepSize(step), ds(ds_) {
 	// create pixel array representation
 	maxX = img->width();
@@ -312,9 +314,15 @@ void Approx::run(int maxIter, double eps) {
 	// initialize to something higher than newEnergy
 	double prevEnergy = newEnergy + 100 * eps;
 	int iterCount = 0;
-	while(iterCount < maxIter && abs(prevEnergy - newEnergy) > eps) {
+	int numSmallChanges = 0;
+	while(iterCount < maxIter && numSmallChanges < maxSmallChanges) {
 		cout << "iteration " << iterCount << endl;
 		step(prevEnergy, newEnergy, approxErr);
+		if(abs(prevEnergy - newEnergy) > eps * abs(prevEnergy)) {
+        	numSmallChanges = 0;
+    	} else {
+        	numSmallChanges++;
+    	}
 		iterCount++;
 	}
 }

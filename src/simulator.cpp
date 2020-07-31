@@ -8,12 +8,24 @@ Simulator::Simulator(const char *imgPath, CImg<unsigned char> *img, ApproxType a
         approx = new LinearApprox(img, STARTING_STEP);
     }
 
+    // determine whether to use saliency map
+    string saliencyString;
+    bool salient = false;
+    vector<string> yesAnswers = {"y", "Y"};
+    cout << "Use saliency map for feature identification? y/N: ";
+    cin >> saliencyString;
+    // anything other than y/Y is false
+    for(int i = 0; i < 2; i++) {
+        if(saliencyString == yesAnswers.at(i)) {
+            salient = true;
+        }
+    }
+
     // determine initialization method
     string trimString;
     bool useTRIM = false; // default to uniform initialization
     cout << "Use TRIM initialization? y/N: ";
     cin >> trimString;
-    vector<string> yesAnswers = {"y", "Y"};
     // anything other than y/Y will be false
     for(int i = 0; i < 2; i++) {
         if(trimString == yesAnswers.at(i)) {
@@ -24,7 +36,7 @@ Simulator::Simulator(const char *imgPath, CImg<unsigned char> *img, ApproxType a
     matlabPtr = startMATLAB();
 
     // initialize triangulation
-    if(useTRIM) {
+    if(useTRIM) { // get initial triangulation from matlab TRIM functions
         // prompt for density
         cout << "Density argument: ";
         cin >> density;
