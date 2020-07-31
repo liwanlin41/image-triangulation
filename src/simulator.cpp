@@ -146,24 +146,16 @@ void Simulator::initialize() {
     registerMesh(approx);
     // setup gradient descent
     cout << "finding energy..." << endl;
-    newEnergy = approx->computeEnergy();
+    approxErr = approx->computeEnergy();
+    newEnergy = approxErr + approx->regularizationEnergy();
     cout << "done, energy is " << newEnergy << endl;
     // initialize to something higher than newEnergy
     prevEnergy = newEnergy * 2;
     iterCount = 0;
     totalIters = 0;
     elapsedTimeVec.push_back(totalStep); // initial values
+    errorVec.push_back(approxErr);
     energyVec.push_back(newEnergy);
-    // get approximation error only
-    errorVec.push_back(newEnergy - approx->regularizationEnergy());
-    // center mesh
-    /*
-    polyscope::view::resetCameraToHomeView();
-    polyscope::resetScreenshotIndex();
-    // screenshot
-    polyscope::screenshot(false);
-    polyscope::screenshot("../outputs/initial.tga", false);
-    */
 }
 
 void Simulator::step(double eps) {
@@ -182,21 +174,7 @@ void Simulator::step(double eps) {
         numSmallChanges++;
     }
     // handle display
-    /*
-    for(int t : highlightedTriangles) { // de-highlight old triangles
-        highlight(approx->getApproxType(), t, false);
-    }
-    */
     updateMesh(approx);
-    // get new triangles to highlight
-    /*
-    highlightedTriangles = approx->getTinyTriangles();
-    for(int t : highlightedTriangles) {
-        highlight(approx->getApproxType(), t, true);
-    }
-    */
-    //approx->updateMesh();
-    //polyscope::screenshot(false);
 }
 
 bool Simulator::step(int maxIter, double eps) {
