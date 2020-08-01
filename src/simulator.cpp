@@ -11,6 +11,10 @@ Simulator::Simulator(const char *imgPath, CImg<unsigned char> *img, ApproxType a
         approx = new LinearApprox(img, STARTING_STEP);
     }
 
+    cout << "connecting to matlab... " << flush;
+    matlabPtr = startMATLAB();
+    cout << "done" << endl;
+
     // determine whether to use saliency map
     string saliencyString;
     bool salient = false;
@@ -23,8 +27,6 @@ Simulator::Simulator(const char *imgPath, CImg<unsigned char> *img, ApproxType a
             salient = true;
         }
     }
-
-    matlabPtr = startMATLAB();
 
     /* TODO: set saliency with matlab saliency map 
      * current code already connects to matlab,

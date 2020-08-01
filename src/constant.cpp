@@ -130,7 +130,8 @@ void ConstantApprox::computeEdgeEnergies(vector<array<double, 3>> *edgeEnergies)
 			color1 /= area;
 			color2 /= area;
 			newEnergy += integrator.constantEnergyEval(&t1, color1, ds, salient) + integrator.constantEnergyEval(&t2, color2, ds, salient)
-				+ 2 * regularizationEnergy(&t1); // regularization energies on t1, t2 are the same
+				+ 2 * regularizationEnergy(&t1) // regularization energies on t1, t2 are the same
+				+ EDGE_SPLIT_MULTIPLIER / endpoint0.distance(endpoint1); // penalize short edges
 		}
 		// change in energy due to subdivision
 		edgeEnergies->push_back({(double) edge[0], (double) edge[1], newEnergy - curEnergy});

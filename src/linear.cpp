@@ -183,7 +183,7 @@ void LinearApprox::computeEdgeEnergies(vector<array<double, 3>> *edgeEnergies) {
             computeCoeffs(&t1, coeffs1);
             computeCoeffs(&t2, coeffs2);
 			newEnergy += integrator.linearEnergyApprox(&t1, coeffs1, ds, salient) + integrator.linearEnergyApprox(&t2, coeffs2, ds, salient)
-                + 2 * regularizationEnergy(&t1);
+                + 2 * regularizationEnergy(&t1) + EDGE_SPLIT_MULTIPLIER / endpoint0.distance(endpoint1);
 		}
 		// change in energy due to subdivision
 		edgeEnergies->push_back({(double) edge[0], (double) edge[1], newEnergy - curEnergy});

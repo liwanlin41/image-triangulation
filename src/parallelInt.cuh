@@ -14,6 +14,8 @@ enum ApproxType{constant = 1, linear = 3, quadratic = 6};
 
 // multiplication factor on log area barrier
 static const double LOG_AREA_MULTIPLIER = 100;
+// multiplication factor on edge splitting in subdivision step
+static const double EDGE_SPLIT_MULTIPLIER = 100000;
 // do not tolerate triangles with area less than this
 static const double AREA_THRESHOLD = 0.1;
 
