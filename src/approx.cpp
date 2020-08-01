@@ -32,6 +32,14 @@ Approx::~Approx() {
     cudaFree(triArr);
 }
 
+void Approx::setSaliency(vector<double> saliency) {
+	// check size requirements
+	assert(saliency.size() == maxX * maxY);
+	for(int i = 0; i < maxX * maxY; i++) {
+		pixArr[i].setSaliency(saliency.at(i));
+	}
+}
+
 void Approx::initialize(ApproxType approxtype, int pixelRate) {
 	// create points
 	int numX = ceil(((double) maxX) / pixelRate) + 1; // number of samples in x direction

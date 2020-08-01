@@ -67,6 +67,8 @@ class Approx {
 		// pass in old number of triangles for 2D arrays
         virtual void reallocateSpace(int oldNumTri) = 0;
 
+		// set saliency map from a 1D saliency vector, where columns are contiguous
+		void setSaliency(vector<double> saliency);
         // create starting approximation
         virtual void initialize(int pixelRate) = 0;
         virtual void initialize(vector<Point> &points, vector<array<int, 3>> &triangleInd) = 0;

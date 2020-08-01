@@ -1,7 +1,10 @@
 #include "simulator.h"
 
 Simulator::Simulator(const char *imgPath, CImg<unsigned char> *img, ApproxType approxtype) {
-    cout << "image is " << img->width() << "x" << img->height() << endl;
+    // get dimensions of image
+    int maxX = img->width();
+    int maxY = img->height();
+    cout << "image is " << maxX << "x" << maxY << endl;
     if(approxtype == constant) {
         approx = new ConstantApprox(img, STARTING_STEP);
     } else if (approxtype == linear) {
@@ -15,10 +18,45 @@ Simulator::Simulator(const char *imgPath, CImg<unsigned char> *img, ApproxType a
     cout << "Use saliency map for feature identification? y/N: ";
     cin >> saliencyString;
     // anything other than y/Y is false
-    for(int i = 0; i < 2; i++) {
+    for(int i = 0; i < yesAnswers.size(); i++) {
         if(saliencyString == yesAnswers.at(i)) {
             salient = true;
         }
+    }
+
+    matlabPtr = startMATLAB();
+
+    /* TODO: set saliency with matlab saliency map 
+     * current code already connects to matlab,
+     * change would just be changing matlab function call
+     * and arguments */
+    // assign pixel saliency values
+    if(salient) { // for now this is just a Gaussian with standard dev 1/4 the diagonal length
+        double stdev = 0.25 * sqrt(maxX * maxX + maxY * maxY);
+        // matlab will generate a square filter
+        int length = max(maxX, maxY);
+        // pass arguments to matlab
+        vector<matlab::data::Array> filterArgs({
+            factory.createCharArray("gaussian"),
+            factory.createScalar<double>(length),
+            factory.createScalar<double>(stdev)
+        });
+        matlab::data::Array matlabMat = matlabPtr->feval(u"fspecial", filterArgs);
+        vector<double> saliencyValues;
+        // resulting structure is length x length, need to extract
+        // a centered maxX x maxY matrix; do this by finding
+        // the top left corner
+        int startX = (length - maxX) / 2;
+        int startY = (length - maxY) / 2;
+        for(int i = 0; i < maxX; i++) {
+            for(int j = 0; j < maxY; j++) {
+                // scale the saliency up so that the sum of saliency values is approximately
+                // maxX * maxY; consistent with default where every pixel has saliency 1
+                double salience = (double) matlabMat[startX+i][startY+j] * maxX * maxY;
+                saliencyValues.push_back(salience);
+            }
+        }
+        approx->setSaliency(saliencyValues);
     }
 
     // determine initialization method
@@ -27,13 +65,11 @@ Simulator::Simulator(const char *imgPath, CImg<unsigned char> *img, ApproxType a
     cout << "Use TRIM initialization? y/N: ";
     cin >> trimString;
     // anything other than y/Y will be false
-    for(int i = 0; i < 2; i++) {
+    for(int i = 0; i < yesAnswers.size(); i++) {
         if(trimString == yesAnswers.at(i)) {
             useTRIM = true;
         }
     }
-
-    matlabPtr = startMATLAB();
 
     // initialize triangulation
     if(useTRIM) { // get initial triangulation from matlab TRIM functions
@@ -194,7 +230,6 @@ void Simulator::flow(int maxIter, double eps) {
 void Simulator::retriangulate(int num) {
     approx->subdivide(num);
     // re-initialize new mesh
-    //approx->registerMesh();
     registerMesh(approx);
     // reset values
     iterCount = 0;
@@ -206,7 +241,6 @@ void Simulator::retriangulate(int num) {
     energyVec.push_back(newEnergy);
     errorVec.push_back(approxErr);
     cout << "energy after subdivision: " << newEnergy << endl;
-    //polyscope::screenshot(false);
 }
 
 void Simulator::revealEdges(bool &display) {
@@ -214,9 +248,6 @@ void Simulator::revealEdges(bool &display) {
 }
 
 void Simulator::cleanup() {
-    /*
-    polyscope::screenshot("../outputs/triangulation.tga", false);
-    */
     // create suitable matlab arrays for data display purposes
     matlab::data::TypedArray<int> iters = factory.createArray<int>({1, (unsigned long) totalIters + 1});
     matlab::data::TypedArray<double> elapsedTime = factory.createArray<double>({1, (unsigned long) totalIters + 1});
@@ -241,7 +272,19 @@ void Simulator::cleanup() {
     matlabPtr->eval(u"h=figure('visible', 'off'); plot(x, ae); axis([0 inf 0 inf]); title('Approximation Error')");
     matlabPtr->eval(u"exportgraphics(h, '../outputs/data_error.png')");
 
-    // convert screenshot sequences to video
-    system("ffmpeg -hide_banner -loglevel warning -framerate 2 -i screenshot_%06d.tga -vcodec mpeg4 ../outputs/video_output.mp4");
-    system("rm *.tga");
+    // optionally convert screenshot sequences to video
+    string confirm;
+    cout << "run cleanup sequence? [WARNING: this is configured for Linux and will remove all .tga files in this directory] Y/n: " << flush;
+    cin >> confirm;
+    bool runCleanup = true;
+    const vector<string> noAnswers = {"n", "N"};
+    for(int i = 0; i < noAnswers.size(); i++) {
+        if(confirm == noAnswers.at(i)) {
+            runCleanup = false;
+        }
+    }
+    if(runCleanup) {
+        system("ffmpeg -hide_banner -loglevel warning -framerate 2 -i screenshot_%06d.tga -vcodec mpeg4 ../outputs/video_output.mp4");
+        system("rm *.tga");
+    }
 }
