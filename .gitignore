@@ -3,6 +3,11 @@ build/
 installs.txt
 testing.txt
 tests/build/*
-outputs/
 images/
-results/
+outputs/build/
+outputs/results/
+outputs/*.tga
+outputs/*.jpg
+outputs/*.png
+outputs/*.jpeg
+outputs/*.mp4
