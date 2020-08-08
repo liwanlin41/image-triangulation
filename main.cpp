@@ -159,14 +159,14 @@ int main(int argc, char* argv[]) {
         polyscope::view::resetCameraToHomeView();
         polyscope::resetScreenshotIndex();
         // screenshot
-        polyscope::screenshot(false);
-        polyscope::screenshot("../outputs/initial.tga", false);
+        polyscope::screenshot(true);
+        polyscope::screenshot("../outputs/initial.tga", true);
     };
 
     // lambda for making a single step of gradient flow
     auto step = [&]() {
        if(sim.step(maxIter, eps)) {
-            polyscope::screenshot(false);
+            polyscope::screenshot(true);
        } else {
            polyscope::warning("done");
        }
@@ -175,14 +175,14 @@ int main(int argc, char* argv[]) {
     // lambda for running the entire gradient flow
     auto runGradient = [&]() {
        while(sim.step(maxIter, eps)) {
-           polyscope::screenshot(false);
+           polyscope::screenshot(true);
        }
     };
 
     // lambda for retriangulating by subdivision
     auto retriangulate = [&]() {
         sim.retriangulate(subdivisions);
-        polyscope::screenshot(false);
+        polyscope::screenshot(true);
     };
 
     // lambda to handle GUI updates
@@ -240,11 +240,11 @@ int main(int argc, char* argv[]) {
         // take screenshot of just the triangulated image
         displayEdges = false;
         sim.revealEdges(displayEdges);
-        polyscope::screenshot("../outputs/triangulation.tga", false);
+        polyscope::screenshot("../outputs/triangulation.tga", true);
         // take screenshot with edges shown
         displayEdges = true;
         sim.revealEdges(displayEdges);
-        polyscope::screenshot("../outputs/edges.tga", false);
+        polyscope::screenshot("../outputs/edges.tga", true);
     }
 
     sim.cleanup();
