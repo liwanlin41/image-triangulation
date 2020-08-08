@@ -29,3 +29,11 @@ This will compile the main file as well as the tests, which can be found in the 
 ## Running Triangulations
 
 Put an image (for the sake of example, `image.jpg`) to be triangulated in the `images` directory. Then from the `build` directory, run ```./CoarseTriangulation image.jpg``` This will output a screenshot of the initial triangulation, the final coarse triangulation, a video of all intermediate steps, and graphs of the energy function and total step over time. All these can be found in the `outputs` directory. Note that running the program multiple times will overwrite these files, which may require root access.
+
+For the sake of convenience, an image cropper can also be found in the `outputs` directory. This will remove the white Polyscope background. Compile this executable by
+```
+mkdir build && cd build
+cmake ..
+make
+```
+from within the `outputs` directory. Then run ```./crop relative_path_to_image``` from `outputs/build`, which will output a file named `cropped.jpeg`. Note that if the image input to the triangulation already has a white background, this image cropper may remove part of that background as well. To fix this, simply convert the triangulation output to a png file before running the cropper.
