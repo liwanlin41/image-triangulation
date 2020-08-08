@@ -36,4 +36,4 @@ mkdir build && cd build
 cmake ..
 make
 ```
-from within the `outputs` directory. Then run ```./crop relative_path_to_image``` from `outputs/build`, which will output a file named `cropped.jpeg`. Note that if the image input to the triangulation already has a white background, this image cropper may remove part of that background as well. To fix this, simply convert the triangulation output to a png file before running the cropper.
+from within the `outputs` directory. Then run ```build/crop relative_path_to_image output_file_name``` from the `outputs` directory, which will output a file named `output_file_name` (default `cropped.jpeg`). Note that if the image input to the triangulation already has a white background, this image cropper may remove part of that background as well. To fix this, simply convert the triangulation output to a png file before running the cropper.
