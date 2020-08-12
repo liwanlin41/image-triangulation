@@ -12,7 +12,7 @@ Saliency Toolbox: Dirk Walther and Christof Koch (2006), Modeling attention to s
 
 ## Requirements
 
-For speed purposes, an Nvidia GPU is needed with CUDA support. Other installations not included in this repo include MATLAB and `ffmpeg` (for Linux; this is not strictly necessary and is just used for output purposes).
+For image reading, `libjpeg` and `libpng` with `libz` are needed, and `X11` is used for testing. For speed purposes, an Nvidia GPU is needed with CUDA support. Other installations not included in this repo include MATLAB and `ffmpeg` (for Linux; this is not strictly necessary and is just used for output purposes).
 
 ## Compiling
 
