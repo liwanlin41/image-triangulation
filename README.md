@@ -2,6 +2,8 @@
 
 Given an input image, compute a coarse triangulation approximation of the image. Supported approximations: piecewise constant, linear, quadratic per triangle. An initial triangulation on the image is provided by the TRIM algorithm, and then a gradient descent mesh moving method is used to further align the triangular mesh to the image to minimize approximation error.
 
+The Windows port of this code can be found here: https://github.com/pzpzpzp1/CoarseTriangulations.
+
 ## Credits
 
 Polyscope: www.polyscope.run
